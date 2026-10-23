@@ -1,0 +1,22 @@
+17-0036 name=dummy modalias=i2c:dummy driver=dummy
+17-0037 name=dummy modalias=i2c:dummy driver=dummy
+17-0050 name=ee1004 modalias=i2c:ee1004 driver=ee1004
+i2c-0 name=Synopsys DesignWare I2C adapter modalias= driver=
+i2c-1 name=i915 gmbus dpa modalias= driver=
+i2c-10 name=NVIDIA i2c adapter 1 at 1:00.0 modalias= driver=
+i2c-11 name=NVIDIA i2c adapter 5 at 1:00.0 modalias= driver=
+i2c-12 name=AUX A/DDI A/PHY A modalias= driver=
+i2c-13 name=AUX USBC1/DDI TC1/PHY TC1 modalias= driver=
+i2c-14 name=AUX USBC2/DDI TC2/PHY TC2 modalias= driver=
+i2c-15 name=AUX USBC3/DDI TC3/PHY TC3 modalias= driver=
+i2c-16 name=AUX USBC4/DDI TC4/PHY TC4 modalias= driver=
+i2c-17 name=SMBus I801 adapter at 0000:00:1f.4 modalias= driver=
+i2c-2 name=i915 gmbus dpb modalias= driver=
+i2c-3 name=i915 gmbus dpc modalias= driver=
+i2c-4 name=i915 gmbus tc1 modalias= driver=
+i2c-5 name=i915 gmbus tc2 modalias= driver=
+i2c-6 name=i915 gmbus tc3 modalias= driver=
+i2c-7 name=i915 gmbus tc4 modalias= driver=
+i2c-8 name=i915 gmbus tc5 modalias= driver=
+i2c-9 name=i915 gmbus tc6 modalias= driver=
+i2c-ELAN0788:00 name=ELAN0788:00 modalias=acpi:ELAN0788:PNP0C50: driver=i2c_hid_acpi

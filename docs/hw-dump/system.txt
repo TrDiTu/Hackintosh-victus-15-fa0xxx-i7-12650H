@@ -1,0 +1,15 @@
+sys_vendor: HP
+product_name: Victus by HP Gaming Laptop 15-fa0xxx
+product_version: 
+product_family: 103C_5335M7 HP Victus
+product_sku: 68Y11UA#ABA
+board_vendor: HP
+board_name: 8A4F
+board_version: 37.56
+bios_vendor: AMI
+bios_version: F.34
+bios_date: 03/19/2026
+bios_release: 15.34
+boot_mode: UEFI
+running_os: CachyOS
+kernel: 7.2.11-1-cachyos

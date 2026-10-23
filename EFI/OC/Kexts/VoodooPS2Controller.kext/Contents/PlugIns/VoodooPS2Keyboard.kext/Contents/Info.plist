@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>as.lvs1974.VoodooPS2Keyboard</string>
+	<key>CFBundleExecutable</key>
+	<string>VoodooPS2Keyboard</string>
+	<key>CFBundlePackageType</key>
+	<string>KEXT</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.3.7</string>
+	<key>CFBundleVersion</key>
+	<string>2.3.7</string>
+	<key>OSBundleLibraries</key>
+	<dict>
+		<key>as.lvs1974.VoodooPS2Controller</key>
+		<string>1.0.0</string>
+	</dict>
+</dict>
+</plist>

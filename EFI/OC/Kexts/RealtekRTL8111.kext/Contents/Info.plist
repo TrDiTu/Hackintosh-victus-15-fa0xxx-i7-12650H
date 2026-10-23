@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.insanelymac.RealtekRTL8111</string>
+	<key>CFBundleName</key>
+	<string>RealtekRTL8111</string>
+	<key>CFBundleExecutable</key>
+	<string>RealtekRTL8111</string>
+	<key>CFBundlePackageType</key>
+	<string>KEXT</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.4.2</string>
+	<key>CFBundleVersion</key>
+	<string>2.4.2</string>
+</dict>
+</plist>

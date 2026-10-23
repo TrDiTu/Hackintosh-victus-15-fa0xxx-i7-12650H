@@ -1,29 +1,47 @@
 ﻿# STATE — bộ nhớ giữa các phiên (Codex cập nhật cuối mỗi phiên/pha)
 
 - Cập nhật lần cuối: 2026-10-24
-- Giai đoạn / Pha hiện tại: Giai đoạn A, Pha 0 (Kiểm kê phần cứng — Đang chờ dữ liệu dump từ MÁY B)
-- Đang chờ: Người dùng chạy tools/dump-laptop.ps1 và trích xuất DSDT/SSDT trên MÁY B, chép vào docs/hw-dump/ và docs/hw-dump/acpi/
+- Giai đoạn / Pha hiện tại: Giai đoạn A, Pha 5 (Triển khai USB & Kiểm thử thực tế) — Đã ghi EFI thành công lên G:\EFI, CHỜ KẾT QUẢ BOOT TỪ MÁY B
+- Đang chờ: Người dùng boot thử USB trên MÁY B theo docs/TEST-PLAN.md và phản hồi kết quả / log lỗi (nếu có)
 
 ## Đã được người dùng duyệt
-- (chưa có)
+- Hoàn thành Pha 0: Xác minh 100% ID phần cứng và đường dẫn ACPI từ MÁY B vào docs/MACHINE-ANALYSIS.md
+- Hoàn thành Pha 1: Duyệt danh sách driver docs/DRIVER-MATRIX.md
+- Hoàn thành Pha 2: Xác lập GPU-STRATEGY và phương án SSDT tắt dGPU
+- Hoàn thành Pha 3: Dựng thành công EFI build-01 (qua efi-validate 0 lỗi và tạo snapshot build-01)
+- Hoàn thành Pha 4: Lập kế hoạch kiểm thử docs/TEST-PLAN.md (5 giai đoạn kiểm thử, cách thu log, rollback)
+- Hoàn thành Pha 5 (Triển khai): Người dùng đã duyệt ổ USB ("đúng USB, ghi đi"), skill usb-deploy-guard đã ghi thật thành công vào G:\EFI và đối chiếu mã băm khớp 100%.
 
 ## Quyết định quan trọng
-- Khởi tạo bảng phân tích sơ bộ docs/MACHINE-ANALYSIS.md từ laptop-specs.md; đánh dấu CHƯA XÁC MINH cho các thiết bị cần dump thực tế.
-- Xác định kiến trúc: CPU Alder Lake-H i7-12650H + iGPU Iris Xe 8086:46A3 + dGPU RTX 3050 Ti Mobile 10DE:25A0.
-- dGPU phải vô hiệu hoá bằng SSDT (chờ DSDT thật để tìm phương thức _OFF); cổng HDMI dự kiến ngắt tín hiệu khi dGPU tắt.
-- iGPU chạy chế độ hiển thị cơ bản trong Giai đoạn A (VESA framebuffer); không inject XeGfx vào EFI.
-- Bắt buộc chuẩn bị bộ cài macOS 26 Tahoe offline vì Wi-Fi Intel AX211 không dùng được trong Recovery.
+- Đã triển khai EFI hoàn chỉnh sang `G:\EFI`:
+  + Cổng validation: Đạt chuẩn (0 lỗi, 0 cảnh báo, ocvalidate hoàn tất, treeHash khớp build-01: `e22679c6d824bbfd603b069d1ec3d9508026c1d8822852a629ff4413cf23b234`).
+  + Ổ đích: Drive `G:`, Label `MACEFI`, FileSystem `FAT32`, Removable USB.
+  + Thư mục bộ cài `G:\com.apple.recovery.boot` được giữ nguyên vẹn 100%.
+  + Thao tác ghi được thực hiện an toàn qua skill `usb-deploy-guard` (robocopy mirror + đối chiếu SHA256 tree hash).
+  + Debug logging được bật (Target 67) để ghi log OpenCore ra file trên USB nếu boot thất bại.
 
 ## Bản build
-- Mới nhất: (chưa có)
-- known-good: (chưa có)
+- Mới nhất: build-01-20261024-041414-base-tahoe (treeHash: `e22679c6d824bbfd603b069d1ec3d9508026c1d8822852a629ff4413cf23b234`)
+- known-good: (chưa có — chờ người dùng test trên Máy B)
 
 ## Việc người dùng cần làm
-1. Chạy tools/dump-laptop.ps1 bằng PowerShell (Administrator) trên MÁY B, chép thư mục kết quả vào docs/hw-dump/.
-2. Trích xuất DSDT và các bảng SSDT gốc trên MÁY B (bằng SSDTTime hoặc acpidump), chép vào docs/hw-dump/acpi/.
-3. Kiểm tra các mục BIOS trên MÁY B: Tắt Secure Boot, Tắt Fast Boot, đảm bảo chế độ ổ đĩa là AHCI (không bật Intel RST/VMD), giữ chế độ GPU Hybrid.
+1. **Safely Remove (Eject) USB** an toàn trên MÁY A trước khi rút ra.
+2. Cắm dây mạng LAN vào MÁY B (để tải gói cài đặt qua card Realtek RTL8111 nếu bộ cài yêu cầu kết nối mạng).
+3. Kiểm tra cài đặt BIOS trên MÁY B (HP Victus 15):
+   - Secure Boot: **Disabled**
+   - Fast Boot: **Disabled**
+   - VMD / Intel RST: Đảm bảo chạy chế độ **AHCI** (hoặc Native NVMe)
+   - Chế độ đồ họa: **Hybrid / Dynamic** (KHÔNG chọn Discrete Only / dGPU Only)
+   - VT-d: Bật bình thường (EFI đã có `DisableIoMapper = true` xử lý RMRR)
+4. Cắm USB vào cổng USB-A bên trái/phải của MÁY B.
+5. Bật máy, nhấn liên tục **F9** (Boot Menu của HP) -> Chọn USB UEFI (thường có tên dạng UEFI: USB... hoặc tên nhãn USB).
+6. Tại menu OpenCore:
+   - Chọn mục **Reset NVRAM** đầu tiên (để xoá sạch NVRAM cũ), máy sẽ tự khởi động lại.
+   - Nhấn tiếp F9 -> Chọn lại USB UEFI -> Chọn **macOS Base System (External)** hoặc bộ cài.
+7. Theo dõi màn hình verbose (chữ chạy):
+   - Nếu vào được Recovery / Trình cài đặt macOS: Báo lại để tiếp tục kiểm tra bàn phím, touchpad, mạng.
+   - Nếu bị đứng (freeze) hoặc kernel panic: Rút USB, cắm lại vào MÁY A, gửi file log `opencore-YYYY-MM-DD-HHMMSS.txt` trên thư mục gốc của USB (hoặc chụp ảnh màn hình dừng) cho Codex phân tích.
 
 ## Rủi ro / CHƯA XÁC MINH đang mở
-- Chưa có file DSDT gốc để xác định đường dẫn ACPI chính xác của dGPU và GPIO Pinning cho trackpad ELAN0788.
-- Chưa có USB dump để map topology cổng USB (camera, bluetooth, type-C).
-- Cổng HDMI ngoài nối dGPU nên sẽ không xuất hình khi dGPU bị ngắt nguồn trong macOS.
+- Cổng HDMI ngoài không xuất hình do dGPU RTX 3050 Ti bị tắt.
+- iGPU Iris Xe chạy basic framebuffer không tăng tốc 3D (QE/CI) trong Giai đoạn A.
