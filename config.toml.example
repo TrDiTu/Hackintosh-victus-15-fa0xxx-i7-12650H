@@ -1,0 +1,10 @@
+# Chép các dòng dưới vào ~/.codex/config.toml (hoặc cấu hình dự án của bạn).
+# Tên khoá có thể khác giữa các phiên bản Codex: đối chiếu với tài liệu của bản bạn đang dùng.
+# Sandbox là lớp BẮT BUỘC thật sự; AGENTS.md chỉ là hướng dẫn mềm.
+
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+
+[sandbox_workspace_write]
+writable_roots = ["G:\\"]
+network_access = true   # cần để đọc repo/tài liệu và tìm driver; tắt nếu bạn tự clone sẵn vào _cache\
