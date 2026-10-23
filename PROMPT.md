@@ -14,7 +14,7 @@ Bắt buộc có: Wi-Fi bằng itlwm + HeliPort, touchpad/bàn phím hoạt đ�
 Mục tiêu dài hạn: Metal 3 trên iGPU Intel Xe.
 
 ## Bối cảnh bắt buộc phải đọc
-1. `laptop-specs.md`. (Có sẵn)
+1. `laptop-specs.md`.(Có sẵn)
 2. https://github.com/watchthelight-labs/XeGfx — README, `docs/HOW-IT-WORKS.md`, `CONTRIBUTING.md`, các issue
    đang mở. Ghi nhớ: XeGfx là WIP và CHƯA điều khiển được GPU; kext KHÔNG load lúc boot (cài vào
    auxiliary kernel collection, `kmutil load`, chạy từng stage qua `debug.xegfx_stage`); khuyến nghị BIOS
