@@ -1,2 +1,4 @@
 /README-SETUP.md
 /{tools,docs,.agents
+_cache/
+*.jpg

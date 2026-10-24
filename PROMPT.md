@@ -3,7 +3,7 @@ mọi quy tắc trong đó (hai máy khác nhau, chỉ ghi trong workspace và G
 dùng các skill trong `.agents/skills/`).
 
 ## Mục tiêu
-Xây dựng EFI OpenCore cho laptop của tôi (MÁY B, mô tả trong `laptop-specs.md`),
+Xây dựng EFI OpenCore cho laptop của tôi (MÁY B, mô tả trong `laptop-specs.md` và `docs/hw-dump/`),
 target macOS 26 Tahoe, theo hai giai đoạn:
 
 **Giai đoạn A: EFI nền hoàn chỉnh (không có XeGfx).** Tìm driver cho TẤT CẢ thiết bị trên máy,
@@ -14,7 +14,7 @@ Bắt buộc có: Wi-Fi bằng itlwm + HeliPort, touchpad/bàn phím hoạt đ�
 Mục tiêu dài hạn: Metal 3 trên iGPU Intel Xe.
 
 ## Bối cảnh bắt buộc phải đọc
-1. `laptop-specs.md`.(Có sẵn)
+1. `laptop-specs.md`, `docs/hw-dump/` (do tôi dump trên MÁY B).
 2. https://github.com/watchthelight-labs/XeGfx — README, `docs/HOW-IT-WORKS.md`, `CONTRIBUTING.md`, các issue
    đang mở. Ghi nhớ: XeGfx là WIP và CHƯA điều khiển được GPU; kext KHÔNG load lúc boot (cài vào
    auxiliary kernel collection, `kmutil load`, chạy từng stage qua `debug.xegfx_stage`); khuyến nghị BIOS
@@ -24,19 +24,24 @@ Mục tiêu dài hạn: Metal 3 trên iGPU Intel Xe.
    JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe, IntelIGPU-Tahoe, VedCloud/Meteor-Lake..., nmx-intel,
    LunarBridge, WhateverGreen, OpenCorePkg).
 4. OpenCore Install Guide (Dortania) và Configuration.pdf đúng phiên bản OpenCore sẽ dùng.
+5. `docs/REFERENCES.md`, đặc biệt **R1: https://github.com/sulthonuladib/victus-15-fa0xxx-hackintosh** — repo hackintosh cho
+   đúng dòng HP Victus 15-fa0xxx (cùng board 8A4F; Alder Lake-P Iris Xe + RTX 3050; macOS Sequoia 15; iGPU dùng Tiger Lake spoof;
+   có `notes/stock-vs-working.diff` (14 key giúp màn hình lên), `scan/` (ACPI dump), `logs/`, HANDOFF.md). Đọc README và HANDOFF.md trước.
+   Clone/đọc vào `_cache/refs/`. Đây là nguồn tham chiếu, KHÔNG phải EFI để copy; làm theo quy tắc trong `docs/REFERENCES.md`.
 
 ## Quy trình (dừng và báo cáo sau mỗi pha; cập nhật `docs/STATE.md` sau mỗi pha)
 
 ### GIAI ĐOẠN A
 
 **Pha 0 — Kiểm kê phần cứng** (skill `hw-dump-reader`)
-- Nếu `docs/hw-dump/` chưa có hoặc thiếu: hướng dẫn tôi chạy `tools/dump-laptop.ps1` trên MÁY B, và hướng
+- Nếu `docs/hw-dump/` chưa có hoặc thiếu: hướng dẫn tôi chạy `tools/dump-laptop.sh` (nếu MÁY B chạy Linux, ưu tiên) hoặc `tools/dump-laptop.ps1` (Windows) trên MÁY B, và hướng
   dẫn dump DSDT/SSDT khi cần. DỪNG chờ dữ liệu. KHÔNG dump phần cứng của máy đang chạy Codex.
 - Khi đủ dữ liệu: lập danh sách MỌI thiết bị kèm Hardware ID (CPU/chipset, iGPU, dGPU, màn hình, Wi-Fi,
   Bluetooth, Ethernet, audio codec, mic, touchpad, bàn phím/phím Fn, SSD/NVMe, card reader, camera, vân tay,
   USB/Type-C/Thunderbolt, EC/pin, quạt/sensor, TPM, ALS/accelerometer, I2C/GPIO) + BIOS options liên quan
   (CFG Lock, VT-d, Above 4G, chế độ GPU, DVMT, Secure Boot). Ghi vào `docs/MACHINE-ANALYSIS.md`.
 - Liệt kê thông tin còn thiếu và hỏi tôi.
+- Đối chiếu máy tôi với R1 (model/board, CPU 12650H vs 12700H, dGPU 3050 Ti vs 3050, BIOS F.34, ACPI dump) và ghi các khác biệt vào MACHINE-ANALYSIS.
 
 **Pha 1 — Tìm driver cho TẤT CẢ thiết bị** (skill `driver-vetting`)
 - Tìm rộng mọi driver/kext/SSDT/patch khả thi cho từng thiết bị theo Hardware ID thực của máy tôi.
@@ -50,6 +55,8 @@ Mục tiêu dài hạn: Metal 3 trên iGPU Intel Xe.
 
 **Pha 2 — Chiến lược GPU** (`docs/GPU-STRATEGY.md`; dùng `ssdt-authoring` nếu cần SSDT)
 - Đời iGPU của tôi có trong danh sách mục tiêu XeGfx không, đang ở mốc nào.
+- Phân tích R1: iGPU spoof Tiger Lake trong EFI của repo làm gì, 14 key trong `stock-vs-working.diff` là gì và vì sao cần,
+  cách repo xử lý dGPU. Đánh giá từng điều cho Tahoe (có bằng chứng không?) và cho máy của tôi. Không áp dụng mù quáng.
 - So sánh các hướng cho EFI nền (có nguồn, xét riêng Tahoe): (a) tận dụng driver Apple kiểu WhateverXe/
   NootedGreen, (c) framebuffer an toàn không tăng tốc làm đường lui; ghi chú hướng (b) XeGfx + NvGfx dành
   cho Giai đoạn B. Kết luận trung thực: Metal 3 hiện có đạt được trên máy tôi không, cần gì để đạt.

@@ -48,3 +48,7 @@ Cách kiểm chứng: ...   Đề xuất sửa: ...   Rủi ro: ...
 ## Không làm
 - Không tuyên bố đã sửa khi chưa có test mới của người dùng. Không yêu cầu người dùng đăng serial/UUID
   (che chúng trong log nếu thấy). Không suy diễn nguyên nhân từ log không liên quan.
+
+## Đối chiếu log với R1
+Nếu lỗi liên quan màn hình/iGPU lúc boot, xem thư mục `logs/` của repo R1 (`docs/REFERENCES.md`; log đã che serial) để tìm triệu
+chứng tương tự và cách repo xử lý. Ghi rõ đó là mức B (Sequoia, máy cùng dòng), không phải kết luận cho Tahoe.

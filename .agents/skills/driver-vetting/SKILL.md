@@ -53,3 +53,8 @@ không áp cấu hình mẫu của máy khác.
 ## Không làm
 - Không bịa Hardware ID, tên kext, phiên bản hay bằng chứng tương thích. Không chắc → `CHƯA XÁC MINH`.
 - Không tải binary từ nguồn không chính thức. Không chép code từ dự án chỉ dành cho "học hỏi".
+
+## Nguồn tham chiếu cùng dòng máy (R1)
+Với mỗi thiết bị, xem repo R1 (`docs/REFERENCES.md`) có kext/cấu hình tương ứng không, và ghi vào DRIVER-MATRIX
+(cột Bằng chứng) dưới dạng mức B: "R1 dùng X trên Sequoia", kèm link file. Đó KHÔNG phải bằng chứng Tahoe và KHÔNG thay thế
+checklist kiểm định: kext vẫn phải lấy từ release chính thức, có license, và có bằng chứng Tahoe riêng.

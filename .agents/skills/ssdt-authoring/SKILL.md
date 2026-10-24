@@ -59,3 +59,8 @@ Nếu không tìm được phương thức `_OFF` hợp lệ: dùng phương án
 - Không dùng SSDT mẫu của máy khác khi chưa đối chiếu DSDT thật. Không đoán đường dẫn ACPI.
 - Không sửa DSDT gốc của máy; chỉ thêm SSDT/patch qua OpenCore.
 - Không tuyên bố SSDT "hoạt động" cho tới khi người dùng test trên MÁY B và báo kết quả.
+
+## Dùng R1 làm tham khảo, không làm thay thế
+Có thể đọc SSDT/ACPI dump của repo R1 (`docs/REFERENCES.md`) để biết dòng máy này thường cần xử lý gì (ví dụ đường dẫn
+dGPU/touchpad). Nhưng vẫn phải xác minh đường dẫn trên DSDT thật của người dùng (BIOS F.34 có thể khác bản của R1),
+tự viết SSDT và không chép nguyên file `.aml`/`.dsl` của repo.

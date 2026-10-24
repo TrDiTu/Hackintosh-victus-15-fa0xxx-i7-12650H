@@ -1,2 +1,0 @@
-eno1 vendor=0x10ec device=0x8168 subsys_vendor=0x103c subsys_device=0x8a4f driver=r8169
-wlan0 vendor=0x8086 device=0x2725 subsys_vendor=0x8086 subsys_device=0x0024 driver=iwlwifi
