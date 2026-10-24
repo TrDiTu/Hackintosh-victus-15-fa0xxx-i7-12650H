@@ -1,0 +1,80 @@
+==========================================================
+XEGFX RUN REPORT - STAGE 3 - Sun Oct 25 03:13:04 +07 2026
+==========================================================
+
+--- 1. STAGE & RESULTS ---
+debug.xegfx_stage: 3
+debug.xegfx_results (hex):
+00000000: 0000 0000 0100 0000 0100 0000 0100 0000  ................
+00000010: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+
+--- 3. DRIVER CONSOLE OUTPUT (debug.xegfx_log) ---
+xegfx: vm: vmap selftest 0
+xegfx: iGPU 8086:9a49 stolen base 0x7c800000 size 60 MiB
+xegfx: no IOMMU, DMA addresses are physical
+xegfx: newbus root0 state 30 driver root
+xegfx: newbus   pcib0 state 30 driver pcib
+xegfx: newbus     pci0 state 30 driver pci
+xegfx: newbus       hostb0 state 30 driver hostb pci 8086:4649 class 060000
+xegfx: newbus       vgapci0 state 30 driver vgapci pci 8086:9a49 class 030000
+xegfx: newbus         drmn0 state 10 driver -
+xegfx: newbus       ? state 10 driver - pci 8086:5182 class 060100
+xegfx: devclass root:
+xegfx: devclass pcib:
+xegfx: devclass pci:
+xegfx: devclass hostb:
+xegfx: devclass vgapci:
+xegfx: devclass drmn:
+
+--- 4. RECENT SYSTEM LOGS ---
+[  454.192224]: "AppleKeyStore":pid:917,:13297: operation failed (sel: 7 ret: e00002c2, -1)
+[  454.231075]: Sandbox apply: bluetoothd[917] <bytes>Corpse released, count at 0
+[  457.797844]: AppleUserHIDEventDriver:0x1000005c0 HIDRMDeviceState: Unknown
+
+[  458.112930]: itlwm: : end passive scan
+[  458.113000]: itlwm: ieee80211_switch_ess
+[  458.113019]: itlwm: ieee80211_node_choose_bss
+[  458.113106]: itlwm: ieee80211_reset_scan
+[  458.113129]: itlwm: ieee80211_reset_scan
+[  458.113133]: itlwm: iwx_updateslot
+[  458.113137]: itlwm: ieee80211_next_scan 930 nstate=1
+[  458.113145]: itlwm: iwx_add_task iwx_newstate_task
+[  458.113211]: itlwm: iwx_newstate_task
+[  458.113215]: itlwm: iwx_newstate_task sc->sc_flags & IWX_FLAG_SHUTDOWN false
+[  458.113221]: itlwm: iwx_scan
+[  458.113241]: itlwm: iwx_umac_scan
+[  458.113247]: itlwm: iwx_umac_scan_v14
+[  458.113253]: itlwm: iwx_fill_probe_req
+[  458.113282]: itlwm: iwx_send_cmd: Sending command (1.d), 1940 bytes at [113]:0 ver: 0
+[  458.114449]: itlwm: iwx_cmd_done: command 0x10d done
+[  458.114488]: itlwm: ieee80211_reset_scan
+[  458.114493]: itlwm: iwx_updateslot
+[  458.114496]: itlwm: : SCAN -> SCAN
+[  458.476950]: IOHIDInterface:0x10000044e Creating temporary buffer for report data
+
+[  458.477247]: AppleUserHIDEventDriver:0x1000005c0 HIDRMDeviceState: Unknown
+
+[  458.555679]: IOHIDInterface:0x10000044e Creating temporary buffer for report data
+
+[  458.953317]: IOHIDInterface:0x10000044e Creating temporary buffer for report data
+
+[  458.953723]: AppleUserHIDEventDriver:0x1000005c0 HIDRMDeviceState: Unknown
+
+[  458.962480]: process_is_plugin_host: running binary "sudo" in keys-off mode due to entitlement: com.apple.private.security.clear-library-validationprocess_is_plugin_host: running binary "bash" in keys-off mode due to identity: com.apple.bashIOHIDInterface:0x10000044e Creating temporary buffer for report data
+
+[  459.551804]: xegfx: iGPU 8086:9a49 stolen base 0x7c800000 size 60 MiB
+[  459.551814]: xegfx: no IOMMU, DMA addresses are physical
+[  459.552863]: xegfx: newbus root0 state 30 driver root
+[  459.552867]: xegfx: newbus   pcib0 state 30 driver pcib
+[  459.552869]: xegfx: newbus     pci0 state 30 driver pci
+[  459.552873]: xegfx: newbus       hostb0 state 30 driver hostb pci 8086:4649 class 060000
+[  459.552877]: xegfx: newbus       vgapci0 state 30 driver vgapci pci 8086:9a49 class 030000
+[  459.552880]: xegfx: newbus         drmn0 state 10 driver -
+[  459.552883]: xegfx: newbus       ? state 10 driver - pci 8086:5182 class 060100
+[  459.552886]: xegfx: devclass root:
+[  459.552889]: xegfx: devclass pcib:
+[  459.552892]: xegfx: devclass pci:
+[  459.552894]: xegfx: devclass hostb:
+[  459.552897]: xegfx: devclass vgapci:
+[  459.552900]: xegfx: devclass drmn:
+

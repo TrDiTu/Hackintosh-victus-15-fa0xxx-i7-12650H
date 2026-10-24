@@ -206,3 +206,73 @@ Từ ảnh chụp màn hình thực tế logs/20261024_212116.jpg do người d�
   - xegfx-test/02-run-stage.sh: Nạp kext qua kmutil và chạy từng stage 1 -> 4 theo yêu cầu.
   - xegfx-test/99-uninstall-xegfx.sh: Gỡ bỏ sạch sẽ XeGfx để phục hồi hệ thống.
 - **Trạng thái:** Hoàn tất Pha 6. Sẵn sàng bước vào Pha 7: chạy thử Stage 1 trên Máy B.
+
+## Giai đoạn B — Pha 7: Phân tích Baseline & Kết quả Stage 1 (2026-10-25)
+- **Baseline Report (logs/baseline-20261025-030240.txt):**
+  - Hệ điều hành: macOS Tahoe 26.7.1 (Build 25G241), kernel Darwin 25.6.0.
+  - Bộ nạp Kext: 23 kext bên thứ ba (Lilu 1.7.2, WEG 1.7.1, AppleALC 1.9.8, VoodooI2C 2.9.1/3.0.0, VoodooGPIO, VoodooInput, VoodooPS2, itlwm 2.3.0, IntelBluetoothFirmware 2.4.0...) nạp chuẩn xác.
+  - Display Framebuffer: Giao diện GUI đang chạy trên .Display_boot (IONDRVFramebuffer) 1920×1080.
+  - Đồ hoạ rời (dGPU): Card NVIDIA RTX 3050 Ti đã bị ngắt nguồn hoàn toàn (không xuất hiện driver trên bus).
+- **Kết quả Stage 1 (logs/stage1-20261025-030650.log):**
+  - Khởi tạo kext: AuxKC bundle org.watchthelight.XeGfx marked as loadable nạp thành công qua kmutil load.
+  - Self-test bộ nhớ: xegfx: vm: vmap selftest 0 vượt qua kiểm tra map bộ nhớ kernel XNU mà không dính lỗi -12 (lỗi từng xảy ra trên Legion N-221).
+  - Trạng thái stage: debug.xegfx_stage = 1.
+  - Kết quả trả về: debug.xegfx_results = 0x00000001 (**PASS**).
+  - Không xảy ra kernel panic, không bị treo máy.
+- **Tiến trình:** Stage 1 PASS hoàn toàn. Cho phép mở Stage 2.
+
+## Giai đoạn B — Pha 7: Kết quả Stage 2 (2026-10-25)
+- **Thực thi:** Người dùng chạy  2-run-stage.sh 2 trên Máy B.
+- **Log thu thập:** logs/stage2-20261025-031101.log.
+- **Kết quả trả về:**
+  - debug.xegfx_stage = 2.
+  - debug.xegfx_results = [Stage 1: 1, Stage 2: 1] (**PASS**).
+  - Thuộc tính XeGfxResident cập nhật XeGfxStage = 2.
+  - Dictionary XeGfxProbe đọc chính xác toàn bộ cấu trúc GPU mà không cần kích hoạt ngắt hay ghi thanh ghi:
+    - device-id = 39497 ( x9A49)
+    - evision = 12 ( x0c)
+    - ar0 = 0x4016000000 (16 MiB)
+    - ar2 = 0x4000000000 (256 MiB)
+    - pipe-a-lit = 1, pipe-frmcount-a = 64616 (Display pipe A đang quét màn hình nội bộ)
+    - oot-fb-size = 8294400 (1920 × 1080 32bpp)
+    - dsm-base-lo = 2088763393
+- **Độ ổn định:** Không có panic, không chớp tắt màn hình.
+- **Tiến trình:** Stage 2 PASS. Sẵn sàng cho Stage 3.
+
+## Giai đoạn B — Pha 7: Kết quả Stage 3 (2026-10-25)
+- **Thực thi:** Người dùng chạy  2-run-stage.sh 3 trên Máy B.
+- **Log thu thập:** logs/stage3-20261025-031302.log.
+- **Kết quả trả về:**
+  - debug.xegfx_stage = 3.
+  - debug.xegfx_results = [Stage 1: 1, Stage 2: 1, Stage 3: 1] (**PASS**).
+  - Newbus phân giải cây thiết bị thành công:
+    - oot0 -> pcib0 -> pci0
+    - hostb0: 8086:4649 (Alder Lake Host Bridge)
+    - gapci0: 8086:9a49 (Intel iGPU)
+    - drmn0: Thiết bị DRM sẵn sàng tiếp nhận driver i915
+  - Cấu hình DMA: 
+o IOMMU, DMA addresses are physical.
+  - Bộ nhớ Stolen: base  x7c800000, size 60 MiB.
+- **Tiến trình:** Stage 3 PASS hoàn toàn. Sẵn sàng cho Stage 4.
+
+## Giai đoạn B — Pha 7: Phân tích Kernel Panic Stage 4 (2026-10-25)
+- **Log:** logs/Kernel-2026-10-25-032317.panic.
+- **Hiện tượng:** Máy mất phản hồi khi chạy  2-run-stage.sh 4 do Watchdog/kernel panic, sau khi reboot đã vào lại macOS bình thường.
+- **Phân tích kỹ thuật chuyên sâu (Skill: log-analysis):**
+  - **Panicked Task:** sysctl (pid 863).
+  - **Lỗi:** Page fault (Type 14) tại CR2: 0x0000000000000000.
+  - **Call Trace:**
+    - org.watchthelight.XeGfx : _xg_start_stage + 0x46 (bắt đầu Stage 4).
+    - org.watchthelight.XeGfx : _i915kms_evh + 0x2dc -> _i915_driver_probe + 0x56d.
+    - org.watchthelight.XeGfx : _intel_detect_pch + 0x63.
+    - org.watchthelight.XeGfx : _lkpi_pci_get_class + 0x5f -> _lkpi_pci_dev_init_common + 0x3f.
+    - org.watchthelight.XeGfx : _kobject_init_and_add -> _kobject_set_name_vargs.
+    - org.watchthelight.XeGfx : _xg_vsnprintf + 0x45.
+  - **Nguyên nhân cốt lõi trong mã nguồn XeGfx:**
+    - i915 khi probe phần cứng sẽ gọi intel_detect_pch() để tìm kiếm PCH ISA bridge (PCI_CLASS_BRIDGE_ISA tương ứng với 8086:5182 Alder Lake PCH-P).
+    - Khi tìm thấy, LinuxKPI cố gắng khởi tạo struct pci_dev và gọi kobject_set_name_vargs. Tại đây con trỏ format string truyền vào _xg_vsnprintf là NULL (RDX = 0x0000000000000000).
+    - Trong shim/src/xnu/xg_kext.cpp, hàm xg_has_pext(fmt) thực thi or (; *f; f++) mà không có guard check if (!f) return false;, dẫn đến việc dereference con trỏ NULL ngay lập tức.
+- **Đánh giá mức độ an toàn:**
+  - Kext không nằm trong EFI. Phân vùng EFI uild-10 hoàn toàn nguyên vẹn.
+  - Sau khi hard reset hoặc reboot, hệ thống macOS trở lại giao diện đồ hoạ bình thường.
+- **Kết luận:** Lỗi thuộc về mã nguồn upstream của dự án XeGfx (chưa xử lý đầy đủ việc gán device kobject khi quét PCH trên Alder Lake/Raptor Lake). Dự án XeGfx hiện tại mới chỉ kiểm thử thành công trên chip Arrow Lake (8086:7D67).

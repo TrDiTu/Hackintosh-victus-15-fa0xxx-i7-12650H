@@ -1,0 +1,310 @@
+==========================================================
+BASELINE SYSTEM REPORT - Sun Oct 25 03:02:40 +07 2026
+==========================================================
+
+--- 1. MACOS VERSION ---
+ProductName:		macOS
+ProductVersion:		26.7.1
+BuildVersion:		25G241
+Darwin arch.lan 25.6.0 Darwin Kernel Version 25.6.0: Tue Aug 18 17:46:40 PDT 2026; root:xnu-12377.161.15.700.19~2/RELEASE_X86_64 x86_64
+
+--- 2. BOOT ARGS ---
+boot-args	-v debug=0x100 keepsyms=1 -lilubetaall amfi_get_out_of_my_way=0x1 -vi2c-force-polling -wegnoegpu alcid=11
+
+--- 3. LOADED THIRD-PARTY KEXTS ---
+Index Refs Address            Size       Wired      Name (Version) UUID <Linked Against>
+   56   11 0xffffff8004178000 0x31000    0x31000    as.vit9696.Lilu (1.7.2) C2A303B8-6D22-3163-A905-5DB8E340D285 <9 7 6 3 2 1>
+   57    0 0xffffff80041cd000 0x82000    0x82000    as.vit9696.WhateverGreen (1.7.1) 1EAB6DC3-887F-37A7-82BB-F86E987ED5A3 <56 19 9 7 6 3 2 1>
+   58    0 0xffffff800424f000 0x1d3000   0x1d3000   as.vit9696.AppleALC (1.9.8) 34DB8015-25BF-36A8-AA54-19C4C35CC625 <56 19 9 7 6 3 1>
+   59    0 0xffffff8004422000 0xd000     0xd000     as.vit9696.RestrictEvents (1.1.6) 25F49E19-6E00-36DE-B6F6-0DDEDAED5F4F <56 9 7 6 3 2 1>
+   61    0 0xffffff800442f000 0xa000     0xa000     as.acidanthera.BrightnessKeys (1.0.3) 5A770600-6040-3204-A9E7-EB8618DCEAB4 <60 56 17 9 7 6 3 1>
+   62    0 0xffffff8004439000 0x8000     0x8000     com.1Revenger1.ECEnabler (1.0.6) 62C6C7EF-F3AC-3C94-B801-9FE22BAAC215 <56 9 7 6 3 2 1>
+   63    0 0xffffff8004441000 0xd000     0xd000     org.acidanthera.NVMeFix (1.1.3) B85FCD6D-9B68-3AC2-B4C9-4BF1441CCCC3 <56 9 7 6 3 2 1>
+   64    2 0xffffff80041a9000 0x1b000    0x1b000    as.vit9696.VirtualSMC (1.3.8) 5957E44C-374F-34FC-8190-ECF6ADA5E916 <56 17 9 7 6 3 1>
+   66    0 0xffffff80044d2000 0x17000    0x17000    ru.usrsse2.SMCBatteryManager (1.3.8) 7758E80B-3166-35D3-8C3E-22483B939595 <65 64 56 17 9 7 6 3 1>
+   67    1 0xffffff8004527000 0xf000     0xf000     com.alexandred.VoodooI2CServices (1) 4F9BD11E-8174-3BDE-B4AB-2FFA12555F39 <6 3>
+   68    0 0xffffff800608a000 0xb000     0xb000     as.acidanthera.BlueToolFixup (2.7.2) 037F9890-9A93-3E7F-AC9B-4AD018E0A67B <56 9 7 6 3 2 1>
+   69    0 0xffffff80041c4000 0x9000     0x9000     org.b00t0x.CpuTopologyRebuild (2.0.2) A92123DC-6818-335D-AE71-4C41CE1AB594 <56 17 9 7 6 3 2 1>
+   70    0 0xffffff80044e9000 0xd000     0xd000     as.vit9696.SMCProcessor (1.3.8) CEA79C26-8DD5-3D33-8DEA-A9AC6D735EFD <64 56 17 9 7 6 3 2 1>
+   79    1 0xffffff8004500000 0x1a000    0x1a000    as.acidanthera.voodoo.driver.PS2Controller (2.3.7) E3314D9C-A923-3BFF-8F79-8D8F7627085F <17 9 7 6 3 1>
+   81    1 0xffffff8004536000 0x5b000    0x5b000    org.coolstar.VoodooGPIO (1.1) E1840481-56B0-3891-AEBD-9C05EEE1AD52 <17 7 6 3>
+   83    0 0xffffff800451a000 0xd000     0xd000     as.acidanthera.voodoo.driver.PS2Keyboard (2.3.7) EFA883F4-7558-3E98-A352-E202CB3DFAAF <79 60 9 7 6 3 1>
+   84    0 0xffffff8004608000 0xf85000   0xf85000   com.zxystd.itlwm (2.3.0) 681F902C-67C5-3C40-965D-E4553C6A962B <52 19 7 6 3 1>
+   85    1 0xffffff80045ac000 0x25000    0x25000    com.alexandred.VoodooI2C (2.9.1) 823B5CF7-69F3-38AD-9389-4BB0A6F1F2A3 <81 67 60 19 17 7 6 3 1>
+   88    0 0xffffff80044f6000 0xa000     0xa000     com.dhinakg.USBToolBox.kext (1.2.0) DF8F0CD3-4C6C-33AA-8A16-C7DEB1410F96 <37 19 6 3>
+   90    0 0xffffff800444e000 0x84000    0x84000    com.insanelymac.RealtekRTL8111 (2.4.2) 7A4AD8D5-E6C5-3337-BF24-B570982B5D22 <52 19 7 6 3 1>
+  107    0 0xffffff80045d1000 0x37000    0x37000    com.alexandred.VoodooI2CHID (1) C6A21011-088A-3BDF-AB9D-CE90C9F8D47F <85 60 17 7 6 3>
+  108    0 0xffffff8004591000 0x1b000    0x1b000    me.kishorprins.VoodooInput (1.1.7) 3CA81925-548C-3896-A5C0-70DFF6A6458C <60 7 6 3>
+  113    0 0xffffff800558d000 0xafd000   0xafd000   com.zxystd.IntelBluetoothFirmware (2.4.0) F9DD55B4-27C6-39D5-AAFC-C599DB3DEBCA <38 7 6 3>
+
+--- 4. PCI DISPLAY / GPU DEVICES ---
+PCI:
+
+    Intel Iris Xe Graphics:
+
+      Name: display
+      Type: VGA-Compatible Controller
+      Driver Installed: Yes
+      MSI: No
+      Bus: PCI
+      Slot: built-in
+      Vendor ID: 0x8086
+      Device ID: 0x9a49
+      Subsystem Vendor ID: 0x103c
+      Subsystem ID: 0x8a4f
+      Revision ID: 0x000c
+      Link Width: x0
+      Link Status: Link up
+
+
+--- 5. IOREG GFX0 / DISPLAY CONTROLLER ---
+    | | |   "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000"
+    | | |   "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |   "assigned-addresses" = <1010008240000000000000160000000000000001181000c2400000000000000000000000000000102010008100000000005000000000000040000000>
+    | | |   "vendor-id" = <86800000>
+    | | |   "class-code" = <00000300>
+    | | |   "subsystem-vendor-id" = <3c100000>
+    | | |   "hda-gfx" = <"onboard-1">
+    | | |   "IOPCIExpressLinkCapabilities" = 0
+    | | |   "IOName" = "display"
+    | | |   "rps-control" = <01000000>
+    | | |   "force-online" = <01000000>
+    | | |   "pcidebug" = "0:2:0"
+    | | |   "display-connect-flags" = <00000000>
+    | | |   "IOPCIExpressLinkStatus" = 0
+    | | |   "complete-modeset" = <01000000>
+    | | |   "IOPCIExpressCapabilities" = 146
+    | | |   "Capability Offsets" = {"VendorSpecificCapability"=64,"PowerManagementCapability"=208,"PCIExpressCapability"=112,"PASID"=256,"PRI"=768,"MSICapability"=172,"SRIOV"=800,"ATS"=512}
+    | | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.pci"))
+    | | |   "AAPL,gray-value" = <00000000>
+    | | |   "IOInterruptControllers" = ("io-apic-0","IOPCIMessagedInterruptController")
+    | | |   "built-in" = <00>
+    | | |   "enable-max-pixel-clock-override" = <01000000>
+    | | |   "AAPL,slot-name" = <"built-in">
+    | | |   "IOBusyInterest" = "IOCommand is not serializable"
+    | | |   "IOPowerManagement" = {"ChildrenPowerState"=2,"CurrentPowerState"=2,"CapabilityFlags"=258,"ChildProxyPowerState"=2,"MaxPowerState"=3}
+    | | |   "IOPCIMSIMessageControl" = 256
+    | | |   "name" = <"display">
+    | | |   "subsystem-id" = <4f8a0000>
+    | | |   "IOPCIResourced" = Yes
+    | | |   "model" = <"Intel Iris Xe Graphics">
+    | | |   "IODeviceMemory" = (({"address"=275247005696,"length"=16777216}),({"address"=274877906944,"length"=268435456}),"IOSubMemoryDescriptor is not serializable")
+--
+    | | |   "compatible" = <"pci103c,8a4f","pci8086,46a3","pciclass,030000","GFX0","IGPU">
+    | | |   "IOPCIExpressDeviceCapabilities2" = 0
+    | | |   "IOHibernateState" = <00000000>
+    | | |   "IOPCIExpressDeviceCapabilities" = 268468224
+    | | |   "attached-gpu-control-path" = "IOService:/AppleACPIPlatformExpert/PC00@0/AppleACPIPCI/IGPU@2/IONDRVFramebuffer/AGPM"
+    | | |   "framebuffer-patch-enable" = <01000000>
+    | | |   "reg" = <0010000000000000000000000000000000000000101000020000000000000000000000000000000118100042000000000000000000000000000000102010000100000000000000000000000040000000>
+    | | |   "IOPCIPowerManagementCapabilities" = 2228225
+    | | |   "device-id" = <499a0000>
+    | | |   "revision-id" = <0c000000>
+    | | |   "IOPCIExpressLinkCapabilities2" = 0
+    | | |   "IOInterruptSpecifiers" = (<1000000007000000>,<0500000000000100>)
+    | | |   "AAPL,ig-platform-id" = <0000499a>
+    | | | }
+    | | | 
+    | | +-o DD01@100  <class IORegistryEntry, id 0x100000328, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD01@100"
+    | | |   }
+    | | |   
+    | | +-o DD02@2  <class IORegistryEntry, id 0x100000329, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD02@2"
+    | | |   }
+    | | |   
+    | | +-o DD03@300  <class IORegistryEntry, id 0x10000032a, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD03@300"
+    | | |   }
+    | | |   
+    | | +-o DD04@301  <class IORegistryEntry, id 0x10000032b, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD04@301"
+    | | |   }
+    | | |   
+    | | +-o DD05@302  <class IORegistryEntry, id 0x10000032c, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD05@302"
+    | | |   }
+    | | |   
+    | | +-o DD06@303  <class IORegistryEntry, id 0x10000032d, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD06@303"
+    | | |   }
+    | | |   
+    | | +-o DD07@304  <class IORegistryEntry, id 0x10000032e, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD07@304"
+    | | |   }
+    | | |   
+    | | +-o DD08@305  <class IORegistryEntry, id 0x10000032f, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD08@305"
+    | | |   }
+    | | |   
+    | | +-o DD09@9  <class IORegistryEntry, id 0x100000330, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD09@9"
+    | | |   }
+    | | |   
+    | | +-o DD0A@a  <class IORegistryEntry, id 0x100000331, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD0A@a"
+    | | |   }
+    | | |   
+    | | +-o DD0B@b  <class IORegistryEntry, id 0x100000332, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD0B@b"
+    | | |   }
+    | | |   
+    | | +-o DD0C@c  <class IORegistryEntry, id 0x100000333, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD0C@c"
+    | | |   }
+    | | |   
+    | | +-o DD0D@d  <class IORegistryEntry, id 0x100000334, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD0D@d"
+    | | |   }
+    | | |   
+    | | +-o DD0E@e  <class IORegistryEntry, id 0x100000335, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD0E@e"
+    | | |   }
+    | | |   
+    | | +-o DD0F@f  <class IORegistryEntry, id 0x100000336, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD0F@f"
+    | | |   }
+    | | |   
+    | | +-o DD1F@400  <class IORegistryEntry, id 0x100000337, retain 4>
+    | | |   {
+    | | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD1F@400"
+    | | |   }
+    | | |   
+    | | +-o DD2F@0  <class IORegistryEntry, id 0x100000338, retain 4>
+    | |     {
+    | |       "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | |       "acpi-path" = "IOACPIPlane:/_SB/PC00@0/GFX0@20000/DD2F@0"
+    | |     }
+    | |     
+    | +-o TCPU@4  <class IOPCIDevice, id 0x1000003b0, registered, matched, active, busy 0 (29 ms), retain 9>
+    | |   {
+    | |     "assigned-addresses" = <1020008240000000000010170000000000000200>
+    | |     "IOInterruptSpecifiers" = (<1000000007000000>,<0600000000000100>)
+    | |     "class-code" = <00801100>
+    | |     "IODeviceMemory" = (({"address"=275264831488,"length"=131072}))
+    | |     "IOPowerManagement" = {"CurrentPowerState"=2,"CapabilityFlags"=258,"ChildProxyPowerState"=2,"MaxPowerState"=3}
+    | |     "subsystem-vendor-id" = <3c100000>
+    | |     "built-in" = <00>
+    | |     "acpi-device" = "IOACPIPlatformDevice is not serializable"
+    | |     "IOBusyInterest" = "IOCommand is not serializable"
+    | |     "IOPCIPowerManagementCapabilities" = 253953
+    | |     "Capability Offsets" = {"MSICapability"=144,"PowerManagementCapability"=208,"VendorSpecificCapability"=224}
+    | |     "IOInterruptControllers" = ("io-apic-0","IOPCIMessagedInterruptController")
+    | |     "vendor-id" = <86800000>
+    | |     "name" = <"pci8086,461d">
+    | |     "device-id" = <1d460000>
+    | |     "IOPCIMSIMessageControl" = 0
+    | |     "IOPCIResourced" = Yes
+    | |     "compatible" = <"pci103c,8a4f","pci8086,461d","pciclass,118000","TCPU">
+    | |     "IOPCIExpressLinkCapabilities" = 0
+    | |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.pci"))
+    | |     "acpi-path" = "IOACPIPlane:/_SB/PC00@0/TCPU@40000"
+    | |     "subsystem-id" = <4f8a0000>
+    | |     "revision-id" = <02000000>
+    | |     "pcidebug" = "0:4:0"
+    | |     "IOName" = "pci8086,461d"
+    | |     "reg" = <00200000000000000000000000000000000000001020000200000000000000000000000000000200>
+
+--- 6. FRAMEBUFFER / DISPLAY SERVICE ---
++-o .Display_boot  <class IONDRVFramebuffer, id 0x10000059c, registered, matched, active, busy 0 (9 ms), retain 22>
+  | {
+  |   "IOClass" = "IONDRVFramebuffer"
+  |   "IOFBConfig" = {"IOFB0Hz"=Yes,"IOFBModes"=({"ID"=100,"AID"=18446744072277895850,"DM"=<800700003804000000000000000000000b00000000000000000000000000000000000000>,"DF"=3}),"dims"=<ffffffffffffffff0000000000000000>}
+  |   "IOFBIntegrated" = Yes
+  |   "IOPersonalityPublisher" = "com.apple.iokit.IONDRVSupport"
+  |   "IOPMStrictTreeOrder" = Yes
+  |   "IOFBGammaWidth" = 8
+  |   "IOPowerManagement" = {"ChildrenPowerState"=2,"MaxPowerState"=2,"CurrentPowerState"=2,"CapabilityFlags"=32784,"ChildProxyPowerState"=2,"DriverPowerState"=1}
+  |   "IOProviderClass" = "IOPCIDevice"
+  |   "IOFramebufferOpenGLIndex" = 0
+  |   "IOFBWaitCursorFrames" = 29
+  |   "IOProbeScore" = 20000
+  |   "IOFBUIScale" = <00000000>
+  |   "IOFBTransform" = 0
+  |   "IONameMatch" = "display"
+  |   "graphic-options" = 0
+  |   "IOFBMemorySize" = 8294400
+  |   "CFBundleIdentifierKernel" = "com.apple.iokit.IONDRVSupport"
+  |   "IOScreenRestoreState" = <00000000>
+  |   "IOFBGammaHeaderSize" = 12
+  |   "IOMatchCategory" = "IOFramebuffer"
+  |   "CFBundleIdentifier" = "com.apple.iokit.IONDRVSupport"
+  |   "IONameMatched" = "display"
+  |   "IODisplayParameters" = "IOFramebufferParameterHandler is not serializable"
+  |   "IONDRVFramebufferGeneration" = <0100000001000000>
+  |   "IOGeneralInterest" = "IOCommand is not serializable"
+  |   "IOFBWaitCursorPeriod" = 33333333
+  |   "IOFBProbeOptions" = 1
+  |   "IOFBGammaCount" = 256
+  | }
+  | 
+  +-o AppleMCCSControlModule  <class AppleMCCSControlModule, id 0x1000005a9, registered, matched, active, busy 0 (3 ms), retain 7>
+  | +-o AppleMCCSParameterHandler  <class AppleMCCSParameterHandler, id 0x1000005ab, registered, matched, active, busy 0 (2 ms), retain 5>
+  +-o AppleUpstreamUserClientDriver  <class AppleUpstreamUserClientDriver, id 0x1000005aa, registered, matched, active, busy 0 (0 ms), retain 5>
+  +-o AGPM  <class AGPM, id 0x1000005e7, registered, matched, active, busy 0 (1 ms), retain 8>
+  +-o display0  <class IODisplayConnect, id 0x10000060e, registered, matched, active, busy 0 (0 ms), retain 6>
+  | +-o AppleDisplay  <class AppleDisplay, id 0x100000610, registered, matched, active, busy 0 (0 ms), retain 8>
+  +-o IOFramebufferUserClient  <class IOFramebufferUserClient, id 0x100000613, !registered, !matched, active, busy 0, retain 5>
+  +-o IOFramebufferSharedUserClient  <class IOFramebufferSharedUserClient, id 0x10000070b, !registered, !matched, active, busy 0, retain 4>
+
+
+--- 7. POWER ASSERTIONS & DGPU STATUS ---
+2026-10-25 03:02:41 +0700 
+Assertion status system-wide:
+   BackgroundTask                 0
+   ApplePushServiceTask           0
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    0
+   SoftwareUpdateTask             0
+   PreventSystemSleep             0
+   ExternalMedia                  1
+   PreventUserIdleSystemSleep     0
+   NetworkClientActive            0
+Listed by owning process:
+   pid 104(powerd): [0x0000103b00088480] 00:01:25 ExternalMedia named: "com.apple.powermanagement.externalmediamounted"  
+   pid 194(WindowServer): [0x000010030009846f] 00:00:00 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:1000005b3 service:AppleUserHIDEventService product:Keyboard eventType:3"  
+	Timeout will fire in 599 secs Action=TimeoutActionRelease
+Kernel Assertions: 0x104=USB,MAGICWAKE
+   id=501  level=255 0x4=USB creat=25/10/26, 02:03 description=com.apple.usb.externaldevice.14700000 owner=Bluetooth USB Host Controller
+   id=502  level=255 0x4=USB creat=25/10/26, 02:04 description=com.apple.usb.externaldevice.14600000 owner=HP Wide Vision HD Camera
+   id=506  level=255 0x100=MAGICWAKE creat=25/10/26, 02:11 description=en0 owner=en0
+   id=507  level=255 0x4=USB creat=25/10/26, 03:05 description=com.apple.usb.externaldevice.14200000 owner=Disk 2.0
+Idle sleep preventers: IODisplayWrangler
+System sleep preventers: .Display_boot
+
+    | | +-o PEGP@0  <class IOPCIDevice, id 0x1000003c1, registered, matched, active, busy 0 (94 ms), retain 13>
+    | |   |   "compatible" = <"pci1c5c,174a","pciclass,010802","PEGP">
+    | |   |   "IOReportLegend" = ({"IOReportGroupName"="Interrupt Statistics (by index)","IOReportChannels"=((5291294645182005248,4295098369,"               First Level Interrupt Handler Count"),(5291294645182005249,4295098369,"              Second Level Interrupt Handler Count"),(5291294645182005250,4295098369,"        First Level Interrupt Handler Time (MATUs)"),(5291294645182005251,4295098369,"   Second Level Interrupt Handler CPU Time (MATUs)"),(5291294645182005252,4295098369,"Second Level Interrupt Handler System Time (MATUs)")),"IOReportChannelInfo"={"IOReportChannelUnit"=0},"IOReportSubGroupName"="PEGP 0"})
+    | |   |   "acpi-path" = "IOACPIPlane:/_SB/PC00@0/PEG0@60000/PEGP@0"
+

@@ -1,0 +1,65 @@
+==========================================================
+XEGFX RUN REPORT - STAGE 1 - Sun Oct 25 03:06:52 +07 2026
+==========================================================
+
+--- 1. STAGE & RESULTS ---
+debug.xegfx_stage: 1
+debug.xegfx_results (hex):
+00000000: 0000 0000 0100 0000 0000 0000 0000 0000  ................
+00000010: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+
+--- 3. DRIVER CONSOLE OUTPUT (debug.xegfx_log) ---
+xegfx: vm: vmap selftest 0
+
+--- 4. RECENT SYSTEM LOGS ---
+[   86.763715]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.799250]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.799283]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.825135]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.825153]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.879224]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.879250]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.914147]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.914175]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.954743]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   86.954794]: _process_matches_constraint: error: Requirement not satisfied: Constraint not matched
+[   87.350508]: KextLog: AuxKC bundle org.watchthelight.XeGfx marked as loadable
+[   87.365099]: Kext com.apple.driver.IOVersatile - can't resolve dependencies; OSBundleLibraries missing/invalid type.
+[   87.365107]: Can't load kext com.apple.driver.IOVersatile - failed to resolve library dependencies.
+[   87.365110]: Kext com.apple.driver.IOVersatile failed to load (0xdc00800e).
+[   87.365111]: Failed to load kext com.apple.driver.IOVersatile (error 0xdc00800e).
+[   87.365127]: Kext com.apple.driver.IOVersatile - can't resolve dependencies; OSBundleLibraries missing/invalid type.
+[   87.365142]: Can't load kext com.apple.driver.IOVersatile - failed to resolve library dependencies.
+[   87.365170]: Kext com.apple.driver.IOVersatile failed to load (0xdc00800e).
+[   87.365172]: Failed to load kext com.apple.driver.IOVersatile (error 0xdc00800e).
+[   87.365182]: Kext com.apple.driver.IOVersatile - can't resolve dependencies; OSBundleLibraries missing/invalid type.
+[   87.365185]: Can't load kext com.apple.driver.IOVersatile - failed to resolve library dependencies.
+[   87.365186]: Kext com.apple.driver.IOVersatile failed to load (0xdc00800e).
+[   87.365188]: Failed to load kext com.apple.driver.IOVersatile (error 0xdc00800e).
+[   87.365612]: Couldn't alloc class "IOVersatileHWA"
+[   87.365615]: Couldn't alloc class "IOVersatileNub"
+[   87.365620]: Couldn't alloc class "IOVersatileSoftBitstreamManager"
+[   87.367231]: Sandbox: kernelmanagerd(121) deny(1) file-write-create /private/var/folders/zz/zyxvpxvq6csfxvn_n0000000000000/T/com.apple.kernelmanagerd/TemporaryItemsSandbox: kernelmanagerd(121) deny(1) file-write-create /private/var/db/loadedkextmt.plist.sb-23399365-scec8bitlwm: : end passive scan
+[   87.554685]: itlwm: ieee80211_switch_ess
+[   87.554703]: itlwm: ieee80211_node_choose_bss
+[   87.554744]: itlwm: ieee80211_reset_scan
+[   87.554753]: itlwm: ieee80211_reset_scan
+[   87.554757]: itlwm: iwx_updateslot
+[   87.554761]: itlwm: ieee80211_next_scan 930 nstate=1
+[   87.554768]: itlwm: iwx_add_task iwx_newstate_task
+[   87.554806]: itlwm: iwx_newstate_task
+[   87.554810]: itlwm: iwx_newstate_task sc->sc_flags & IWX_FLAG_SHUTDOWN false
+[   87.554816]: itlwm: iwx_scan
+[   87.554819]: itlwm: iwx_umac_scan
+[   87.554824]: itlwm: iwx_umac_scan_v14
+[   87.554831]: itlwm: iwx_fill_probe_req
+[   87.554852]: itlwm: iwx_send_cmd: Sending command (1.d), 1940 bytes at [29]:0 ver: 0
+[   87.556019]: itlwm: iwx_cmd_done: command 0x10d done
+[   87.556066]: itlwm: ieee80211_reset_scan
+[   87.556072]: itlwm: iwx_updateslot
+[   87.556076]: itlwm: : SCAN -> SCAN
+[   87.731208]: Sandbox: parsecd(572) deny(1) mach-lookup com.apple.apsdSandbox apply: mdworker_shared[762] <bytes>Sandbox apply: mdworker_shared[761] <bytes>Sandbox apply: mdworker_shared[763] <bytes>Sandbox apply: mdworker_shared[764] <bytes>Sandbox apply: mdworker_shared[766] <bytes>Sandbox apply: mdworker_shared[765] <bytes>xegfx: vm: vmap selftest 0
+[   88.702326]: Sandbox apply: mdworker_shared[773] <bytes>Sandbox apply: mdworker_shared[772] <bytes>Sandbox apply: mdworker_shared[771] <bytes>tx_flush:1344: disk1 xid 53105 tx stats: # 280 owait 12 1866us finish 291 bar2 280 f 10 enter 47 fq 37 79 559us close 0us prep 641us flush 1444us
+[   88.954815]: Sandbox: mds_stores(318) deny(1) mach-lookup com.apple.powerlog.plxpclogger.xpctx_flush:1344: disk1 xid 53125 tx stats: # 300 owait 12 1866us finish 311 bar2 300 f 10 enter 25 fq 22 25 231us close 0us prep 425us flush 1145us
+[   89.356201]: tx_flush:1344: disk1 xid 53145 tx stats: # 320 owait 12 1866us finish 331 bar2 320 f 10 enter 18 fq 14 18 134us close 0us prep 546us flush 1398us
+
