@@ -1,0 +1,5 @@
+NAME    MODEL                            SIZE TRAN ROTA
+sdb     ProductCode                     29,3G usb     1
+zram0                                   23,1G         0
+nvme0n1 SK hynix BC711 HFM256GD3JX013N 238,5G nvme    0
+nvme0 model=SK hynix BC711 HFM256GD3JX013N           firmware=HPS1    

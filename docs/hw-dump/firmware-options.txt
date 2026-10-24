@@ -1,0 +1,19 @@
+# VT-d / IOMMU hints from the kernel log
+[    0.005177] ACPI: DMAR 0x000000006E9AD000 000088 (v02 HPQOEM 8A4F     00000002 HP   01000013)
+[    0.005200] ACPI: Reserving DMAR table memory at [mem 0x6e9ad000-0x6e9ad087]
+[    0.100466] DMAR: Host address width 39
+[    0.100466] DMAR: DRHD base: 0x000000fed90000 flags: 0x0
+[    0.100470] DMAR: dmar0: reg_base_addr fed90000 ver 4:0 cap 1c0000c40660462 ecap 29a00f0505e
+[    0.100471] DMAR: DRHD base: 0x000000fed91000 flags: 0x1
+[    0.100476] DMAR: dmar1: reg_base_addr fed91000 ver 5:0 cap d2008c40660462 ecap f050da
+[    0.100478] DMAR: RMRR base: 0x0000007c000000 end: 0x000000803fffff
+[    0.100479] DMAR-IR: IOAPIC id 2 under DRHD base  0xfed91000 IOMMU 1
+[    0.100480] DMAR-IR: HPET id 0 under DRHD base 0xfed91000
+[    0.100481] DMAR-IR: Queued invalidation will be enabled to support x2apic and Intr-remapping.
+[    0.102149] DMAR-IR: Enabled IRQ remapping in x2apic mode
+[    0.325852] pci 0000:00:02.0: DMAR: Skip IOMMU disabling for graphics
+[    0.365611] iommu: Default domain type: Translated
+[    0.365611] iommu: DMA domain TLB invalidation policy: lazy mode
+
+# CFG Lock (MSR 0xE2, bit 15 set = locked). Needs root + msr-tools.
+not available (install msr-tools and run as root to read it)
