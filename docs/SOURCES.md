@@ -1,5 +1,14 @@
 # SOURCES — Nguồn gốc và Kiểm định Tính toàn vẹn của Driver & Công cụ
 
+## Ứng viên touchpad 2026-10-25 — chưa đưa vào EFI
+
+- Cập nhật: người dùng đã duyệt thử ngoại lệ Tahoe; archive dưới đây đã được dùng cho core/plugins/HID của build-10. Không thêm các satellite ELAN/Atmel/FTE/Synaptics. Tiêu đề và dòng chờ duyệt còn lại ghi trạng thái trước khi được duyệt.
+- Tác giả fork lzhoang2801/VoodooI2C, GPL-3.0; release tag 3.0.0, archive/CFBundleVersion vẫn 2.9.1.
+- Binary chính tác giả: https://github.com/lzhoang2801/VoodooI2C/releases/download/3.0.0/VoodooI2C-2.9.1-RELEASE.zip
+- Local: `_cache/downloads/VoodooI2C-lzhoang2801-3.0.0-RELEASE.zip`; SHA256 `703a21ef1d7bafb47a774ce28020b9eeae4ead6c2bc78f82899c43daae56cc36`.
+- PR chưa merge: https://github.com/VoodooI2C/VoodooI2C/pull/586 — kiểm tra archive có PCI 51E8 và GPIO INTC1055. CHƯA XÁC MINH TAHOE, chờ duyệt thử nghiệm.
+- https://github.com/VoodooI2C/VoodooI2C/issues/582 nói về Tahoe trên máy khác với HID custom; không chứng minh fork hoạt động.
+
 | Thành phần | Phiên bản | URL Release chính thức | File | SHA256 | Ngày tải | Dùng trong EFI? |
 |---|---|---|---|---|---|---|
 | **OpenCorePkg** | 1.0.8 | https://github.com/acidanthera/OpenCorePkg/releases | OpenCore-1.0.8-RELEASE.zip | 2011e8b7216ecb2645d97ea710df965947edd406846e92050b9bc4190be6d27b | 2026-10-24 | Có |
@@ -23,3 +32,4 @@
 | **IntelBluetoothFirmware** | 2.4.0 | https://github.com/OpenIntelWireless/IntelBluetoothFirmware/releases | IntelBluetooth-v2.4.0.zip | 78418daa11f620012fc53ba68cbd643c2642a45f2f96c594fd01aaf2bc68fe2b | 2026-10-24 | Công cụ |
 | **VoodooI2C** | 2.9.1 | https://github.com/VoodooI2C/VoodooI2C/releases | VoodooI2C-2.9.1-RELEASE.zip | 368e5eb60794583c340764813bd7e8244e94d3d3c06ea5b67034addd539487f4 | 2026-10-24 | Có |
 | **USBToolBox** | 1.2.0 | https://github.com/USBToolBox/kext/releases | USBToolBox-1.2.0-RELEASE.zip | c315a3a5acfd496dd97d0d19b4fbd1d487103d2fd541c5651583d4c9cebcfe07 | 2026-10-24 | Có |
+| **XeGfx (Giai đoạn B)** | 0.0.38 | https://github.com/watchthelight-labs/XeGfx/releases | XeGfx-0.0.38.zip | 10fa402c966cb60f444c026fb9ec6e73c6c6467a13d2742a5e08bb6007899a87 | 2026-10-25 | Không (nạp thủ công macOS) |

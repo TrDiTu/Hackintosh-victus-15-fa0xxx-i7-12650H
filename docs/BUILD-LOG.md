@@ -178,6 +178,31 @@ Từ ảnh chụp màn hình thực tế logs/20261024_212116.jpg do người d�
 - 2026-10-25T01:09:50 Deployed EFI to G:\EFI (tree 8fd1301031e6, verified)
 
 ## Kết quả kiểm thử build-09 — 2026-10-25
+- Build-10: người dùng duyệt thử fork trên Tahoe; thay riêng bộ VoodooI2C/VoodooI2CHID từ archive đã kiểm định. Config/ACPI giữ nguyên. Validate 0 lỗi/0 cảnh báo, ocvalidate ran (validate-20261025-014527.md). Snapshot build-10-20261025-014543-touchpad-adl-driver; build-09 được giữ. USB dry-run đúng G: MACEFI FAT32 2,99 GB; chờ xác nhận ghi. Chưa chứng minh touchpad hoạt động trên máy B.
+- Người dùng báo touchpad/âm thanh không hoạt động, ưu tiên touchpad. VoodooI2C 2.9.1 hiện tại không match 8086:51E8. Đã chuẩn bị ứng viên lzhoang2801 release 3.0.0 (GPL-3.0, đúng PCI/GPIO ID, chưa xác minh Tahoe), chờ duyệt thử nghiệm. Chưa đổi EFI/USB hoặc tạo snapshot. Xem TOUCHPAD-ANALYSIS-20261025.md và tools/collect-touchpad.sh.
 - Người dùng xác nhận "đã boot thành công rồi" sau khi USB được cập nhật build-09 (IntelBTPatcher Enabled=false).
 - Boot thành công theo báo cáo máy B; chưa xác nhận cụ thể Desktop/Setup Assistant, chức năng thiết bị, độ ổn định qua restart/sleep-wake hoặc tăng tốc đồ họa.
 - Không sửa EFI hoặc USB trong lượt này; giữ snapshot hiện có, chưa đánh dấu known-good. Tiếp tục kiểm thử Giai đoạn A; Giai đoạn B chưa được mở.
+- 2026-10-25T01:45:44 Created build-10-20261025-014543-touchpad-adl-driver (tree 2e5c3fc66324, ocvalidate: 0 errors, 0 warnings; ocvalidate ran)
+- 2026-10-25T01:45:44 Rotated out (deleted) oldest snapshot build-07-20261025-004429-no-igfxvesa-test
+- 2026-10-25T01:47:29 Deployed EFI to G:\EFI (tree 2e5c3fc66324, verified)
+
+## Kết quả kiểm thử build-10 — 2026-10-25
+- Người dùng xác nhận: build-10 trên Máy B "đã hoạt động ổn, đủ điều kiện để chuyển sang giai đoạn tiếp theo".
+- Xác nhận phần cứng: Touchpad ELAN0788 trên bộ điều khiển Alder Lake LPSS I2C (8086:51E8) hoạt động với VoodooI2C fork v3.0.0 (lzhoang2801) trên macOS 26 Tahoe.
+- Trạng thái các thiết bị khác: Bàn phím PS/2 và LAN RTL8111 đã hoạt động tốt. Âm thanh Realtek ALC245 (layout-id 11) cần làm rõ tình trạng đã phát ra tiếng chưa.
+- Cổng chặn Giai đoạn B (XeGfx): Tiếp tục đóng theo AGENTS.md §6 cho đến khi người dùng xác nhận bằng câu lệnh chuẩn "EFI nền đã ổn định, bắt đầu XeGfx", xác nhận đánh dấu snapshot build-10 là known-good, và hoàn tất thu thập baseline logs trên macOS.
+
+## Giai đoạn B — Pha 6: Chuẩn bị & Runbook XeGfx (2026-10-25)
+- **Kích hoạt:** Người dùng gửi câu lệnh chính thức: "EFI nền đã ổn định, bắt đầu XeGfx". Cổng chặn Giai đoạn B chính thức được mở theo AGENTS.md §6.
+- **Snapshot nền:** uild-10 được xác nhận là mốc known-good: true. EFI hiện tại hoàn toàn giữ nguyên, không sửa đổi hay nạp XeGfx vào EFI.
+- **Nguồn tham chiếu XeGfx:** Đã đọc và xác minh tài liệu mới nhất từ GitHub watchthelight-labs/XeGfx (commit 78db6fceab4a6d50c3072c12e5ea89688f281d26, 2026-10-24).
+- **Binary:** Tải release chính thức XeGfx-0.0.38.zip (SHA256: 10fa402c966cb60f444c026fb9ec6e73c6c6467a13d2742a5e08bb6007899a87), cập nhật vào docs/SOURCES.md.
+- **Runbook & Scripts:**
+  - docs/XEGFX-RUNBOOK.md: Hướng dẫn chi tiết từng bước, các tiêu chí đánh giá, cơ chế an toàn và rollback.
+  - docs/XEGFX-PROGRESS.md: Bảng theo dõi tiến độ tuần tự từng stage.
+  - xegfx-test/00-collect-baseline.sh: Thu thập trạng thái hệ thống trước khi nạp driver.
+  - xegfx-test/01-install-xegfx.sh: Cài kext vào Auxiliary Kernel Collection với backup an toàn.
+  - xegfx-test/02-run-stage.sh: Nạp kext qua kmutil và chạy từng stage 1 -> 4 theo yêu cầu.
+  - xegfx-test/99-uninstall-xegfx.sh: Gỡ bỏ sạch sẽ XeGfx để phục hồi hệ thống.
+- **Trạng thái:** Hoàn tất Pha 6. Sẵn sàng bước vào Pha 7: chạy thử Stage 1 trên Máy B.

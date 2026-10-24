@@ -1,6 +1,14 @@
 ﻿# DRIVER-MATRIX — Ma trận kiểm định Driver cho Laptop HP Victus 15-fa0xxx
 
 *Mục tiêu: macOS 26 Tahoe (Darwin 25)*  
+
+## Cập nhật touchpad 2026-10-25 (thay thế kết luận cũ)
+
+- **ĐÃ DUYỆT THỬ NGHIỆM:** người dùng trả lời "Duyệt thử bản này trên Tahoe". Cho phép ngoại lệ thiếu bằng chứng Tahoe cho fork release 3.0.0; đã thay core/plugins/HID trong build-10. Tương thích thực tế vẫn CHƯA XÁC MINH. Các dòng chờ duyệt bên dưới là lịch sử.
+- Build-09 boot thành công nhưng touchpad và âm thanh không hoạt động. Kext hiện tại là VoodooI2C 2.9.1, thiếu match PCI 8086:51E8. Rút lại khẳng định R1 đã chứng minh touchpad/Tahoe hoạt động và polling chắc chắn giải quyết lỗi.
+- **ỨNG VIÊN, chờ duyệt thử nghiệm:** [lzhoang2801/VoodooI2C release 3.0.0](https://github.com/lzhoang2801/VoodooI2C/releases/tag/3.0.0), GPL-3.0, CFBundleVersion vẫn 2.9.1. Có match I2C 8086:51E8, GPIO INTC1055 và HID PNP0C50. **CHƯA XÁC MINH TAHOE**, chưa đưa vào EFI. Hash và giới hạn trong `TOUCHPAD-ANALYSIS-20261025.md` và `SOURCES.md`.
+- Giữ Services / GPIO / VoodooInput trước VoodooI2C, rồi VoodooI2CHID; chỉ một VoodooInput. Chờ duyệt ngoại lệ thử nghiệm cho bản fork này theo AGENTS.md §4.
+
 *Trạng thái: Đang chờ Người dùng duyệt trước khi tải binary hoặc nạp vào EFI.*
 
 Quy ước Quyết định:
