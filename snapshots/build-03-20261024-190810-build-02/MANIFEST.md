@@ -1,0 +1,34 @@
+﻿# build-03-20261024-190810-build-02
+
+- created: 2026-10-24T19:08:10
+- label: build-02
+- known-good: false
+- tree-sha256: 61cdf56548b08c2a656ae89976381b7ed2b88516e151e9ad4f8e25d4fa6ef568
+- config.plist sha256: B039581DFB9910071717AF577C4ED535FC90D016540B28844EC6CA49E5F7724E
+- ocvalidate: docs\validation\validate-20261024-190802.md
+
+## Notes / changes vs previous build
+Fix EXITBS:START freeze: Alder Lake CPUID spoof to Comet Lake, DisableIoMapper=True, LapicKernelPanic=True
+
+## Kexts
+- AppleALC.kext 1.9.8
+- BlueToolFixup.kext 2.7.2
+- BrightnessKeys.kext ?
+- CpuTopologyRebuild.kext 2.0.2
+- ECEnabler.kext 1.0.6
+- IntelBluetoothFirmware.kext 2.4.0
+- IntelBTPatcher.kext 2.4.0
+- itlwm.kext 2.3.0
+- Lilu.kext 1.7.2
+- NVMeFix.kext 1.1.3
+- RealtekRTL8111.kext 3.0.0
+- RestrictEvents.kext 1.1.6
+- SMCBatteryManager.kext 1.3.8
+- SMCProcessor.kext 1.3.8
+- USBToolBox.kext ?
+- UTBDefault.kext 1.0
+- VirtualSMC.kext 1.3.8
+- VoodooI2C.kext 2.9.1
+- VoodooI2CHID.kext 1.0
+- VoodooPS2Controller.kext 2.3.7
+- WhateverGreen.kext 1.7.1

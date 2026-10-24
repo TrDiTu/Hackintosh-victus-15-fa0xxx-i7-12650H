@@ -1,0 +1,34 @@
+﻿# build-05-20261024-221513-build-04
+
+- created: 2026-10-24T22:15:13
+- label: build-04
+- known-good: false
+- tree-sha256: 0c4b0fca6acf7a17d9d4b102271f74417d2cd2c04a59e83d626901f50c143dbb
+- config.plist sha256: E30C52B80AD337EA19909A1D0D337A099F207A025BFDCF1B9A8916C307D8CC79
+- ocvalidate: 0 errors
+
+## Notes / changes vs previous build
+Fix gIOScreenLockState 3 freeze: add -igfxvesa to boot-args
+
+## Kexts
+- AppleALC.kext 1.9.8
+- BlueToolFixup.kext 2.7.2
+- BrightnessKeys.kext ?
+- CpuTopologyRebuild.kext 2.0.2
+- ECEnabler.kext 1.0.6
+- IntelBluetoothFirmware.kext 2.4.0
+- IntelBTPatcher.kext 2.4.0
+- itlwm.kext 2.3.0
+- Lilu.kext 1.7.2
+- NVMeFix.kext 1.1.3
+- RealtekRTL8111.kext 2.4.2
+- RestrictEvents.kext 1.1.6
+- SMCBatteryManager.kext 1.3.8
+- SMCProcessor.kext 1.3.8
+- USBToolBox.kext ?
+- UTBDefault.kext 1.0
+- VirtualSMC.kext 1.3.8
+- VoodooI2C.kext 2.9.1
+- VoodooI2CHID.kext 1.0
+- VoodooPS2Controller.kext 2.3.7
+- WhateverGreen.kext 1.7.1
