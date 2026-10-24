@@ -1,14 +1,14 @@
-﻿# build-05-20261024-221513-build-04
+﻿# build-09-20261025-010852-disable-intelbtpatcher
 
-- created: 2026-10-24T22:15:13
-- label: build-04
-- known-good: false
-- tree-sha256: 0c4b0fca6acf7a17d9d4b102271f74417d2cd2c04a59e83d626901f50c143dbb
-- config.plist sha256: E30C52B80AD337EA19909A1D0D337A099F207A025BFDCF1B9A8916C307D8CC79
-- ocvalidate: 0 errors
+- created: 2026-10-25T01:08:52
+- label: disable-intelbtpatcher
+- known-good: true
+- tree-sha256: 8fd1301031e6cbf0875bb7dfd6906ac1d89a67cb9eadb26b6e1efdd48f3f9ce2
+- config.plist sha256: B40EEA9F7292AFA1C961D064E2B0A1B033BB71205E153ED0010F360B3F617694
+- ocvalidate: 0 errors, 0 warnings; ocvalidate ran
 
 ## Notes / changes vs previous build
-Fix gIOScreenLockState 3 freeze: add -igfxvesa to boot-args
+Disable IntelBTPatcher only: five UVCAssistant IOGMD panics implicate its USB request hook. Bluetooth may regress; boot success unverified.
 
 ## Kexts
 - AppleALC.kext 1.9.8

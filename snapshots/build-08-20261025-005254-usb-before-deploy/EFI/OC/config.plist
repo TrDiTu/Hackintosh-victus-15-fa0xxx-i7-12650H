@@ -989,7 +989,7 @@
 			<key>7C436110-AB2A-4BBB-A880-FE41995C9F82</key>
 			<dict>
 				<key>boot-args</key>
-				<string>-v debug=0x100 keepsyms=1 -lilubetaall amfi=0x80 -vi2c-force-polling -wegnoegpu alcid=11 -igfxvesa</string>
+				<string>-v debug=0x100 keepsyms=1 -lilubetaall amfi_get_out_of_my_way=0x1 -vi2c-force-polling -wegnoegpu alcid=11 -igfxvesa</string>
 				<key>csr-active-config</key>
 				<data>
 				7w8AAA==

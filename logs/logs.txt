@@ -1,0 +1,49 @@
+
+apfs_trim_to_prev_fsize:188: disk2s4 *** reset ino 22985 size back to 3 (from 32768) apfs_trin_to_prev_fsize:180: disk2s4 *** reset ino 22988 size back to 32 (from 74192) IOG flags 8x3 (8x51) apfs_trim_to_prev_fsize:188: disk2s4 *** reset ino 22989 size back to 3 (from 32768)
+apfs_trim_to_prev_fsize:180: disk2s4 *** reset ino 22914 size back to 32 (from 32992) apfs_trim_to_prev_fsize:188: disk2s4 *** reset ino 22915 size back to 3 (from 32768) Driver com.apple.DriverKit-IOUserDockChannelSerial has crashed 8 time(s) "AppleKeyStore":pid:232,:13297: operation failed (sel: 17 ret: e00882f8, 205)
+Generation from SMC report as 2 DK: IOUser DockChannelSerial-8x100000544 waiting for server com.apple.IOUser DockChannelSerial-100000544
+SMCProcessor scpu: failed to find a compatible processor
+IOPPF - IODeviceTree:/efi/platform/StartupPowerEvents: 8x8
+Kext com.apple.driver.IOVersatile can't resolve dependencies: OSBundleLibraries missing/invalid type. Can't load kext com.apple.driver. IOVersatile failed to resolve library dependencies.
+Kext com.apple.driver. IOVersatile failed to load (8xdc88888e).
+Failed to load kext com.apple.driver. IOVersatile (error 8xdc88888e).
+Kext com.apple.driver.IOVersatile - can't resolve dependencies; OSBundleLibraries missing/invalid type. Can't Load kext com.apple.driver. IOVersatile failed to resolve library dependencies.
+Kext com.apple.driver. IOVersatile failed to load (8xdc88888e).
+Failed to load kext com.apple.driver.IOVersatile (error 8xdc88888e).
+Kext com.apple.driver.IOVersatile - can't resolve dependencies: OSBundleLibraries missing/invalid type. Can't load kext com.apple.driver. IOVersatile failed to resolve library dependencies.
+Kext com.apple.driver.IOVersatile failed to load (8xdc88888e).
+Failed to load kext com.apple.driver.IOVersatile (error 8xdc88888e).
+apfs_trim_to_prev_fsize:188: disk2s4 *** reset ino 22989 size back to 32 (from 187152) apfs_trin_to_prev_fsize:188: disk2s4 *** reset ino 23889 size back to 3 (from 32768)
+nfs_kext_start: successfully Loaded NFS kext
+Couldn't alloc class "IOVersatileNub" virtual bool IOKitCrashQuizl::init(OSDictionary *) virtual IOService IOKitCrashQuiz1: :probe (IOService, SInt32 =) Couldn't alloc class "10Versatile
+IOTimeSyncTimeSyncTimePort (8x7c5758db5e620808): Created general notifier <ptr> for local clock port <ptr>
+Couldn't alloc class "IOVersatileSoftBitstreamManager"
+virtual bool IOKitCrashQuizl::start(IOService *)
+GTrace synchronization point 1
+GTrace synchronization point 3
+com_apple_filesystems_nfs: successfully Loaded NFS module
+Unsupported PCH HP Wide Vision HD Camera@14688888: IOUSBHostDevice::setConfigurationGated: AppleUSBHostCompositeDevice selected configuration 1
+Kext com.apple.driver.IOVersatile
+can't resolve dependencies; OSBundleLibraries missing/invalid type.
+Kext com.apple.driver.IOVersatile failed to load (Bxdc88888e).
+Can't load kext com.apple.driver.IOVersatile failed to resolve library dependencies.
+Failed to load kext com.apple.driver.IOVersatile (error 0xdc88888e),
+Kext com.apple.driver.IOVersatile - can't resolve dependencies: OSBundleLibraries missing/invalid type. Kext com.apple.driver.IOVersatile failed to load (Bxdc88888e). Can't load kext com.apple.driver.IOVersatile failed to resolve library dependencies.
+Failed to load kext com.apple.driver.IOVersatile (error 8xdc88888e).
+Kext com.apple.driver.IOVersatile
+can't resolve dependencies; OSBundleLibraries missing/invalid type.
+com.apple.driver.IOVersatile failed to load (Bxdc88888e). Can't load kext com.apple.driver.IOVersatile failed to resolve library dependencies."
+Kext
+Couldn't alloc class "IOVersatileHWA"
+Failed to load kext com.apple.driver.IOVersatile (error 0xdc88888e).
+Couldn't alloc class "IOVersatileNub"
+Couldn't alloc class "IOVersatileSoftBitstreamManager"
+Driver com.apple,AppleUserHIDDrivers has crashed 8 time(s)
+Driver com.apple.AppleUserHIDDrivers has crashed 8 time(s) DK: AppleUserHIDEventDriver-8x100080581 waiting for server com.apple.driverkit.AppleUserHIDDrivers-100000581
+set CameraAssistantBundleID: com.apple.cnlo.uvcassistantextension
+DK: AppleUserHIDEventDriver-8x100000584 waiting for server com.apple.driverkit.AppleUserHIDDrivers-100000581
+set CamerafssistantBundleID: com.apple.cmio.uvcassistantextension
+AMFI: [non-fatal) unable to accelerate context: com.apple.DriverKit-IOUserDockChannel Sertal | 65285
+shared_region: 8x4ce6cbe16714c569 [234(com.apple.Driver)1 check_np(0x7ff7b84ceaa8) va shared region_start_address() returned 8x1 shared_region: 8x4ce6cbe16714c569 [234(com.apple.Driver)] check_np(0x7ff7b84cd9f8) va shared region_start_address() returned 8x1 apfs_trim_to_prev_fsize:188: disk2s4 *** reset ino 22998 size back to 32 (from 183832) shared region: 8x4ce6cbe16714c569 (234(com.apple.Driver)1: vnode Lookup(/System/DriverKit/System/Library/dyld/) failed (error=2) apfs_trin_to_prev_fsize:188: disk2s4 *** reset ino 22999 size back to 3 (from 32768)
+disallowing unsupported code signature page shift: 14.
+unable to create a validated cs_blob object: 85

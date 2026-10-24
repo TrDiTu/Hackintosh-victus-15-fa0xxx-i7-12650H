@@ -1,14 +1,14 @@
-﻿# build-04-20261024-192302-build-03
+﻿# build-08-20261025-005254-usb-before-deploy
 
-- created: 2026-10-24T19:23:02
-- label: build-03
+- created: 2026-10-25T00:52:54
+- label: usb-before-deploy
 - known-good: false
-- tree-sha256: 5359af8f9c52595f9d25c4a2ed22a8664216ee14a84c1bf1dca444f9fc2de26f
-- config.plist sha256: B039581DFB9910071717AF577C4ED535FC90D016540B28844EC6CA49E5F7724E
-- ocvalidate: docs\validation\validate-20261024-192231.md
+- tree-sha256: 17e7915b2ba728c2ffa1b731566c1f87c29af5866133a2c67c3abac30bd51a3e
+- config.plist sha256: F3DDF761F74E0F511839682065AF29D31A3540DA5BC6506CF1D1E5633B283F37
+- ocvalidate: n/a (existing USB content)
 
 ## Notes / changes vs previous build
-Downgrade RealtekRTL8111 to v2.4.2 to fix LAN link in recovery
+Automatic backup of G:\EFI before deploy
 
 ## Kexts
 - AppleALC.kext 1.9.8

@@ -1,14 +1,14 @@
-﻿# build-03-20261024-190810-build-02
+﻿# build-07-20261025-004429-no-igfxvesa-test
 
-- created: 2026-10-24T19:08:10
-- label: build-02
+- created: 2026-10-25T00:44:29
+- label: no-igfxvesa-test
 - known-good: false
-- tree-sha256: 61cdf56548b08c2a656ae89976381b7ed2b88516e151e9ad4f8e25d4fa6ef568
-- config.plist sha256: B039581DFB9910071717AF577C4ED535FC90D016540B28844EC6CA49E5F7724E
-- ocvalidate: docs\validation\validate-20261024-190802.md
+- tree-sha256: b676dcb35d8dc93c0075b55e50f1e78cc37ca3c95cc1eb3105b437b6d7b4dbc6
+- config.plist sha256: B162CE2C23DC09E9BEB7B11E9F390C909A5F48B6400E9F2770BBB11C1360FC5A
+- ocvalidate: 0 errors, 0 warnings; ocvalidate ran
 
 ## Notes / changes vs previous build
-Fix EXITBS:START freeze: Alder Lake CPUID spoof to Comet Lake, DisableIoMapper=True, LapicKernelPanic=True
+Remove only -igfxvesa from AMFI hotfix for controlled boot test; GUI success and root cause unverified; no connector or VRAM changes.
 
 ## Kexts
 - AppleALC.kext 1.9.8
@@ -21,7 +21,7 @@ Fix EXITBS:START freeze: Alder Lake CPUID spoof to Comet Lake, DisableIoMapper=T
 - itlwm.kext 2.3.0
 - Lilu.kext 1.7.2
 - NVMeFix.kext 1.1.3
-- RealtekRTL8111.kext 3.0.0
+- RealtekRTL8111.kext 2.4.2
 - RestrictEvents.kext 1.1.6
 - SMCBatteryManager.kext 1.3.8
 - SMCProcessor.kext 1.3.8
