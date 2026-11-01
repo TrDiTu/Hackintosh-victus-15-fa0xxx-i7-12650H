@@ -1,9 +1,9 @@
 # dump-laptop.ps1
-# CHAY TREN LAPTOP DICH (MAY B), khong chay tren may Codex.
+# CHAY TREN LAPTOP DICH (MAY B), khong chay tren may Claude Code.
 # Chi doc thong tin. Khong ghi serial/UUID cua may. Ket qua nam trong thu muc .\hw-dump
 # Cach chay: PowerShell (nen chay "Run as administrator" de day du hon):
 #   powershell -ExecutionPolicy Bypass -File .\dump-laptop.ps1
-# Sau do chep thu muc hw-dump vao <workspace>\docs\hw-dump\ tren may chay Codex.
+# Sau do chep thu muc hw-dump vao <workspace>\docs\hw-dump\ tren may chay Claude Code.
 
 $ErrorActionPreference = 'Continue'
 $out = Join-Path (Get-Location).Path 'hw-dump'
@@ -54,7 +54,7 @@ foreach ($d in $devs) {
 }
 $rows | Export-Csv -Path (Join-Path $out 'pnp-devices.csv') -NoTypeInformation -Encoding UTF8
 
-# Mot so nhom hay can (de Codex doc nhanh)
+# Mot so nhom hay can (de Claude Code doc nhanh)
 $rows | Where-Object { $_.InstanceId -like 'ACPI\*' } | Export-Csv (Join-Path $out 'acpi-devices.csv') -NoTypeInformation -Encoding UTF8
 $rows | Where-Object { $_.Class -in @('Net','Bluetooth','HIDClass','Media','Camera','Image','SCSIAdapter','USB','System','Biometric','SecurityDevices','Sensor') } |
     Export-Csv (Join-Path $out 'pnp-key-classes.csv') -NoTypeInformation -Encoding UTF8
@@ -67,4 +67,4 @@ Luu y: DSDT/SSDT khong nam trong script nay. Dump rieng bang SSDTTime/acpidump, 
 Misc > Debug > SysReport tren ban OpenCore debug, roi chep vao docs\hw-dump\acpi\.
 "@ | Out-File (Join-Path $out 'README.txt') -Encoding utf8
 
-Write-Host "Xong. Chep thu muc hw-dump vao <workspace>\docs\hw-dump\ tren may chay Codex."
+Write-Host "Xong. Chep thu muc hw-dump vao <workspace>\docs\hw-dump\ tren may chay Claude Code."

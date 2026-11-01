@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # dump-laptop.sh
-# RUN ON THE TARGET LAPTOP (machine B) under Linux (a live USB is fine). NOT on the Codex machine.
+# RUN ON THE TARGET LAPTOP (machine B) under Linux (a live USB is fine). NOT on the Claude Code machine.
 # Read-only: it only reads /sys, /proc and runs lspci/lsusb/etc. It never writes outside the output folder.
 # Run as root so the ACPI tables and PCI details are readable:
 #   sudo bash dump-laptop.sh            -> creates ./hw-dump
 #   sudo bash dump-laptop.sh /path/out  -> creates /path/out
-# Then copy the folder to <workspace>/docs/hw-dump/ on the machine that runs Codex.
+# Then copy the folder to <workspace>/docs/hw-dump/ on the machine that runs Claude Code.
 #
 # Privacy: serial numbers, UUIDs, MAC addresses, EDID serials and the Windows OEM key table (MSDM) are
 # deliberately NOT collected.
@@ -145,6 +145,29 @@ done
 } > "$OUT/power-sensors.txt"
 lsmod > "$OUT/lsmod.txt" 2>&1
 
+# ---------- iGPU topology / stolen memory / firmware (for the NootedGreen 64 EU setup) ----------
+{
+  echo "# i915 kernel messages (stolen memory, DMC, GuC/HuC, topology)"
+  dmesg 2>/dev/null | grep -iE 'i915|stolen|dmc|guc|huc|sseu|subslice|eu total' | head -n 80
+  echo
+  if is_root; then
+    if [ ! -d /sys/kernel/debug/dri ]; then mount -t debugfs none /sys/kernel/debug 2>/dev/null; fi
+    for d in /sys/kernel/debug/dri/*; do
+      [ -d "$d" ] || continue
+      [ -e "$d/i915_capabilities" ] || [ -e "$d/i915_sseu_status" ] || continue
+      echo "== $d"
+      for f in i915_sseu_status gt/sseu_topology gt0/sseu_topology gt/sseu_status gt0/sseu_status i915_capabilities gt/uc/guc_info gt0/uc/guc_info gt/uc/huc_info gt0/uc/huc_info i915_dmc_info; do
+        if [ -r "$d/$f" ]; then echo "---- $f"; cat "$d/$f" 2>/dev/null | head -n 120; fi
+      done
+    done
+  else
+    echo "debugfs not read (need root)."
+  fi
+  echo
+  echo "# iGPU PCI resources (BAR sizes)"
+  if have lspci; then lspci -vv -s 00:02.0 2>/dev/null | grep -iE 'Region|Kernel|Subsystem|VGA'; fi
+} > "$OUT/igpu-topology.txt" 2>&1
+
 # ---------- Firmware options visible from Linux ----------
 {
   echo "# VT-d / IOMMU hints from the kernel log"
@@ -182,10 +205,11 @@ cat > "$OUT/README.txt" <<EOF
 Created: $(date -Is)
 Script: dump-laptop.sh (read-only; no serial/UUID/MAC/EDID-serial; MSDM/SLIC skipped)
 Format: linux
-Next: copy this folder to <workspace>/docs/hw-dump/ on the machine that runs Codex.
-Decompile ACPI later with iasl (done by Codex via the ssdt-authoring skill), not here.
+Next: copy this folder to <workspace>/docs/hw-dump/ on the machine that runs Claude Code.
+Decompile ACPI later with iasl (done by Claude Code via the ssdt-authoring skill), not here.
+igpu-topology.txt: EU/subslice/L3 and stolen memory, needed for the NootedGreen 64 EU topology.
 EOF
 
 if [ -n "${SUDO_USER:-}" ]; then chown -R "$SUDO_USER" "$OUT" 2>/dev/null; fi
 echo "Done. Output: $OUT"
-echo "Copy the folder to <workspace>/docs/hw-dump/ on the Codex machine."
+echo "Copy the folder to <workspace>/docs/hw-dump/ on the Claude Code machine."

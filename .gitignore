@@ -1,4 +1,7 @@
-/README-SETUP.md
-/{tools,docs,.agents
+# never commit or share
+secrets/smbios.json
 _cache/
-*.jpg
+snapshots/
+docs/hw-dump/
+config/usb-mount.txt
+__pycache__/

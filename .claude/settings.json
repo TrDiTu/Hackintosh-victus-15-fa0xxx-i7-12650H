@@ -1,0 +1,60 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Bash(python3 .claude/skills/efi-validate/scripts/validate_efi.py*)",
+      "Bash(python3 .claude/skills/efi-snapshot/scripts/snapshot.py * --dry-run*)",
+      "Bash(python3 .claude/skills/usb-deploy-guard/scripts/deploy_usb.py --mount *)",
+      "Bash(lsblk *)",
+      "Bash(findmnt *)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:dortania.github.io)",
+      "Bash(python3 .claude/skills/config-plist-tools/scripts/plist_diff.py *)",
+      "Bash(python3 .claude/skills/config-plist-tools/scripts/plist_edit.py get *)",
+      "Bash(python3 .claude/skills/config-plist-tools/scripts/plist_edit.py * --dry-run*)",
+      "Bash(python3 .claude/skills/release-fetch/scripts/fetch_release.py * --dry-run*)",
+      "WebFetch(domain:api.github.com)"
+    ],
+    "ask": [
+      "Bash(python3 .claude/skills/usb-deploy-guard/scripts/deploy_usb.py * --confirmed*)",
+      "Bash(python3 tools/clone_ref.py*)",
+      "Bash(rm *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rsync *)",
+      "Bash(chmod *)"
+    ],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(su *)",
+      "Bash(*mkfs*)",
+      "Bash(dd *)",
+      "Bash(* dd *)",
+      "Bash(*|dd *)",
+      "Bash(*fdisk*)",
+      "Bash(*parted*)",
+      "Bash(*sgdisk*)",
+      "Bash(*wipefs*)",
+      "Bash(mount *)",
+      "Bash(* mount *)",
+      "Bash(*umount*)",
+      "Bash(*udisksctl*)",
+      "Bash(*efibootmgr*)",
+      "Bash(*blkdiscard*)",
+      "Bash(*shred*)",
+      "Bash(git push*)",
+      "Bash(*make-efi.sh*)",
+      "Bash(*install.sh*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.gnupg/**)",
+      "Read(./secrets/**)",
+      "Edit(./secrets/**)",
+      "Write(./secrets/smbios.json)",
+      "Bash(*secrets/smbios.json*)",
+      "Bash(*smbios.json*)",
+      "Read(./_cache/stage/**)"
+    ]
+  }
+}
