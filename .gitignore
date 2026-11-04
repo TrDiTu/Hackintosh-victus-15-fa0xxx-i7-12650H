@@ -5,3 +5,19 @@ snapshots/
 docs/hw-dump/
 config/usb-mount.txt
 __pycache__/
+# verbose boot videos print Wi-Fi (WPA) session keys from itlwm: never commit
+logs/*.mp4
+# Apple binaries from OCLP-CustoMac (not redistributable): get them from kgp-macPro/OCLP-CustoMac
+EFI/OC/Kexts/IOSkywalkFamily.kext/
+EFI/OC/Kexts/IO80211FamilyLegacy.kext/
+.remember/
+# Claude Code git worktrees (local only)
+.claude/worktrees/
+docs/STATE.md
+docs/feasibility.md
+*.jpg
+*.png
+docs/validation
+GRAPHICS-PANIC-ANALYSIS.md
+MACHINE-ANALYSIS.md
+UPSTREAM-ISSUE-DRAFT.md

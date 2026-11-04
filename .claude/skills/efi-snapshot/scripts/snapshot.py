@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Snapshot ONE complete EFI build into <project>/snapshots (max 3, rotating, known-good protected).
+"""Snapshot ONE complete EFI build into <project>/snapshots (max 10, rotating, known-good protected).
 
 Usage (from the project root):
   python3 .claude/skills/efi-snapshot/scripts/snapshot.py --label wifi-touchpad --note "..." --ocvalidate-result "0 errors" --dry-run
@@ -79,7 +79,7 @@ def main():
     ap.add_argument("--note", default="")
     ap.add_argument("--ocvalidate-result", default="not-run")
     ap.add_argument("--mark-known-good", default=None)
-    ap.add_argument("--max", type=int, default=3)
+    ap.add_argument("--max", type=int, default=10)
     ap.add_argument("--strip-smbios", action="store_true", help="replace serial/MLB/UUID/ROM with placeholders in the copy")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()

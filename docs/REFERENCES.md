@@ -59,7 +59,7 @@ https://github.com/khucxtriendev/irisxegraphic-i712800h-efi
 - dGPU chỉ được ẩn bằng `class-code` (chưa xác nhận tắt nguồn) → máy tôi cần SSDT tắt nguồn thật.
 - `LUU-Y-RA-SOAT.md` cảnh báo bản phụ không nên dùng như bản đã sửa. Repo nhỏ (4 commit).
 
-### T2-2 · m4j2rpf766-crypto/IntelIGPU-Tahoe (B) — **cùng CPU/iGPU 46A3, panel 1080p 144 Hz**
+### T2-2 · m4j2rpf766-crypto/IntelIGPU-Tahoe (B) — **cùng CPU/iGPU 46A3, panel 1080p 144 Hz (KHÔNG DÙNG - CÓ THỂ THAM KHẢO)** 
 https://github.com/m4j2rpf766-crypto/IntelIGPU-Tahoe
 - i7-12650H, `46A3` rev 0c, 1920×1080 144 Hz; macOS **25G83** (khác 25G241). Metal cho desktop/app đã thử, H.264 decode;
   sleep/màn hình ngoài không bảo đảm. Dựa trên driver Apple người dùng tự cung cấp; không kèm EFI.
@@ -71,12 +71,7 @@ https://github.com/dssoftx/Hackintosh-X1Carbon-G11-IrisXe-Tahoe
 - Port JulioNectar sang laptop khác; mẫu tốt về quy trình **EFI 2 giai đoạn** (`EFI-stage1` để cài, `EFI-PostInstall` sau
   `install.sh`) và cách tách patch phần cứng riêng của Dell.
 
-### T2-4 · Dữ liệu tester WTLIntelGfx issue #3 (B)
-https://github.com/watchthelight-labs/WTLIntelGfx/issues/3
-- TrDiTu: HP Victus 15, i7-12650H, 46A3, stage 1–3 qua. Chỉ dùng làm dữ liệu phần cứng (stolen memory, BAR, pipe), không
-  dùng WTLIntelGfx làm driver. Không chạy WTLIntelGfx cùng NootedGreen.
-
-### T2-5 · kgp-macPro/AirportItlwm-Tahoe (A cho AX210, do người dùng chọn và đã thử) — **driver Wi-Fi**
+### T2-4 · kgp-macPro/AirportItlwm-Tahoe (A cho AX210, do người dùng chọn và đã thử) — **driver Wi-Fi**
 https://github.com/kgp-macPro/AirportItlwm-Tahoe
 - AX210 `8086:2725` là adapter tham chiếu được kiểm định vật lý (đúng card của máy này). Kiểm định trên 26.6.2 (25G83) với cả
   AppleVTD (`DisableIoMapper=false`) và cấu hình thường (`true`); 26.7 (25G229) phạm vi hẹp hơn; 25G241 chưa được nêu.
@@ -115,3 +110,10 @@ https://github.com/nullmoth/1401/issues/97
 
 ## Mẫu thêm nguồn mới
 URL · mức bằng chứng · máy/CPU/iGPU/macOS build · vì sao liên quan · khác biệt với máy tôi · giấy phép · được/không được làm.
+
+## Bổ sung 2026-11-02 (Giai đoạn B, sau panic #24)
+- **JulioNectar #13 (OPEN)** — GIGABYTE G16, i7-13620H, **A7A8 UHD 64 EU**, 25G241: CÙNG panic `IGAccelTask::withOptions` CR2 0xc78. JN (2026-10-25): lỗi thật là *task init trả false* trong `IntelAccelerator::start`
+  — nghi **memory/GTT setup, đường GuC/scheduler (`ngreenSched=4`), hoặc context do topology override**; JN xin video verbose có dòng `ngreen:`/`XeNG` trước panic (chưa ai gửi). Mọi máy chạy được đều là Iris Xe 80/96 EU; UHD 64 EU (A7A8, 46A3) chưa máy nào qua.
+- **sgiammori/NootedGreen #12, #16 (OPEN)** — cùng chữ ký trên Tiger Lake thật (i5-1135G7 DVMT 32 MB khoá; i7-11800H) khi bật `-allow3d`; không có bản sửa; sgiammori ngừng phát triển.
+- **IntelIGPU-Tahoe (T2-2, @9baa4bb)** — đúng 46A3 rev0c 144 Hz: KHÔNG khởi động TGL lúc boot (`device-id ffff0000` + Kernel/Block AppleIntelTGLGraphics), vá binary TGL để hoãn `registerService`, kích hoạt sau boot bằng `sudo ./igpu-start`.
+  Cần binary TGL Apple SHA-256 `ae99582b…` (KHÁC cả hai bản trong sgiammori/NootedGreen sle_Internal: le `1b2f5aa3…`, sle `890735a9…`) — nguồn không công bố; khoá 25G83; GPL-3.0 stack riêng. Không áp dụng được ngay; ý tưởng "kích hoạt muộn" ghi nhận.

@@ -31,10 +31,10 @@ Trả lời người dùng bằng tiếng Việt.
 - Trên USB: chỉ ghi trong `<usb-mount>/EFI` qua skill `usb-deploy-guard`. Không `mount`/`umount`, `mkfs`, `dd`, `fdisk`/`parted`/`sgdisk`, `wipefs`.
 - Cần ghi ngoài phạm vi: DỪNG và hỏi.
 
-## 3. Snapshot theo BẢN BUILD (tối đa 3)
+## 3. Snapshot theo BẢN BUILD (tối đa 10)
 - "Một bản build" = EFI hoàn chỉnh đã qua `efi-validate` không lỗi. Snapshot một lần khi build xong (`efi-snapshot`),
   không snapshot từng lần sửa nhỏ. Ghi mọi quyết định vào `docs/BUILD-LOG.md`.
-- Tối đa 3 trong `snapshots/`; bản `known-good` không bao giờ tự xoá (dừng và hỏi). Chỉ người dùng mới đánh dấu known-good.
+- Tối đa 10 trong `snapshots/` (người dùng đổi từ 3, 2026-11-02); bản `known-good` không bao giờ tự xoá (dừng và hỏi). Chỉ người dùng mới đánh dấu known-good.
 
 ## 4. Kiểm định driver và nguồn
 - Driver/kext/SSDT chỉ vào EFI khi đã qua `driver-vetting` VÀ người dùng duyệt trong `docs/DRIVER-MATRIX.md`.

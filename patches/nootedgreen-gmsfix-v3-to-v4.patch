@@ -1,0 +1,59 @@
+diff -ruN a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+--- a/src/NootedGreen/kern_gen11.cpp	2026-11-05 02:45:44.714082442 +0700
++++ b/src/NootedGreen/kern_gen11.cpp	2026-11-05 02:45:44.732473926 +0700
+@@ -79,6 +79,40 @@
+ }
+ static thread_call_t gTopoTc = nullptr;
+ 
++// xe/curdiag (2026-11-05): cursor-plane registers sampled ~200 ms after AppleIntelBaseController::hwSetCursorImage and
++// published on the accelerator (ioreg -rc IntelAccelerator -d1 | grep xe-cur). Diagnostic only, no behaviour change.
++// The boot log is useless for this: the kernel message buffer is overwritten by XeNG BLIT/V212 lines long before.
++static mach_vm_address_t gOrgHwSetCursorImage = 0;
++static thread_call_t gXeCurTc = nullptr;
++static volatile uint32_t gXeCurN = 0, gXeCurW = 0, gXeCurH = 0, gXeCurRet = 0;
++static void xeCurPublish(thread_call_param_t, thread_call_param_t) {
++	auto *svc = OSDynamicCast(IOService, reinterpret_cast<OSObject *>(gTopoAcc));
++	if (!svc || !NGreen::callback) return;
++	static const uint32_t regs[] = {0x70080, 0x70084, 0x70088, 0x700a0, 0x700ac};
++	static const char *const names[] = {"xe-cur-ctl", "xe-cur-base", "xe-cur-pos", "xe-cur-fbcctl", "xe-cur-surflive"};
++	for (size_t i = 0; i < arrsize(regs); i++) svc->setProperty(names[i], NGreen::callback->readReg32(regs[i]), 32);
++	svc->setProperty("xe-cur-img-w", gXeCurW, 32);
++	svc->setProperty("xe-cur-img-h", gXeCurH, 32);
++	svc->setProperty("xe-cur-ret", gXeCurRet, 32);
++	svc->setProperty("xe-cur-n", gXeCurN, 32);
++}
++static IOReturn xeHwSetCursorImage(void *that, void *fb, void *info) {
++	IOReturn r = FunctionCast(xeHwSetCursorImage, gOrgHwSetCursorImage)(that, fb, info);
++	gXeCurN++;
++	if (info) {  // IOHardwareCursorInfo: u16 major, u16 minor, u32 cursorHeight, u32 cursorWidth, ...
++		gXeCurH = *reinterpret_cast<const UInt32 *>(static_cast<const uint8_t *>(info) + 4);
++		gXeCurW = *reinterpret_cast<const UInt32 *>(static_cast<const uint8_t *>(info) + 8);
++	}
++	gXeCurRet = static_cast<uint32_t>(r);
++	if (!gXeCurTc) gXeCurTc = thread_call_allocate(xeCurPublish, nullptr);
++	if (gXeCurTc) {
++		uint64_t deadline = 0;
++		clock_interval_to_deadline(200, kMillisecondScale, &deadline);
++		thread_call_enter_delayed(gXeCurTc, deadline);
++	}
++	return r;
++}
++
+ // ==== 6 kextInfos: ICL fallback + dual TGL identities (com.xxxxx and com.apple) from /Library/Extensions ====
+ //trivial
+ // ICL FB — com.apple (fallback path)
+@@ -1457,6 +1491,14 @@
+ 				{"__ZN24AppleIntelBaseController13hwSetupMemoryEP21AppleIntelFramebufferP21AppleIntelDisplayPathP10CRTCParamsb", wrapHwSetupMemory, this->ohwSetupMemory},
+ 			};
+ 			PANIC_COND(!RouteRequestPlus::routeAll(patcher, index, requests, address, size), "ngreen","Failed to route d symbols");
++			{   // xe/curdiag: non-fatal
++				RouteRequestPlus curDiag[] = {
++					{"__ZN24AppleIntelBaseController16hwSetCursorImageEP21AppleIntelFramebufferP20IOHardwareCursorInfo", xeHwSetCursorImage, gOrgHwSetCursorImage},
++				};
++				bool curOk = RouteRequestPlus::routeAll(patcher, index, curDiag, address, size);
++				if (!curOk) patcher.clearError();
++				IOLog("XeNG CURDIAG: hwSetCursorImage route %s\n", curOk ? "OK" : "FAILED");
++			}
+ 			
+ 		}
+ 		

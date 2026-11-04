@@ -1,0 +1,40 @@
+diff -ruN a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+--- a/src/NootedGreen/kern_gen11.cpp	2026-11-03 03:49:51.797621507 +0700
++++ b/src/NootedGreen/kern_gen11.cpp	2026-11-03 03:49:27.634860069 +0700
+@@ -1230,6 +1230,28 @@
+ 		auto *activeKext = (kextG11FBTA.loadIndex == index) ? &kextG11FBTA : &kextG11FBT;
+ 		NGreen::callback->setRMMIOIfNecessary();
+ 		SYSLOG("ngreen", "init AppleIntelTGLGraphicsFramebuffer");
++
++		// xe/gmsfix-fb (2026-11-03): AppleIntelBaseController::FBMemMgr_Init (TGL FB 16.0.x le, file offset 0x5e227) decodes
++		// GGC.GMS as (GGC << 17) & 0xFE000000 in 32 bits:  shll $0x11,%eax ; andl $0xfe000000,%eax
++		// GMS 0xFE (60 MB) -> 0xFC000000 (4032 MB): the FB believes almost all of the 4 GB GGTT is stolen memory.
++		// Replace with the real size: movl $real,%eax ; nop x3 (8 bytes). Same switch as GMSFIX: -ngreennogmsfix.
++		{
++			static const uint8_t fGmsFb[] = {0xc1, 0xe0, 0x11, 0x25, 0x00, 0x00, 0x00, 0xfe};
++			static uint8_t rGmsFb[] = {0xb8, 0x00, 0x00, 0x00, 0x00, 0x90, 0x90, 0x90};
++			uint32_t gmsReal = NGreen::callback->stolen_real_size;
++			if (gmsReal && !checkKernelArgument("-ngreennogmsfix")) {
++				rGmsFb[1] = (uint8_t)(gmsReal & 0xFF);
++				rGmsFb[2] = (uint8_t)((gmsReal >> 8) & 0xFF);
++				rGmsFb[3] = (uint8_t)((gmsReal >> 16) & 0xFF);
++				rGmsFb[4] = (uint8_t)((gmsReal >> 24) & 0xFF);
++				LookupPatchPlus const gmsFixFb {activeKext, fGmsFb, static_cast<const uint8_t *>(rGmsFb), arrsize(fGmsFb), 1};
++				bool gmsFbOk = gmsFixFb.apply(patcher, address, size);
++				if (!gmsFbOk) patcher.clearError();
++				IOLog("XeNG GMSFIX fb-patch: real=%u MB patch=%s\n", gmsReal >> 20, gmsFbOk ? "OK" : "FAILED");
++			} else {
++				IOLog("XeNG GMSFIX fb-patch: skipped (real=%u)\n", gmsReal);
++			}
++		}
+ 		
+ 		bool isprod=false;
+ 		auto prod=patcher.solveSymbol(index, "__ZN24AppleIntelBaseController5startEP9IOService", address, size);
+@@ -5178,6 +5200,7 @@
+ 	xeBootDiagDump("pre-FBstart");
+ 	auto ret=FunctionCast(AppleIntelBaseControllerstart, callback->oAppleIntelBaseControllerstart)(that,param_1 );
+ 	SYSLOG("ngreen", "FBController::start() returned %d", ret);
++	IOLog("XeNG GMSFIX fb: FBController::start ret=%d stolen(0xde4)=0x%x\n", (int)ret, getMember<uint32_t>(that, 0xde4));
+ 	xeBootDiagDump("post-FBstart");
+ 	{   // again 10 s and 40 s later (thread context): writes made while the boot screen/progress bar were up and at the WindowServer handoff
+ 		static thread_call_t tc10 = nullptr, tc40 = nullptr;

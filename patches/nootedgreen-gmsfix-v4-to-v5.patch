@@ -1,0 +1,73 @@
+diff -ruN a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+--- a/src/NootedGreen/kern_gen11.cpp	2026-11-05 03:00:05.681009891 +0700
++++ b/src/NootedGreen/kern_gen11.cpp	2026-11-05 03:00:43.856601663 +0700
+@@ -85,6 +85,7 @@
+ static mach_vm_address_t gOrgHwSetCursorImage = 0;
+ static thread_call_t gXeCurTc = nullptr;
+ static volatile uint32_t gXeCurN = 0, gXeCurW = 0, gXeCurH = 0, gXeCurRet = 0;
++static void *volatile gXeCurCtl = nullptr, *volatile gXeCurFb = nullptr;  // xe/curdiag2: controller + framebuffer of the last call
+ static void xeCurPublish(thread_call_param_t, thread_call_param_t) {
+ 	auto *svc = OSDynamicCast(IOService, reinterpret_cast<OSObject *>(gTopoAcc));
+ 	if (!svc || !NGreen::callback) return;
+@@ -95,10 +96,48 @@
+ 	svc->setProperty("xe-cur-img-h", gXeCurH, 32);
+ 	svc->setProperty("xe-cur-ret", gXeCurRet, 32);
+ 	svc->setProperty("xe-cur-n", gXeCurN, 32);
++
++	// xe/curdiag2: compare what the CPU wrote (Apple's dst = ctl+0xc98 + (gaddr - ctl+0xdc0), as in hwSetCursorImage)
++	// with what the display reads (BAR2 aperture at the cursor's GGTT address), row by row, plus the 4 GGTT PTEs.
++	auto *ctl = static_cast<uint8_t *>(gXeCurCtl);
++	auto *fb = static_cast<uint8_t *>(gXeCurFb);
++	auto *cb = NGreen::callback;
++	if (ctl && fb) {
++		uint32_t idx = *reinterpret_cast<volatile uint32_t *>(fb + 0x4ad8) & 1;
++		uint32_t gaddr = *reinterpret_cast<volatile uint32_t *>(fb + 0x1f4 + idx * 4);
++		uint32_t stolenOff = *reinterpret_cast<volatile uint32_t *>(ctl + 0xdc0);
++		auto *cpuBase = *reinterpret_cast<uint8_t *volatile *>(ctl + 0xc98);
++		svc->setProperty("xe-cur-gaddr", gaddr, 32);
++		svc->setProperty("xe-cur-idx", idx, 32);
++		svc->setProperty("xe-cur-stolenoff", stolenOff, 32);
++		for (uint32_t p = 0; p < 4; p++) {
++			char k[16];
++			snprintf(k, sizeof(k), "xe-cur-pte%u", p);
++			svc->setProperty(k, ((uint64_t)cb->readReg32(GGTT_PTE_LO((gaddr >> 12) + p) + 4) << 32) | cb->readReg32(GGTT_PTE_LO((gaddr >> 12) + p)), 64);
++		}
++		const uint32_t bytes = 64 * 64 * 4;
++		volatile uint32_t *cpu = (cpuBase && gaddr >= stolenOff && (gaddr - stolenOff) + bytes <= 0x200000U) ? reinterpret_cast<volatile uint32_t *>(cpuBase + ((gaddr - stolenOff) & ~3U)) : nullptr;
++		volatile uint32_t *gpu = (cb->xeAperturePtr() && gaddr + bytes <= cb->xeApertureLen()) ? cb->xeAperturePtr() + gaddr / 4 : nullptr;
++		uint64_t rowsCpu = 0, rowsGpu = 0;
++		uint32_t diff = 0;
++		for (uint32_t r = 0; r < 64; r++) {
++			for (uint32_t x = 0; x < 64; x++) {
++				uint32_t c = cpu ? cpu[r * 64 + x] : 0, g = gpu ? gpu[r * 64 + x] : 0;
++				if (c >> 24) rowsCpu |= 1ULL << r;
++				if (g >> 24) rowsGpu |= 1ULL << r;
++				if (cpu && gpu && c != g) diff++;
++			}
++		}
++		svc->setProperty("xe-cur-rows-cpu", rowsCpu, 64);
++		svc->setProperty("xe-cur-rows-gpu", rowsGpu, 64);
++		svc->setProperty("xe-cur-diff", cpu && gpu ? diff : 0xFFFFFFFFU, 32);
++	}
+ }
+ static IOReturn xeHwSetCursorImage(void *that, void *fb, void *info) {
+ 	IOReturn r = FunctionCast(xeHwSetCursorImage, gOrgHwSetCursorImage)(that, fb, info);
+ 	gXeCurN++;
++	gXeCurCtl = that;
++	gXeCurFb = fb;
+ 	if (info) {  // IOHardwareCursorInfo: u16 major, u16 minor, u32 cursorHeight, u32 cursorWidth, ...
+ 		gXeCurH = *reinterpret_cast<const UInt32 *>(static_cast<const uint8_t *>(info) + 4);
+ 		gXeCurW = *reinterpret_cast<const UInt32 *>(static_cast<const uint8_t *>(info) + 8);
+diff -ruN a/src/NootedGreen/kern_green.hpp b/src/NootedGreen/kern_green.hpp
+--- a/src/NootedGreen/kern_green.hpp	2026-11-05 03:00:05.681009891 +0700
++++ b/src/NootedGreen/kern_green.hpp	2026-11-05 03:00:43.850859606 +0700
+@@ -285,6 +285,9 @@
+     bool isGen8LPDerivative = false;
+     bool isRealTGL = false;  // true if CPU is genuine TGL (model 0x8C/0x8D), false if spoofed (RPL/ADL)
+ public:
++	// xe/curdiag2: read-only access to the BAR2 aperture mapping for diagnostics
++	volatile UInt32 *xeAperturePtr() const { return aperturePtr; }
++	uint64_t xeApertureLen() const { return apertureLen; }
+     bool getIsRealTGL() const { return isRealTGL; }
+     uint64_t mmioLength() const { return (rmmio && rmmioPtr) ? rmmio->getLength() : 0; }  // xe/rc6fw (22/10)
+ private:

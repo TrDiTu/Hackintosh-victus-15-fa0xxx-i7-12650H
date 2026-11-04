@@ -1,31 +1,98 @@
 # STATE — bộ nhớ giữa các phiên (Claude Code cập nhật cuối mỗi phiên/pha)
 
-- Cập nhật lần cuối: (chưa có)
-- Giai đoạn / Pha hiện tại: Giai đoạn A, Pha 0 (chưa bắt đầu)
-- Hướng đồ họa: JulioNectar NootedGreen stack (đã bỏ WTLIntelGfx/XeGfx) — chỉ áp dụng ở Giai đoạn B
-- macOS mục tiêu: 26.7.1 (25G241)
-- MÁY A (chạy Claude Code): Linux. Đường dẫn mount USB: (chưa có, lưu ở config/usb-mount.txt)
-- Wi-Fi: kgp-macPro/AirportItlwm-Tahoe (người dùng đã thử, báo ổn) + root patch OCLP; phiên bản/cấu hình: (hỏi người dùng)
-- Đang chờ: người dùng chạy tools/dump-laptop.sh (Linux live USB, sudo) trên MÁY B và chép vào docs/hw-dump/
+- Cập nhật lần cuối: 2026-11-05
+- **Giai đoạn B — ĐÃ CÓ TĂNG TỐC.** build-26 `fencefix` (trên USB MACEFI): vào desktop, **Metal 2**, 1920×1080 @ 144 Hz,
+  `xe-topo` 16390 (64 EU / L3 6), con trỏ chuột hiển thị đúng (2026-11-05 03:42). Wi-Fi, Ethernet, touchpad hoạt động.
+- Stack: JulioNectar @6f03560 (user-space cài trên MÁY B) + **NootedGreen JN + patch dự án v7**
+  (`patches/nootedgreen-gmsfix-v7-jn6f03560.patch`, kext md5 `3a823f7c`). Gồm: GMSFIX (accel), GMSFIX-FB, PAVPFIX, FENCEFIX
+  + log chẩn đoán CURDIAG (ioreg `xe-cur*`, `xe-fence*`, `xe-mm*`). Nguyên nhân từng lỗi: `docs/GRAPHICS-PANIC-ANALYSIS.md` §1–9.
+- macOS 26.7.1 (25G241). Không cập nhật (phá stack đồ hoạ + root patch Wi-Fi).
+- Wi-Fi: AirportItlwm-Tahoe 1.1.0-beta.1 ZC28 + OCLP-CustoMac 3.0.3 (root patch Modern Wi-Fi đã áp trên MÁY B).
+- **Quy tắc boot-args**: toàn chuỗi ≤ 228 ký tự (Lilu); tham số đồ hoạ đứng đầu; `bootarg-add` nối vào cuối → luôn kiểm độ dài.
+- MÁY A (Claude Code) và MÁY B (Victus) là hai máy khác nhau, dùng chung một bản CachyOS.
+- USB EFI: phân vùng MACEFI (FAT32, 3 GB, USB 29,3 GB cùng Ventoy), mount `/run/media/cyra/MACEFI`; tên thiết bị đổi mỗi lần cắm
+  (`/dev/sdb3` / `/dev/sdc3`) — luôn xác nhận qua `usb-deploy-guard`.
+- Repo: `README.md` viết 2026-11-05; đã dọn (BUILD-LOG). `.gitignore` bỏ qua `logs/*.mp4` (khoá WPA), kext Apple
+  `IOSkywalkFamily`/`IO80211FamilyLegacy`, `.claude/worktrees/`. Chưa commit.
+
+## Việc tiếp theo / người dùng cần làm
+- Thử display sleep/wake (`pmset displaysleepnow`) xem con trỏ có vỡ lại (FENCEFIX chỉ chạy trong `hwSetupMemory`; `hwRestoreState` có thể ghi lại fence cũ — CHƯA XÁC MINH).
+- Khởi động lại nhiều lần; nếu ổn → bảo Claude đánh dấu **build-26 known-good**.
+- Quyết định trước khi đẩy repo public: EFI chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — xem mục Rủi ro.
+- Còn hoãn (`docs/DEFERRED.md`): audio ALC245, Bluetooth, map USB 3 (cổng SS), camera, boot không cần USB.
+
+## Quy tắc người dùng đặt
+- **KHÔNG đọc lịch sử commit của repo này** (git log/show/các commit cũ). Chỉ dùng trạng thái hiện tại + `docs/hw-dump/` + repo tham chiếu.
 
 ## Đã được người dùng duyệt
-- (chưa có)
+- 2026-11-02 GRAPHICS-PLAN: fork JulioNectar @6f03560 + ngreen-eu=64 ngreen-l3=6; SIP 0x0A13 + amfi_get_out_of_my_way=1 (chấp nhận mất sleep/màn hình ngoài, rủi ro panic); trình tự graphics-prep → install.sh → graphics-v1; máy B đã sao lưu
+- 2026-11-02 DRIVER-MATRIX: dùng tất cả trừ audio (#14,#15) và Bluetooth (#8) — tạm BỎ QUA; ECEnabler/USBToolBox/RTL8111 không có license → chấp nhận dùng cá nhân; XHCI-unsupported → tự viết injector chỉ Info.plist
+- 2026-11-02 Wi-Fi build-06: dùng payloads OCLP-CustoMac (IOSkywalkFamily, IO80211FamilyLegacy, AMFIPass — không phải release asset, binary Apple không commit), SIP 0x803 + AMFIPass (người dùng đồng ý hệ quả bảo mật)
+- 2026-11-02 touchpad: dùng fork lzhoang2801/VoodooI2C 3.0.0 (bản 2.9.1 chính thức không có 51E8)
+- 2026-11-03 F1: vá NootedGreen (GMSFIX…), build kext trên MÁY B; F2 nếu F1 thất bại (không cần)
+- 2026-11-05 build-21 known-good; xoá snapshot 12, 14, 15 (người dùng), 16, 17 (xoay vòng, đã báo)
+- 2026-11-05 dọn repo: xoá video `logs/*.mp4`, log cũ, patch gộp v1–v6, validate cũ; `.gitignore` thêm video + kext Apple + `.claude/worktrees/`
 
 ## Quyết định quan trọng
-- (chưa có)
+- Dump phần cứng nhận ngày 2026-11-01; phân tích ở `docs/MACHINE-ANALYSIS.md`.
+- Dữ kiện đã xác nhận từ dump: board 8A4F, BIOS F.34, iGPU 46A3 = GT1 UHD **64 EU** (4 DSS, mask 0x33), Wi-Fi = AX210,
+  audio ALC245, touchpad ELAN0788 (I2C0.TPD0), dGPU tại `\_SB_.PC00.PEG1.PEGP`, **CFG Lock đang bật**, VT-d đang bật.
+
+## Cập nhật 2026-11-02 (người dùng trả lời + giải mã ACPI)
+- Người dùng: `iasl` đã cài (20251212); `laptop-specs.md` đã sửa (46A3 64 EU, AX210); BIOS: **không có** Above 4G Decoding, **không có**
+  DVMT Pre-Allocated; Secure Boot = Disabled; stolen memory thật = không rõ; **L3 bank = 6**; panel 144 Hz.
+- Giải mã ACPI vào `_cache/acpi-src/` (DSDT.dsl + SSDT*.dsl). Lưu ý: `iasl -d DSDT.aml` phải chạy riêng, nạp kèm SSDT báo AE_ALREADY_EXISTS (`PEGP._S0W`).
+- dGPU: `\_SB.PC00.PEG1.PEGP` (ADR 0x00010000/0), DSDT chỉ khai báo rỗng; `_PS0/_PS3/_OFF/_DSM` nằm ở SSDT14 (và SSDT11 `SGPO`, SSDT16 `L23D/DL23`).
+  `_OFF` gọi `\_SB.PC00.PEG1.PXP._OFF` nếu có (`CondRefOf`); chưa thấy định nghĩa `PXP_` trong DSDT/SSDT đã dump → đường tắt dGPU CHƯA XÁC MINH.
+- Touchpad: `\_SB.PC00.I2C0.TPD0`, `_HID` ban đầu MSFT1234 → `_INI` đổi thành ELAN0788; I2C 0x15 @ 400 kHz (0x61A80);
+  `_CRS`: OSYS < 0x07DC (không phải Win10+) trả về chỉ SBFI (ngắt APIC), ngược lại tuỳ TPDM (0 = GpioInt qua `\_SB.GPI0`). GPI0 `_HID` = INTC1055 (hoặc PNP0C02 nếu GPHD=1).
+  → macOS báo OSYS thấp nên nhiều khả năng cần SSDT-XOSI/SSDT-GPI0 hoặc chế độ polling của VoodooI2C; CHƯA XÁC MINH trên máy thật.
+- Repo clone: victus-r1 (sulthonuladib/victus-15-fa0xxx-hackintosh) @ e3802fa; AGENTS.md đã đổi thành `*.ref-ignored`. Có `scan/ACPI` để đối chiếu.
+
+## Pha 1 — 2026-11-02
+- `docs/DRIVER-MATRIX.md` lập xong (23 thiết bị + 7 SSDT). Chưa tải binary, chưa có `EFI/`, `docs/SOURCES.md` chưa tạo (tạo khi `release-fetch`).
+- Phát hiện chính: Tahoe gỡ AppleHDA (audio cần SimpleHDA — không license, chứa binary Apple — hoặc root patch OCLP); IntelBluetoothFirmware upstream 2.4.0
+  lỗi với `8087:0032` trên Tahoe, chỉ fork lshbluesky 2.5.2 có bằng chứng; AirportItlwm-Tahoe v1.0.0 chưa kiểm định 25G241; VoodooI2C 2.9.1 có 51E8 + INTC1055;
+  RTS5228 KHÔNG CÓ DRIVER; ECEnabler/SimpleHDA/USBToolBox/RTL8111 không có SPDX license trên GitHub; refs dùng kext nightly (không theo).
+
+## Tải binary — 2026-11-02 (release-fetch, ghi ở docs/SOURCES.md, Used in EFI = not yet)
+- OpenCore 1.0.8, Lilu 1.7.2, VirtualSMC 1.3.8, CpuTopologyRebuild 2.0.2, RestrictEvents 1.1.6, WhateverGreen 1.7.1, AirportItlwm-Tahoe v1.0.0
+  (zip/exec/Info.plist khớp README), RealtekRTL8111 v3.0.0, NVMeFix 1.1.3, VoodooI2C 2.9.1, VoodooPS2 2.3.7, BrightnessKeys 1.0.3, USBToolBox 1.2.0, ECEnabler 1.0.6.
+- Ghi chú công cụ: `release-fetch` cần `GITHUB_TOKEN`; dùng `export GITHUB_TOKEN="$(gh auth token)"` trong lệnh (không lưu, không in). Không có token → 403 rate limit.
+
+## Pha 2 — 2026-11-02
+- 6 SSDT tự viết từ DSDT thật (`docs/acpi-src/`, iasl 0 lỗi): PLUG-ALT, EC-USBX, AWAC, XOSI (+patch `_OSI`→`XOSI` chỉ DSDT), DGPU-OFF (`PEGP._INI`→`PEGP._OFF`→`PEG1.PXP._OFF`, SSDT4:3615), SBUS-MCHC. Không cần SSDT-GPI0.
+- Đính chính: VoodooI2C 2.9.1 chính thức không có 51E8 → fork lzhoang2801 3.0.0 (người dùng duyệt).
+- `_cache/acpi-src` đổi tên thành `_cache/acpi` (theo skill ssdt-authoring).
+- Lỗi công cụ ghi nhận: `plist_edit.py` guard từ chối ROM toàn 0 (ROM là data) → ROM giữ mẫu 112233445566.
+
+## Rà soát workspace 2026-11-02 (theo yêu cầu người dùng)
+- Đã đọc: PROMPT.md, README-SETUP.md, .claude/settings.json, REFERENCES.md, các SKILL.md liên quan, deploy_usb.py, tools/lib/smbios.py, .remember/.
+- Sai sót phát hiện & sửa ở build-02: spoof iGPU (trái PROMPT Pha 2), thiếu GPU-STRATEGY.md, thiếu config-install.plist, ROM mẫu chặn tiêm SMBIOS.
+- Còn thiếu theo PROMPT.md: Pha 4 (`docs/INSTALL-RUNBOOK.md`, `docs/POSTINSTALL-RUNBOOK.md`, TEST-PLAN đầy đủ + "mốc trước tăng tốc", cách lấy bộ cài 25G241).
+- Git: settings.json chặn `git push`; `.gitignore` đã có `.claude/worktrees/` (2026-11-05). EFI/ chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — cân nhắc trước khi đưa lên repo public.
 
 ## Bản build
-- Mới nhất: (chưa có)
-- known-good: (chưa có)
+- Mới nhất: **build-26 `fencefix`** = build-21 + NootedGreen v7 (trên USB, ghi 2026-11-05 03:40). Thư mục `EFI/` dự án = build-26.
+- known-good: **build-10** (EFI nền, không tăng tốc) và **build-21** (Metal 2, con trỏ còn lỗi). Đường lui: build-21 / build-10 / `EFI/OC/config-install.plist` (= build-10).
+- Snapshot (10/10): 10★, 18, 19, 20, 21★, 22, 23, 24, 25, 26. `snapshot.py` không tự bỏ qua known-good build-10 → khi đầy phải xoá tay bản cũ nhất không phải known-good (đã xoá 12, 14, 15, 16, 17).
 
 ## Repo tham chiếu đã clone (tên @ commit)
-- (chưa có)
-
-## Việc người dùng cần làm
-- Sửa laptop-specs.md: iGPU 46A3 là GT1 UHD 64 EU; xác nhận model Wi-Fi (ID 2725 = AX210)
-- Dump phần cứng trên MÁY B; chuẩn bị bộ cài macOS 26.7.1 (25G241) offline
+- victus-r1 @ e3802fa94ea26f6616d6ad87e494120bd407ab60
+- cheseecake (cheseecake/i3-1220p-macos-gpu) @ 788158727daf9ec546888910e7eb9c9028d9d944
+- juliornectar (JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe; tên thư mục gõ nhầm) @ 6f03560ef9694f9826caae15624d4a6cb1bf9ffc
+- khucxtriendev (khucxtriendev/irisxegraphic-i712800h-efi) @ 26ee7f337831bc8c225dfcdfeb609bba444ac31e
 
 ## Rủi ro / CHƯA XÁC MINH đang mở
-- Topology 64 EU cho 46A3 chưa có tiền lệ trên đúng máy này
-- Tương tác giữa root patch OCLP (Wi-Fi) và stack đồ họa NootedGreen chưa ai ghi nhận
-- Panic IOAccelTask::release trên Alder Lake-H có dGPU (JulioNectar #24, #16); DVMT của BIOS HP chưa biết
+- FENCEFIX sau display sleep/wake hoặc đổi chế độ màn hình (fence có thể bị ghi lại từ giá trị cache của FB).
+- Ổn định dài hạn của stack (GPU hang ngẫu nhiên đã được JN ghi nhận); chưa chạy tải nặng.
+- PAVPFIX tắt đường PAVP → không phát được video có DRM.
+- Kext không có SPDX license trong EFI: ECEnabler, USBToolBox, RTL8111 (chấp nhận dùng cá nhân; cân nhắc trước khi public).
+- Patch NootedGreen là sửa đổi theo Thou Shalt Not Profit 1.0 — chỉ phi lợi nhuận.
+
+## Đã giải quyết (tham khảo)
+- Boot-args bị cắt ở 255 (Lilu ~228) → rút còn 224 (H1).
+- Panic `IGAccelTask::withOptions` CR2 0xc78 → GMSFIX (GMS 0xFE giải mã sai) (H3).
+- Panic WindowServer `getAttributeExt+0x25` → GMSFIX-FB (H4). Panic `PAVPCommandCallback` CR2 0xb8 → PAVPFIX.
+- Con trỏ vỡ → FENCEFIX (fence X-tile 64 MB tràn qua stolen 60 MB). Bác bỏ: topology/DSS (H5), băng thông 144 Hz (H7), stride (H6), lệch trang GGTT.
+- Stolen memory đo được 60 MB (GGC 0xFEC1); dGPU tắt bằng SSDT-DGPU-OFF hoạt động (build-05); touchpad chạy polling (`force-polling` trên I2C0).

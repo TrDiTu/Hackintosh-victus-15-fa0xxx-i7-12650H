@@ -1,0 +1,41 @@
+diff -ruN a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+--- a/src/NootedGreen/kern_gen11.cpp	2026-11-05 03:19:22.176732304 +0700
++++ b/src/NootedGreen/kern_gen11.cpp	2026-11-05 03:19:22.193287741 +0700
+@@ -131,6 +131,37 @@
+ 		svc->setProperty("xe-cur-rows-cpu", rowsCpu, 64);
+ 		svc->setProperty("xe-cur-rows-gpu", rowsGpu, 64);
+ 		svc->setProperty("xe-cur-diff", cpu && gpu ? diff : 0xFFFFFFFFU, 32);
++
++		// xe/curdiag3: the CPU writes the cursor through the BAR2 aperture (ctl+0xc98 = map of withSubRange(ctl+0xc80,
++		// ctl+0xdc0, ctl+0xdc8)), so a tiling fence over that range would detile CPU writes while the display reads raw
++		// memory. Publish every valid fence, the one covering the cursor, the FB's post-stolen window and the
++		// accelerator's GPU VA segment start (GMSFIX makes it 60 MB, the same place the FB window starts).
++		svc->setProperty("xe-cur-fbwin", *reinterpret_cast<volatile uint32_t *>(ctl + 0xdc8), 32);
++		uint32_t fenceHit = 0xFF, fenceValid = 0;
++		for (uint32_t i = 0; i < 32; i++) {
++			uint32_t lo = cb->readReg32(0x100000 + i * 8), hi = cb->readReg32(0x100000 + i * 8 + 4);
++			if (!(lo & 1)) continue;
++			fenceValid++;
++			char k[24];
++			snprintf(k, sizeof(k), "xe-fence%02u", i);
++			svc->setProperty(k, ((uint64_t)hi << 32) | lo, 64);
++			uint32_t start = lo & 0xFFFFF000U, end = hi & 0xFFFFF000U;
++			if (gaddr >= start && gaddr <= end + 0xFFFU && fenceHit == 0xFF) fenceHit = i;
++		}
++		svc->setProperty("xe-fence-valid", fenceValid, 32);
++		svc->setProperty("xe-fence-hit", fenceHit, 32);
++	}
++	{
++		auto *acc = static_cast<uint8_t *>(gTopoAcc);
++		auto *mm = acc ? *reinterpret_cast<uint8_t *volatile *>(acc + 0x1260) : nullptr;
++		if (acc) svc->setProperty("xe-acc-fbreg", (uint32_t)*reinterpret_cast<volatile uint8_t *>(acc + 0x128c), 32);
++		if (mm) {
++			svc->setProperty("xe-mm-seg", *reinterpret_cast<volatile uint64_t *>(mm + 0xa8), 64);
++			svc->setProperty("xe-mm-rangestart", *reinterpret_cast<volatile uint64_t *>(mm + 0xb0), 64);
++			svc->setProperty("xe-mm-rangesize", *reinterpret_cast<volatile uint64_t *>(mm + 0xb8), 64);
++			svc->setProperty("xe-mm-stolen30", *reinterpret_cast<volatile uint64_t *>(mm + 0x30), 64);
++			svc->setProperty("xe-mm-stolen38", *reinterpret_cast<volatile uint64_t *>(mm + 0x38), 64);
++		}
+ 	}
+ }
+ static IOReturn xeHwSetCursorImage(void *that, void *fb, void *info) {

@@ -121,7 +121,11 @@ def hexify(o):
 
 def guard_secret(segs, value):
     if segs and segs[-1][0] == "key" and segs[-1][1] in SECRET_KEYS:
-        if not (isinstance(value, str) and (value.startswith("CHANGE_ME") or value.strip("0-") == "")):
+        # Placeholder = same definition as tools/lib/smbios.is_placeholder: CHANGE_ME*/all-zero string,
+        # or all-zero data (ROM placeholder is 6 zero bytes, which arrives here already converted to bytes).
+        is_zero_bytes = isinstance(value, (bytes, bytearray)) and len(value) > 0 and not any(value)
+        is_ph_str = isinstance(value, str) and (value.startswith("CHANGE_ME") or value.strip("0-") == "")
+        if not (is_zero_bytes or is_ph_str):
             raise ValueError("refusing to write a real-looking %s into the project EFI; use smbios-secrets" % segs[-1][1])
 
 

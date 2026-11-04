@@ -1,0 +1,28 @@
+diff -ruN a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+--- a/src/NootedGreen/kern_gen11.cpp	2026-11-04 21:52:19.291980868 +0700
++++ b/src/NootedGreen/kern_gen11.cpp	2026-11-04 21:52:36.081977383 +0700
+@@ -2389,6 +2389,24 @@
+ 				}
+ 			}
+ 
++			// xe/pavpfix (2026-11-04): IntelAccelerator::PAVPCommandCallback (TGL 16.0.x le, 0x29c50) decides "PAVP on"
++			// from the hardware register 0x1082C0 (bits 1|2, set and locked by many OEM BIOSes) and then dereferences the
++			// PAVP hardware context at accel+0x1278. That context is only created in startGraphicsEngine when
++			// accel+0x1300 bit 3 is set, which is not the case here -> NULL+0xb8 page fault, called from
++			// IntelAccelerator::startGraphicsEngine (command 3). Force the "PAVP disabled" path (what Apple runs when the
++			// BIOS leaves PAVP off): cmpb $0,fPavpEnabled(%rip) ; je +0xda  ->  same cmpb ; jmp +0xdb ; nop
++			// Protected (DRM) video playback is not available with this. Non-fatal. Off: -ngreennopavpfix.
++			if (!checkKernelArgument("-ngreennopavpfix")) {
++				static const uint8_t fPavp[] = {0x80, 0x3d, 0x3c, 0x1f, 0x12, 0x00, 0x00, 0x0f, 0x84, 0xda, 0x00, 0x00, 0x00};
++				static const uint8_t rPavp[] = {0x80, 0x3d, 0x3c, 0x1f, 0x12, 0x00, 0x00, 0xe9, 0xdb, 0x00, 0x00, 0x00, 0x90};
++				LookupPatchPlus const pavpFix {activeKext, fPavp, static_cast<const uint8_t *>(rPavp), arrsize(fPavp), 1};
++				bool pavpOk = pavpFix.apply(patcher, address, size);
++				if (!pavpOk) patcher.clearError();
++				IOLog("XeNG PAVPFIX: patch=%s\n", pavpOk ? "OK" : "FAILED");
++			} else {
++				IOLog("XeNG PAVPFIX: skipped\n");
++			}
++
+ 			if (!NGreen::callback->isRealTGL) {
+ 				// RPL-only: hardcode topology and bypass BCS readiness check
+ 				xeTopoArgs();

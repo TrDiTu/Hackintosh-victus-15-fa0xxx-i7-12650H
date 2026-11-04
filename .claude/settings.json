@@ -1,4 +1,5 @@
 {
+  "worktree": {"bgIsolation": "none"},
   "permissions": {
     "defaultMode": "default",
     "allow": [
@@ -15,7 +16,9 @@
       "Bash(python3 .claude/skills/config-plist-tools/scripts/plist_edit.py get *)",
       "Bash(python3 .claude/skills/config-plist-tools/scripts/plist_edit.py * --dry-run*)",
       "Bash(python3 .claude/skills/release-fetch/scripts/fetch_release.py * --dry-run*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Edit(/docs/**)",
+      "Edit(/config/usb-mount.txt)"
     ],
     "ask": [
       "Bash(python3 .claude/skills/usb-deploy-guard/scripts/deploy_usb.py * --confirmed*)",
@@ -49,12 +52,11 @@
       "Bash(*install.sh*)",
       "Read(~/.ssh/**)",
       "Read(~/.gnupg/**)",
-      "Read(./secrets/**)",
-      "Edit(./secrets/**)",
-      "Write(./secrets/smbios.json)",
       "Bash(*secrets/smbios.json*)",
       "Bash(*smbios.json*)",
-      "Read(./_cache/stage/**)"
+      "Read(/secrets/**)",
+      "Edit(/secrets/**)",
+      "Read(/_cache/stage/**)"
     ]
   }
 }

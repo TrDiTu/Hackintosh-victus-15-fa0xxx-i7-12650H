@@ -1,6 +1,6 @@
 ---
 name: efi-snapshot
-description: Create a snapshot of one COMPLETE EFI build (max 3, rotating, known-good protected). Use whenever an EFI build just passed efi-validate, the user says "snapshot", "lưu bản build", "backup EFI", "tạo build mới", or before overwriting the USB EFI. Do NOT use for each small driver/config tweak while a build is still in progress.
+description: Create a snapshot of one COMPLETE EFI build (max 10, rotating, known-good protected). Use whenever an EFI build just passed efi-validate, the user says "snapshot", "lưu bản build", "backup EFI", "tạo build mới", or before overwriting the USB EFI. Do NOT use for each small driver/config tweak while a build is still in progress.
 ---
 
 # efi-snapshot
@@ -31,6 +31,6 @@ CHỈ khi người dùng yêu cầu rõ ràng: `--mark-known-good build-NN`. Kh�
 
 ## Quy tắc cứng
 - Chỉ ghi/xoá bên trong `<workspace>\snapshots\`. Script từ chối đường dẫn ngoài phạm vi.
-- Tối đa 3. Không sửa tay MANIFEST hay thư mục snapshot ngoài script.
+- Tối đa 10 (người dùng đổi từ 3, 2026-11-02). Không sửa tay MANIFEST hay thư mục snapshot ngoài script.
 - Mỗi snapshot có `MANIFEST.md/.json`: thay đổi, danh sách kext + phiên bản, SHA256 config.plist,
   kết quả ocvalidate, cờ known-good. Không ghi serial/MLB/UUID thật vào `--note`.

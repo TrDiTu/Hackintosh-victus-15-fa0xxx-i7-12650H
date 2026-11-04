@@ -1,0 +1,56 @@
+diff -ruN a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+--- a/src/NootedGreen/kern_gen11.cpp	2026-11-05 03:33:40.316175968 +0700
++++ b/src/NootedGreen/kern_gen11.cpp	2026-11-05 03:33:40.333310207 +0700
+@@ -86,6 +86,7 @@
+ static thread_call_t gXeCurTc = nullptr;
+ static volatile uint32_t gXeCurN = 0, gXeCurW = 0, gXeCurH = 0, gXeCurRet = 0;
+ static void *volatile gXeCurCtl = nullptr, *volatile gXeCurFb = nullptr;  // xe/curdiag2: controller + framebuffer of the last call
++static volatile uint32_t gXeFenceFixN = 0, gXeFenceFixLast = 0;  // xe/fencefix: clamps done, last new end
+ static void xeCurPublish(thread_call_param_t, thread_call_param_t) {
+ 	auto *svc = OSDynamicCast(IOService, reinterpret_cast<OSObject *>(gTopoAcc));
+ 	if (!svc || !NGreen::callback) return;
+@@ -150,6 +151,8 @@
+ 		}
+ 		svc->setProperty("xe-fence-valid", fenceValid, 32);
+ 		svc->setProperty("xe-fence-hit", fenceHit, 32);
++		svc->setProperty("xe-fencefix-n", gXeFenceFixN, 32);
++		svc->setProperty("xe-fencefix-end", gXeFenceFixLast, 32);
+ 	}
+ 	{
+ 		auto *acc = static_cast<uint8_t *>(gTopoAcc);
+@@ -5593,6 +5596,35 @@
+ 			   pteHi, pteLo, pteLo & 1, (pteLo >> 3) & 1);
+ 	}
+ 
++	// xe/fencefix (2026-11-05): hwSetupMemory (TGL FB le 0x6e03f) programs the framebuffer's X-tile fence as
++	// [surf, surf + ctl+0xde8 - 1], where ctl+0xde8 is the per-framebuffer memory size from Apple's platform table
++	// (64 MB here). With only 60 MB of stolen memory (GMSFIX) a fence over a surface at GGTT 0 runs past the end of
++	// stolen into the FB's post-stolen window, where the cursor buffers live (0x3C00000+): the CPU writes the cursor
++	// through the aperture (detiled by the fence) and the cursor plane reads it linear -> broken pointer.
++	// Clamp the fence end to the last page of stolen memory. Only for fences that start inside stolen and cross
++	// its end. Same split-write order as i915 (disable, high dword, enable). Off: -ngreennofencefix.
++	if (NGreen::callback && NGreen::callback->mmioValid() && !checkKernelArgument("-ngreennofencefix")) {
++		uint8_t fIdx = getMember<uint8_t>(fb, 0x4288);
++		uint32_t stolen = getMember<uint32_t>(that, 0xdc0);
++		if (fIdx < 32 && stolen >= 0x1000) {
++			uint32_t fLo = NGreen::callback->readReg32(0x100000 + fIdx * 8);
++			uint32_t fHi = NGreen::callback->readReg32(0x100004 + fIdx * 8);
++			uint32_t fStart = fLo & 0xFFFFF000U, fEnd = fHi & 0xFFFFF000U;
++			if ((fLo & 1) && fStart < stolen && fEnd >= stolen) {
++				uint32_t newEnd = (stolen - 0x1000U) & 0xFFFFF000U;
++				if (newEnd >= fStart) {
++					NGreen::callback->writeReg32(0x100000 + fIdx * 8, 0);
++					NGreen::callback->writeReg32(0x100004 + fIdx * 8, newEnd | (fHi & 0xFFFU));
++					NGreen::callback->writeReg32(0x100000 + fIdx * 8, fLo);
++					gXeFenceFixN++;
++					gXeFenceFixLast = newEnd;
++					if (gXeFenceFixN <= 4)
++						IOLog("XeNG FENCEFIX: fence%u end 0x%x -> 0x%x (stolen 0x%x)\n", fIdx, fEnd, newEnd, stolen);
++				}
++			}
++		}
++	}
++
+ 	return ret;
+ }
+ 

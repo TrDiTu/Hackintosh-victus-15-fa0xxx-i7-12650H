@@ -4,8 +4,8 @@
 Xây dựng EFI OpenCore cho laptop của tôi (MÁY B: HP Victus 15-fa0xxx, mô tả trong `laptop-specs.md` và `docs/hw-dump/`),
 target macOS 26.7.1 (25G241), theo hai giai đoạn:
 
-**Giai đoạn A — EFI nền (không tăng tốc đồ họa):** driver cho TẤT CẢ thiết bị, boot ổn định.
-Bắt buộc: Wi-Fi bằng **kgp-macPro/AirportItlwm-Tahoe** (tôi đã dùng thử, hoạt động ổn), touchpad ELAN0788 (I2C) và bàn phím PS/2, dGPU tắt nguồn, iGPU hiển thị qua
+**Giai đoạn A — EFI nền (không tăng tốc đồ họa):** driver cho TẤT CẢ thiết bị, boot ổn định. <br>
+Đề xuất: Wi-Fi bằng **kgp-macPro/AirportItlwm-Tahoe**, touchpad ELAN0788 (I2C) và bàn phím PS/2, dGPU tắt nguồn, iGPU hiển thị qua
 framebuffer firmware.
 
 **Giai đoạn B — Tăng tốc Metal cho iGPU 46A3** theo stack JulioNectar (NootedGreen + driver TGL 16.0.32), dùng
@@ -24,7 +24,7 @@ trong khả năng của hướng này.
 **Pha 1 — Driver cho mọi thiết bị** (`driver-vetting`)
 - Lập `docs/DRIVER-MATRIX.md` + `docs/SOURCES.md`. Xét các ứng viên đặc thù HP Victus trong REFERENCES (lỗi RTC 005,
   ECEnabler, layout-id ALC245, `-vi2c-force-polling`) như gợi ý cần kiểm chứng.
-- Wi-Fi: dùng kgp-macPro/AirportItlwm-Tahoe theo yêu cầu của tôi. Đọc README + INSTALL.md mới nhất của repo, ghi phiên bản
+- Wi-Fi: dùng kgp-macPro/AirportItlwm-Tahoe theo yêu cầu. Đọc README + INSTALL.md mới nhất của repo, ghi phiên bản
   release đã kiểm định (không dùng bản CI/alpha), SHA-256 và UUID theo hướng dẫn của repo. Lưu ý: repo cần root patch
   "Modern Wireless" của OCLP (bản fork OCLP-CustoMac) và chọn `DisableIoMapper` theo cấu hình AppleVTD hoặc thường. Hỏi tôi
   phiên bản/cấu hình tôi đã chạy thử, rồi ghi vào DRIVER-MATRIX là "người dùng đã thử".
@@ -68,6 +68,6 @@ validate, snapshot build mới.
 
 ## Đầu ra
 `EFI/`, `<usb-mount>/EFI` (sau khi duyệt), `docs/` (STATE, MACHINE-ANALYSIS, DRIVER-MATRIX, SOURCES, GPU-STRATEGY, TEST-PLAN,
-BUILD-LOG, GRAPHICS-PLAN, GRAPHICS-RUNBOOK, GRAPHICS-PROGRESS), `snapshots/` (tối đa 3).
+BUILD-LOG, GRAPHICS-PLAN, GRAPHICS-RUNBOOK, GRAPHICS-PROGRESS), `snapshots/` (tối đa 10).
 
 Bắt đầu: đọc các file nêu trên, tóm tắt hiện trạng, rồi làm Pha 0.
