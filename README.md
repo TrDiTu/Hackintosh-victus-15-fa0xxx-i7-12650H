@@ -31,6 +31,7 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Pin, nhiệt độ CPU, phím độ sáng | ✅ |
 | **Hiệu năng CPU** | ✅ Geekbench 7 **2030 / 9646** = 92 % / 95 % Linux cùng máy (XE-PM + XE-HWPAUTO; trước đó 1076 / 5837) — [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | iGPU (Geekbench 7 Metal) | 1094 (chưa có mốc so sánh cùng phiên bản) |
+| Vulkan | ✅ Vulkan 1.4 qua **MoltenVK** (LunarG Vulkan SDK; `vulkaninfo` thấy iGPU, `vkcube` chạy) — không geometry shader, không float64 |
 | USB | ✅ 2 cổng USB-A có USB 3 (SS01/SS02, map từ Linux bằng `tools/map-usb-linux.sh`); USB-C qua controller TB4 do macOS tự nhận (chưa đo tốc độ) |
 | Boot không cần USB | ✅ OpenCore trên ESP ổ NVMe, cạnh Limine (CachyOS) — [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §4 |
 | dGPU RTX 3050 Ti | ⛔ tắt bằng SSDT (macOS không có driver); **HDMI không dùng được** (nối vào dGPU) |

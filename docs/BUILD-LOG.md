@@ -847,3 +847,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T04:39:32 Marked build-37 known-good (người dùng).
 - 2026-11-06 04:40: người dùng đặt mục tiêu mới → docs/ROADMAP.md (G1 iGPU, G2 Vulkan, G3 HW decode, G4 boot time). JN 6f03560 có sẵn XE-GTFREQ (ngreengtfreq), -ngreengva + macos/vadriver, Vulkan qua MoltenVK, gfxrst=1.
 - 2026-11-06 05:01: G2 Vulkan — MoltenVK thấy iGPU (Intel(R) TGL, 0x9a49, Vulkan 1.4.357, MoltenVK 1.4.2). Ghi ROADMAP.
+- 2026-11-06 05:02: vkcube chạy → G2 Vulkan xong (README thêm dòng Vulkan).

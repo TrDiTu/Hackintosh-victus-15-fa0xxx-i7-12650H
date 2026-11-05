@@ -16,12 +16,12 @@ HWPAUTO và tắt C8/C10 (bỏ `ngreenpmcst=0 ngreenpmauto=1`, giải phóng 30 
 - Bước 1: đo xung GT thật lúc GB7 Metal (dòng `XeNG CS … gtf=` trong `dmesg` 10 phút đầu sau boot; `xe-monitor.py` igpu_W).
 - Bước 2: tuỳ kết quả — sàn `ngreengtfreq`, topology/L3, scheduler (`ngreenSched`); so điểm Metal trước/sau.
 
-## G2 — Vulkan
+## G2 — Vulkan ✅
 - JN: **Vulkan 1.4 qua MoltenVK** (LunarG Vulkan SDK), không cần sửa code; `vulkaninfo` thấy GPU, `vkcube` chạy trên GPU.
 - Bước: cài Vulkan SDK (LunarG, bản chính thức) trên MÁY B → `vulkaninfo --summary`, `vkcube`. Hiệu năng bị giới hạn bởi Metal (G1).
 - **Kết quả 2026-11-06 (build-37):** SDK 1.4.363.1, `VK_DRIVER_FILES=…/MoltenVK_icd.json` → `vulkaninfo`: GPU0 `Intel(R) TGL Unknown`,
   0x9a49, INTEGRATED_GPU, MoltenVK 1.4.2, apiVersion 1.4.357. Cảnh báo layer trùng (SDK cài cả `~/VulkanSDK` lẫn `/usr/local`) và lỗi
-  validation `LayeredApiProperties` của vulkaninfo — vô hại. Chờ `vkcube`.
+  validation `LayeredApiProperties` của vulkaninfo — vô hại. `vkcube` chạy. **G2 XONG.**
 
 ## G3 — Giải mã video phần cứng
 - JN: **H.264 giải mã trên GPU** (bit-exact) cho app dùng VideoToolbox; cần boot-arg `-ngreengva` + plugin VA đã vá
