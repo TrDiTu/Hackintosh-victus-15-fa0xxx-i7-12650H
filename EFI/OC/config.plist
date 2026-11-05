@@ -1089,7 +1089,7 @@
 				Rg==
 				</data>
 				<key>boot-args</key>
-				<string>ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta -v</string>
+				<string>ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta</string>
 				<key>csr-active-config</key>
 				<data>
 				EwoAAA==
