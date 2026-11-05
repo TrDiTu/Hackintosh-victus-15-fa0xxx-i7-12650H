@@ -3,7 +3,8 @@
 //
 // Method: a chain of dependent integer ADDs costs exactly 1 cycle each on Golden Cove (P) and Gracemont (E) cores,
 // so ADDs per second = core clock. Each thread runs the chain for a short window and reports MHz. macOS decides
-// which core a thread lands on (no pinning): P-core threads show the higher numbers.
+// which core a thread lands on (no pinning): P-core threads show the higher numbers. Two threads on one P-core
+// (Hyper-Threading) share it, so with 16 threads some threads read about half the core clock.
 //
 // Build:  clang -O2 -o xe-freq xe-freq.c -lpthread
 // Use:    ./xe-freq            one thread, 10 samples (~10 s, single-core turbo)
@@ -44,22 +45,26 @@ static uint64_t timer_step_ns(void) {
 	return best;
 }
 
-// 100 dependent adds per call; the compiler cannot reorder or drop them (asm volatile, register dependency).
-static inline void chain(uint64_t *x) {
+// 100 dependent register-register adds per call. NOT "add $imm": Golden Cove (ADL P-core) folds add-immediate chains
+// in the renamer and retires several per cycle (gave 20 GHz). The addend comes from memory at run time, so it cannot
+// be folded; reg-reg ADD latency is 1 cycle on Golden Cove and Gracemont.
+static volatile uint64_t g_one = 1;
+static inline void chain(uint64_t *x, uint64_t y) {
 	__asm__ volatile(
-#define A "add $1, %0\n\t"
+#define A "add %1, %0\n\t"
 #define A10 A A A A A A A A A A
 		A10 A10 A10 A10 A10 A10 A10 A10 A10 A10
 #undef A10
 #undef A
-		: "+r"(*x));
+		: "+r"(*x)
+		: "r"(y));
 }
 
 static double measure_mhz(uint64_t iters) {
-	uint64_t x = 0;
-	for (uint64_t i = 0; i < iters / 10; i++) chain(&x);  // warm-up: let the core ramp its clock
+	uint64_t x = 0, y = g_one;
+	for (uint64_t i = 0; i < iters / 10; i++) chain(&x, y);  // warm-up: let the core ramp its clock
 	uint64_t t0 = now_ns();
-	for (uint64_t i = 0; i < iters; i++) chain(&x);
+	for (uint64_t i = 0; i < iters; i++) chain(&x, y);
 	uint64_t t1 = now_ns();
 	if (x == 42) puts("");  // keep x live
 	return (double)iters * ADDS_PER_ITER / ((double)(t1 - t0) / 1e3);  // adds per microsecond = MHz
