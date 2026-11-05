@@ -828,3 +828,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T03:43:00 Created build-36-20261106-034300-hwpauto (tree 68c31dc0f0d4, ocvalidate: 0 errors, 0 warnings (validate-20261106T034201.md))
 - 2026-11-06T03:43:17 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree edb09afd9f88, verified)
 - 2026-11-06 03:43: build-36 hwpauto ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 03:48: build-36 + ctrsmt=off (NVRAM còn): xe-freq hwpauto 0/1 = 4391/4376 MHz → HWPAUTO không tác dụng đo được. Kết quả xe-freq lệch lớn giữa các lần cùng cấu hình (3462 vs 4380).

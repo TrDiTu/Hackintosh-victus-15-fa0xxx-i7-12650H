@@ -78,3 +78,7 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   macOS build-35 — luồng đi qua **2–16 nhân mỗi giây**, E-core chỉ 1 % trung bình; xung tỉ lệ nghịch số nhân (2–4 nhân ≈ 4550 MHz,
   12–16 nhân 2000–3800 MHz). → bộ lập lịch XNU chuyển luồng liên tục giữa các P-core (nhân mới còn xung thấp, cache lạnh), không phải E-core.
   Nghi: topology SMT giả của CpuTopologyRebuild mặc định (6c/16t). Thử `ctrsmt=off` qua NVRAM (CHƯA XÁC MINH).
+- Build-36 (NootedGreen v8), **NVRAM `ctrsmt=off` vẫn bật** (hw.physicalcpu 10): xe-freq `hwpauto=0` avg 4391 MHz, `hwpauto=1` avg 4376 MHz
+  → HWPAUTO không khác biệt (để tắt). Luồng chỉ qua 1–3 nhân, phần tụt là lúc ở E-core (3489 MHz, 100 % E), E-core ~15 %.
+  Cùng `ctrsmt=off` lúc 03:33 chỉ 3462 MHz / tới 10 nhân → **xe-freq dao động mạnh giữa các lần** (tải nền sau boot?): cần nhiều lần đo,
+  chờ vài phút sau boot, kiểm `top` trước khi kết luận.
