@@ -646,3 +646,103 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - `.gitignore`: thêm `logs/*.mp4` và kext Apple `IOSkywalkFamily.kext`, `IO80211FamilyLegacy.kext` trong EFI.
 - Không đụng: `.claude/worktrees/` (có nhánh `claude/do-not-touch-this`), `_cache/refs`, `_cache/downloads`, `snapshots/`, các docs cũ, file `.panic`, ảnh.
 - 2026-11-05T03:47:56 .gitignore: thêm .claude/worktrees/ (người dùng yêu cầu).
+- 2026-11-05T19:34:40 Created build-26-20261105-193440-fencefix-restored (tree c69972f2ffb4, ocvalidate: 0 errors, 0 warnings (validate-20261105T193419.md))
+
+## Dựng lại dự án từ USB (2026-11-05 19:30, người dùng: "mất hết thư mục dự án cũ")
+- Thư mục dự án là bản clone mới từ git: mất mọi file trong `.gitignore` — `_cache/` (refs, downloads, acpi, user-inputs với các bản NootedGreen cũ), `snapshots/` (gồm known-good build-10, build-21), `docs/hw-dump/`, `docs/MACHINE-ANALYSIS.md`, `docs/GRAPHICS-PANIC-ANALYSIS.md`, `docs/validation/`, `config/usb-mount.txt`, 2 kext Apple trong EFI.
+- So với USB MACEFI (build-26): `config.plist` chỉ khác 4 trường SMBIOS (đúng — serial chỉ tiêm lúc ghi USB); `config-install.plist` 0 khác biệt; NootedGreen md5 `3a823f7c` khớp; thiếu `IOSkywalkFamily.kext`, `IO80211FamilyLegacy.kext`.
+- Tải lại 2 zip từ OCLP-CustoMac @ f2bbcef (`_cache/downloads/oclp-customac-f2bbcef/`): SHA-256 khớp SOURCES.md; giải nén giống hệt bản trên USB → chép vào `EFI/OC/Kexts/`. `diff -rq` EFI dự án ↔ USB: chỉ còn `config.plist` (SMBIOS) và file `._*` của macOS.
+- efi-validate 0/0 (validate-20261105T193419.md). `snapshots/_counter.txt` đặt tay = 25 (bộ đếm cũ đã mất) để snapshot mang số 26. Snapshot `build-26-…-fencefix-restored`: tree **c69972f2ffb4 = đúng tree build-26 gốc** → giống từng byte.
+- Không khôi phục được: snapshot build-10/21 (known-good), binary NootedGreen cũ (build-21 có thể build lại trên MÁY B từ `patches/` v3), hw-dump, DSDT giải mã, repo tham chiếu (clone lại bằng `tools/clone_ref.py` khi cần). Đường lui hiện có: `EFI/OC/config-install.plist` (= cấu hình build-10).
+- `config/usb-mount.txt` = `/run/media/cyra/MACEFI`.
+- 2026-11-05T19:37:49 Marked build-26-20261105-193440-fencefix-restored as known-good (user request)
+- 2026-11-05T19:39:15 plist_edit append to Kernel/Add: BundlePath=IntelBluetoothFirmware.kext (config.plist)
+- 2026-11-05T19:39:15 plist_edit append to Kernel/Add: BundlePath=IntelBTPatcher.kext (config.plist)
+- 2026-11-05T19:39:15 plist_edit append to Kernel/Add: BundlePath=BlueToolFixup.kext (config.plist)
+- 2026-11-05T19:39:15 plist_edit move Kernel/Add[BundlePath=IntelBluetoothFirmware.kext] to position 17 (config.plist)
+- 2026-11-05T19:39:15 plist_edit move Kernel/Add[BundlePath=IntelBTPatcher.kext] to position 18 (config.plist)
+- 2026-11-05T19:39:15 plist_edit move Kernel/Add[BundlePath=BlueToolFixup.kext] to position 19 (config.plist)
+- 2026-11-05T19:39:15 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/bluetoothExternalDongleFailed = <data 00> (config.plist)
+- 2026-11-05T19:39:15 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/bluetoothInternalControllerInfo = <data 0000000000000000000000000000> (config.plist)
+- 2026-11-05T19:39:16 plist_edit append to NVRAM/Delete/7C436110-AB2A-4BBB-A880-FE41995C9F82: item (config.plist)
+- 2026-11-05T19:39:16 plist_edit append to NVRAM/Delete/7C436110-AB2A-4BBB-A880-FE41995C9F82: item (config.plist)
+
+## Build 27 — `bluetooth` (2026-11-05): = build-26 + Bluetooth AX210 (DRIVER-MATRIX #8, người dùng duyệt 2026-11-05)
+- Người dùng đánh dấu build-26 (bản dựng lại) **known-good** trước khi dựng build-27.
+- Kext (release-fetch, SOURCES.md): IntelBluetoothFirmware + IntelBTPatcher **2.5.3** (fork lshbluesky; Info.plist có personality `IntelBluetoothFirmware_0032` = AX210 `8087:0032`) và BlueToolFixup **2.7.2** (acidanthera/BrcmPatchRAM; chỉ chép BlueToolFixup). IntelBluetoothInjector KHÔNG dùng (không dùng cho Monterey+).
+- Kernel/Add vị trí 17–19, ngay sau AirportItlwm: IntelBluetoothFirmware → IntelBTPatcher → BlueToolFixup (IntelBTPatcher và BlueToolFixup cần Lilu, Lilu ở vị trí 0).
+- NVRAM/Add `7C436110-…`: `bluetoothExternalDongleFailed` = `00`, `bluetoothInternalControllerInfo` = 14 byte `00`; thêm cả hai vào NVRAM/Delete.
+- **Không** thêm `-btlfxallowanyaddr`: boot-args đang 224 ký tự, thêm thì thành 243 > 228 (giới hạn Lilu) → cờ bị cắt. Chỉ xét nếu Bluetooth không bật được, khi đó bỏ `debug=0x100` để có chỗ.
+- `config-install.plist` giữ nguyên (đường lui không tăng tốc, không Bluetooth). Cổng BT HS05 (port 7, Internal 255) đã có trong UTBMap từ build-10.
+- plist_diff với build-26: 3 kext + 2 NVRAM Add + 2 NVRAM Delete (+ dịch thứ tự các kext sau). efi-validate 0/0 (validate-20261105T193921.md). Chưa ghi USB.
+- 2026-11-05T19:39:37 Created build-27-20261105-193937-bluetooth (tree dd2423579245, ocvalidate: 0 errors, 0 warnings (validate-20261105T193921.md))
+- 2026-11-05T19:44:38 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 6efedd66b725, verified)
+- 2026-11-05 19:44: build-27 bluetooth ghi lên MACEFI (/dev/sdb3, kiểm hash OK). SMBIOS thật được tiêm: người dùng tự tạo lại file secrets từ config trên USB (Claude không đọc giá trị). Nội dung USB cũ trùng snapshot build-26 → không tạo snapshot mới.
+
+## Kết quả build-27 bluetooth (người dùng, 2026-11-05 19:55)
+- `kmutil showloaded`: IntelBTPatcher 2.5.3, BlueToolFixup 2.7.2, IntelBluetoothFirmware 2.5.3 đều nạp.
+- `system_profiler SPBluetoothDataType`: controller **State: On**, Transport USB, Chipset THIRD_PARTY_DONGLE, Firmware v12490 (firmware đã tải), dịch vụ HFP/AVRCP/A2DP/HID/LEA/GATT. Địa chỉ MAC không ghi lại.
+- Chưa kiểm: ghép thiết bị (BLE, issue #514), ổn định sau nhiều lần khởi động.
+- 19:58 người dùng: "không tìm được device nào". `nvram`: `bluetoothExternalDongleFailed`=%00, `bluetoothInternalControllerInfo`=14×%00 (có hiệu lực); boot-args 224 đủ. Log bluetoothd 5 phút: không có lỗi; nhiều dòng `Server.LE.Scan decryptProximityPairingPayload` (nhận gói quảng bá BLE của thiết bị Apple xung quanh) và advertise "with error (null)" → **radio và quét BLE hoạt động**. Nghi vấn: thiết bị thử không ở chế độ ghép đôi, hoặc quét Classic (inquiry) lỗi. Chưa đổi boot-args (A/B chờ kết quả thử lại).
+- Log lọc inquiry/discover (cửa sổ 3 phút): lần quét cuối dừng lúc 19:57:32 (`CBStackClassicScanner Scan stopped`, `Bluetooth scan completed`, `Inquiry state changed: Off`) — quét Classic chạy và kết thúc **không có lỗi HCI**; dòng mức Error `notifyDiscoverabiltyChanged: 0` chỉ là thông báo trạng thái. Log không cho biết số thiết bị tìm thấy; sau 19:57:32 không có lần quét nào → chưa có lần thử với thiết bị ở chế độ ghép đôi trong log.
+- 20:00 `log stream` lúc mở Bluetooth Settings: quét Classic `ScanStarted … BT_SUCCESS`, chạy 20:00:12→24 (12 s) và 20:00:54→56 (2 s); **không có kết quả inquiry Classic nào**. Thiết bị duy nhất "found" = iPhone13,2 cùng tài khoản iCloud (`Hidden BLEPaired CloudPaired`, RSSI −56, nhận qua quảng bá BLE) — macOS ẩn thiết bị này khỏi danh sách. Lỗi lặp lại: `Server.LE.Scan addScanFilterByUUID failed 0x1812` (0x1812 = dịch vụ HID-over-GATT) kèm `supportedADVBuffers:0` → bộ lọc quét phần cứng cho chuột/bàn phím BLE không cài được; ảnh hưởng tới việc phát hiện BLE HID CHƯA XÁC MINH.
+- 20:08 người dùng: **"bluetooth hoạt động rồi"** (ghép được thiết bị). Không cần `-btlfxallowanyaddr`, không dựng build-28 cho Bluetooth.
+
+## Độ sáng (D11) — chẩn đoán 2026-11-05 20:11 (build-27)
+- `ioreg -p IODeviceTree | grep PNLF|APP0002`: **rỗng** → firmware F.34 không có PNLF. Class count `AppleBacklightDisplay=0`, `IOBacklightDisplay=0`, `AppleDisplay=1` → macOS coi panel là màn hình không có đèn nền điều chỉnh → không có thanh độ sáng. `IODisplayParameters` có `bklt` 0..65535 (framebuffer). Log kernel: `[IGFB][ERROR] hwGetCRTC: EFI using a different backlight frequency`; không có dòng `bl hw=` của XE-BLR.
+- Kế hoạch build-28: thêm `SSDT-PNLF` tối giản (`docs/acpi-src/SSDT-PNLF.dsl`): `\_SB.PC00.GFX0.PNLF`, `_HID APP0002`, `_CID "backlight"`, `_UID 0x13`, `_STA` 0x0B chỉ Darwin; không `_INI`, không ghi thanh ghi PWM (cấu trúc giống SSDT-PNLF của JN — đã xem bằng hexdump; mẫu OpenCore 1.0.8 bị loại vì `_INI` ghi LEVW/LEVX và với ID 9A49 rơi vào nhánh Skylake PWMMAX 0x56c). Không thêm patch PNLF→XNLF (không có gì để đổi tên). Chưa thêm `ngreenblmax` (một thay đổi mỗi build; boot-args 224).
+- Chờ: (1) xác nhận đường dẫn `\_SB.PC00.GFX0` trên MÁY B (dump DSDT cũ đã mất); (2) `iasl` trên MÁY A (không còn sau khi mất thư mục/hệ thống) — người dùng cài.
+- 2026-11-05T20:14:09 plist_edit append to ACPI/Add: Path=SSDT-PNLF.aml (config.plist)
+
+## Build 28 — `pnlf` (2026-11-05): = build-27 + SSDT-PNLF (MỘT thay đổi)
+- Người dùng xác nhận đường dẫn iGPU trên MÁY B: `IOACPIPlane:/_SB/PC00@0/GFX0@20000` → `\_SB.PC00.GFX0` đúng. `iasl` 20251212 (người dùng cài lại trên MÁY A).
+- `docs/acpi-src/SSDT-PNLF.dsl` → `EFI/OC/ACPI/SSDT-PNLF.aml` (139 byte; `iasl -ve` 0 lỗi/0 cảnh báo; dịch ngược khớp nguồn). ACPI/Add thêm cuối danh sách (không phụ thuộc SSDT khác). `_OSI` trong SSDT không bị patch XOSI (patch chỉ áp DSDT).
+- Boot-args giữ 224 (chưa `ngreenblmax`). `config-install.plist` không đổi. efi-validate 0/0 (validate-20261105T201409.md).
+- Kiểm trên MÁY B: `ioreg -lw0 -p IODeviceTree | grep -i APP0002`; class `AppleBacklightDisplay` = 1; thanh độ sáng trong Control Center/System Settings; kéo hết dải xem đèn nền có tối→sáng tối đa không (nếu chỉ ~50% → build sau thêm `ngreenblmax`).
+- 2026-11-05T20:14:18 Created build-28-20261105-201417-pnlf (tree b1a42bc030ec, ocvalidate: 0 errors, 0 warnings (validate-20261105T201409.md))
+- 2026-11-05T20:15:27 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4ede6cbe9e0d, verified)
+- 2026-11-05 20:20 kết quả build-28 (người dùng): `APP0002` có trong IODeviceTree, `AppleBacklightDisplay=1`, **thanh độ sáng hoạt động** nhưng mức tối đa tối hơn bình thường.
+- `dmesg` (XeNG CS, slider tối đa): `bl hw=96000 apple=0 fw=0 duty=17741 max=17741 out=17741` → macOS không ghi chu kỳ (apple=0) nên XE-BLR không rescale; đầu ra 17741/96000 ≈ 18,5 % PWM. Trùng số đo của JN (HISTORY.md, XPS). Mã XE-BLR @6f03560 (`kern_gen11.cpp`): `out = duty × hw / ngreenblmax`, kẹp ở hw.
+- Đề xuất build-29 (chờ duyệt — boot-args đồ hoạ): thêm `ngreenblmax=17741` (đầu ra tối đa = 96000 = 100 %), bỏ `debug=0x100` và `keepsyms=1` (phương án A); chuỗi mới 219 ký tự.
+- 2026-11-05 20:15: build-28 pnlf ghi lên MACEFI (/dev/sdb3, tree 4ede6cbe9e0d, kiểm hash OK, SMBIOS thật). USB cũ trùng snapshot build-27 → không tạo snapshot mới.
+- 2026-11-05T20:24:03 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = 'ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta -v' (config.plist)
+
+## Build 29 — `blmax` (2026-11-05): = build-28 + boot-args độ sáng (người dùng duyệt 20:23)
+- boot-args (219 ký tự): `ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta -v`.
+- Thêm `ngreenblmax=17741` (duty tối đa đo được; XE-BLR: đầu ra = duty × 96000 / 17741 → 100 % ở mức tối đa). Bỏ `debug=0x100`, `keepsyms=1` (giới hạn 228): panic sẽ tự khởi động lại, `.panic` không có tên hàm — khi cần gỡ panic, thêm lại tạm thời.
+- plist_diff với build-28: 1 khác biệt (boot-args). efi-validate 0/0 (validate-20261105T202403.md).
+- Kiểm trên MÁY B: slider tối đa = sáng như bình thường; `sudo dmesg | grep -a 'bl hw' | tail -1` phải có `out=96000` (hoặc gần) khi slider tối đa.
+- 2026-11-05T20:24:12 Created build-29-20261105-202412-blmax (tree 42b04e74d767, ocvalidate: 0 errors, 0 warnings (validate-20261105T202403.md))
+- 2026-11-05T20:24:20 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree a6513c2bd81b, verified)
+- 2026-11-05 20:24: build-29 blmax ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-05 20:28: **build-29: độ sáng hoạt động** (người dùng: slider đủ dải, sáng tối đa đúng).
+
+## Audio ALC245 (D1, DRIVER-MATRIX #14/#15) — kiểm định lại 2026-11-05 20:30
+- AppleALC 1.9.8 (mới nhất) có 3 layout cho codec ALC245: 11 (soto2080, Lenovo), 12 (Lenovo), 13 (lunjielee, HP Omen 2020). Không có layout cho HP 8A4F → thử 13 trước (HP), rồi 11, 12.
+- OCLP-CustoMac @ f2bbcef (`_cache/refs/oclp-customac`): `sys_patch/patchsets/hardware/misc/modern_audio.py` — root patch **Modern Audio** chép `AppleHDA.kext` bản "26.0 Beta 1" vào `/System/Library/Extensions` (tải về MÁY B qua OCLP, Claude không phân phối binary Apple); `requires_kernel_debug_kit` = True. `root_selection.py`: Modern Wi-Fi và Modern Audio là hai tuỳ chọn, **mặc định chọn cả hai** → có thể AppleHDA đã được cài cùng lần root patch Wi-Fi (CHƯA XÁC MINH, chờ kiểm trên MÁY B).
+- SimpleHDA vẫn loại (không license, chứa binary Apple). Boot-args 219 → `alcid=` sẽ chạm 228 → dùng DeviceProperty `layout-id` (cần đường dẫn PCI của HDA thật).
+- 2026-11-05T20:32:32 plist_edit append to Kernel/Add: BundlePath=AppleALC.kext (config.plist)
+- 2026-11-05T20:32:32 plist_edit move Kernel/Add[BundlePath=AppleALC.kext] to position 7 (config.plist)
+- 2026-11-05 20:31 người dùng duyệt #14 (AppleALC) và #15 (root patch Modern Audio OCLP, KHÔNG SimpleHDA). AppleALC 1.9.8 tải (release-fetch, digest OK), chép `AppleALC.kext` (không AppleALCU) vào EFI, Kernel/Add vị trí 7 (sau WhateverGreen, NootedGreen; cần Lilu). **Build-30 đang dựng dở**: còn thiếu DeviceProperty `layout-id` — chờ đường dẫn PCI của HDA từ MÁY B. Chưa snapshot.
+- 2026-11-05T20:33:51 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x1f,0x3)}/layout-id = <data 0D000000> (config.plist)
+
+## Build 30 — `audio` (2026-11-05): = build-29 + AppleALC 1.9.8 + `layout-id` 13 (DRIVER-MATRIX #14/#15 duyệt 20:31)
+- MÁY B (20:33): `AppleHDA.kext` **không có**; OCLP plist chỉ có "Modern Wireless"; HDA = `IOACPIPlane:/_SB/PC00@0/HDAS@1f0003` → DeviceProperties `PciRoot(0x0)/Pci(0x1f,0x3)` `layout-id` = `0D000000` (13, HP Omen 2020 — cùng hãng; dự phòng 11, 12).
+- AppleALC.kext Kernel/Add vị trí 7 (sau NootedGreen). Boot-args không đổi (219). plist_diff với build-29: +AppleALC, +DeviceProperty HDA (còn lại là dịch thứ tự). efi-validate 0/0 (validate-20261105T203352.md).
+- KDK 25G241 có trên dortania/KdkSupportPkg (OCLP-CustoMac `kdk_handler.py` dùng manifest này). Root patch Modern Audio cần Revert + patch lại cả Wi-Fi + Audio: `docs/POSTINSTALL-RUNBOOK.md` §5 (viết lại).
+- 2026-11-05T20:34:32 Created build-30-20261105-203431-audio (tree 2b7dda3187b0, ocvalidate: 0 errors, 0 warnings (validate-20261105T203352.md))
+- 2026-11-05T20:36:09 Marked build-29-20261105-202412-blmax as known-good (user request)
+- 2026-11-05T20:36:14 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree ed52c66ef74a, verified)
+- 2026-11-05 20:36: người dùng đánh dấu **build-29 known-good**. build-30 audio ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật); chờ root patch Modern Audio trên MÁY B (POSTINSTALL-RUNBOOK §5).
+- 2026-11-05 20:49 (build-30, sau root patch Modern Wi-Fi + Modern Audio): `AppleHDA.kext` có trong /S/L/E; nạp: AppleALC 1.9.8, AppleHDAController 600.2, AppleHDA 600.2, AppleHDAHardwareConfigDriver 600.2. Chưa có kết quả loa/jack/mic, Wi-Fi, Metal.
+- 2026-11-05T20:54:11 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x1f,0x3)}/layout-id = <data 0B000000> (config.plist)
+- 2026-11-05 20:53 kết quả layout 13 (người dùng): Output "Internal Speakers" có nhưng **không có tiếng**; jack 3,5 mm nhận tai nghe nhưng **tiếng nhỏ, chỉ kênh trái**; **không có Input device**. Wi-Fi, Metal, độ sáng vẫn bình thường sau Revert + patch lại → root patch không ảnh hưởng stack đồ hoạ.
+
+## Build 31 — `alc11` (2026-11-05): = build-30, `layout-id` 13 → **11** (MỘT thay đổi; theo kế hoạch đã duyệt 13 → 11 → 12)
+- 2026-11-05T20:54:12 Created build-31-20261105-205412-alc11 (tree 2c547662d582, ocvalidate: 0 errors, 0 warnings (validate-20261105T205411.md))
+- `layout-id` = `0B000000`. efi-validate 0/0 (validate-20261105T205411.md). Snapshot build-31. Chưa ghi USB (USB chưa mount). Root patch không cần làm lại khi đổi layout.
+- 2026-11-05T20:55:47 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree a204c4d89952, verified)
+- 2026-11-05 20:55: build-31 alc11 ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-05 21:08 kết quả build-31 layout 11 (người dùng): **loa trong có tiếng, mic trong hoạt động**; tai nghe 3,5 mm vẫn chỉ kênh trái — người dùng nghi tiếp xúc jack/tai nghe, chấp nhận bỏ qua (CHƯA XÁC MINH là phần cứng hay layout). Audio coi là xong với layout 11.
+- 2026-11-05T21:09:41 Marked build-31-20261105-205412-alc11 as known-good (user request)
+- 2026-11-05 21:09: người dùng đánh dấu **build-31 known-good**.

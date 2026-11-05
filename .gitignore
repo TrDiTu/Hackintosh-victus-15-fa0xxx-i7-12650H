@@ -21,3 +21,8 @@ docs/validation
 GRAPHICS-PANIC-ANALYSIS.md
 MACHINE-ANALYSIS.md
 UPSTREAM-ISSUE-DRAFT.md
+.clinerules/
+.cursor/
+.github
+.opencode
+.windsurf

@@ -70,10 +70,24 @@ Claude sẽ: thêm `UTBMap.kext`, tắt `UTBDefault.kext`, validate, snapshot, g
    ghi lại tên bạn thấy. Giữ USB MACEFI làm dự phòng.
 5. Lần sau Claude cập nhật EFI: vẫn ghi lên USB trước, test, rồi bạn tự chép sang ESP.
 
-## 5. Tuỳ chọn — Audio ALC245 (đã tạm bỏ qua)
-- Cần: AppleALC 1.9.8 + `layout-id` (thử 11 → 12 → 13; AppleALC chưa có layout riêng cho HP 8A4F) **và** root patch **Modern Audio / AppleHDA** của OCLP-CustoMac
-  (cần KDK đúng 25G241). Vì máy đã có root patch Wi-Fi, lựa chọn hiển thị chỉ đọc → phải **Revert Root Patches → khởi động lại → patch lại cả Wi-Fi + Audio**.
-- Rủi ro: thêm một vòng root patch; HDMI audio không có (HDMI ở dGPU). Báo Claude nếu muốn làm — Claude dựng build có AppleALC trước.
+## 5. Audio ALC245 (build-30, người dùng duyệt 2026-11-05)
+EFI build-30 đã có AppleALC 1.9.8 + `layout-id` 13 trên `PciRoot(0x0)/Pci(0x1f,0x3)` (HDAS). AppleALC **không ra tiếng** khi chưa có AppleHDA
+(Tahoe đã gỡ; máy hiện chỉ có root patch "Modern Wireless").
+1. Boot build-30. Kiểm: `kmutil showloaded | grep -i AppleALC` (phải có). Wi-Fi vẫn chạy như cũ.
+2. Cắm Ethernet (KDK ~1 GB tải qua mạng). Mở **OpenCore-Patcher (OCLP-CustoMac 3.0.3)** → Post-Install Root Patch.
+3. Nếu danh sách chỉ đọc (đã có root patch): **Revert Root Patches** → khởi động lại (vẫn bằng build-30; Wi-Fi tạm mất, dùng Ethernet) →
+   mở lại OCLP → Post-Install Root Patch.
+4. Chọn **cả hai**: Modern Wi-Fi **và** Modern Audio. OCLP tự tải KDK **25G241** (có trên KdkSupportPkg) → Start Root Patching → khởi động lại.
+5. Kiểm và gửi Claude:
+   ```
+   ls -d /System/Library/Extensions/AppleHDA.kext
+   kmutil showloaded | grep -i -E 'AppleHDA|AppleALC'
+   ioreg -lw0 -p IOService | grep -E '"layout-id"|AppleHDAController' | head
+   ```
+   Thử: loa trong, jack tai nghe (cắm/rút có tự chuyển không), mic trong (System Settings → Sound → Input).
+6. Không có tiếng / thiếu loa/jack/mic → báo Claude thử layout 11, rồi 12 (chỉ đổi `layout-id`, không cần root patch lại).
+- Hệ quả: thêm một vòng root patch (snapshot hệ thống ghi lại; cập nhật macOS xoá cả Wi-Fi lẫn Audio). Stack đồ hoạ cài ở `/Library` (AuxKC) không bị Revert đụng tới — CHƯA XÁC MINH, kiểm Metal sau bước 4.
+- HDMI audio không có (HDMI nối dGPU).
 
 ## 6. Tuỳ chọn — Bluetooth AX210 (đã tạm bỏ qua)
 - Ứng viên: IntelBluetoothFirmware/IntelBTPatcher **fork lshbluesky 2.5.2** + BlueToolFixup 2.7.2 + NVRAM `bluetoothExternalDongleFailed`/`bluetoothInternalControllerInfo`
