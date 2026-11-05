@@ -1,7 +1,5 @@
 {
-  "worktree": {"bgIsolation": "none"},
   "permissions": {
-    "defaultMode": "default",
     "allow": [
       "Bash(python3 .claude/skills/efi-validate/scripts/validate_efi.py*)",
       "Bash(python3 .claude/skills/efi-snapshot/scripts/snapshot.py * --dry-run*)",
@@ -19,15 +17,6 @@
       "WebFetch(domain:api.github.com)",
       "Edit(/docs/**)",
       "Edit(/config/usb-mount.txt)"
-    ],
-    "ask": [
-      "Bash(python3 .claude/skills/usb-deploy-guard/scripts/deploy_usb.py * --confirmed*)",
-      "Bash(python3 tools/clone_ref.py*)",
-      "Bash(rm *)",
-      "Bash(cp *)",
-      "Bash(mv *)",
-      "Bash(rsync *)",
-      "Bash(chmod *)"
     ],
     "deny": [
       "Bash(sudo *)",
@@ -57,6 +46,22 @@
       "Read(/secrets/**)",
       "Edit(/secrets/**)",
       "Read(/_cache/stage/**)"
-    ]
+    ],
+    "ask": [
+      "Bash(python3 .claude/skills/usb-deploy-guard/scripts/deploy_usb.py * --confirmed*)",
+      "Bash(python3 tools/clone_ref.py*)",
+      "Bash(rm *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rsync *)",
+      "Bash(chmod *)"
+    ],
+    "defaultMode": "default"
+  },
+  "worktree": {
+    "bgIsolation": "none"
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
   }
 }

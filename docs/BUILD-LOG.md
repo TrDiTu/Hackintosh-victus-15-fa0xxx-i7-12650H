@@ -746,3 +746,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-05 21:08 kết quả build-31 layout 11 (người dùng): **loa trong có tiếng, mic trong hoạt động**; tai nghe 3,5 mm vẫn chỉ kênh trái — người dùng nghi tiếp xúc jack/tai nghe, chấp nhận bỏ qua (CHƯA XÁC MINH là phần cứng hay layout). Audio coi là xong với layout 11.
 - 2026-11-05T21:09:41 Marked build-31-20261105-205412-alc11 as known-good (user request)
 - 2026-11-05 21:09: người dùng đánh dấu **build-31 known-good**.
+- 2026-11-05 21:10: commit 17e0396 trên nhánh `bt-backlight-audio` (EFI build-31 + docs; không gồm `.claude/settings.json`, `AGENTS.md`). SMBIOS trong commit là placeholder (đã kiểm).
