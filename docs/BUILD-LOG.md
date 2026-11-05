@@ -815,3 +815,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 02:37 build-35 trên MÁY B: sysctl debug.xepm.route 1, cst 0 → `ngreenpmcst=0` (vị trí 227–240) được kernel đọc; Wi-Fi còn (-amfipassbeta không bị cắt). dmesg không còn dòng 'XeNG PM' (bộ đệm bị log 'XeNG CS' đẩy ra).
 - 2026-11-06 02:47: so GB7 macOS (~1200/7100) với Linux cùng máy (~2xxx/2xxxx): kiểm CPUID trên macOS — có AVX1.0, FMA, AVX2, BMI1/2, SHA, AES, VAES, GFNI → không phải thiếu tập lệnh. Đang kiểm đồng hồ (TSC) và xe-freq hai hệ.
 - 2026-11-06 02:54: TSC đúng (2,688 GHz, sleep 30 = 30,04 s). xe-freq 1 luồng: Linux 4503/4640/4681, macOS build-35 1502/3365/4586 MHz → luồng không giữ được xung cao. Thêm XEFREQ_SAMPLES để in từng mẫu.
+- 2026-11-06 03:08: GB7 trên CachyOS cùng máy: single 2195, multi 10101 (mốc). macOS 1176/7114 = 54 %/70 %.

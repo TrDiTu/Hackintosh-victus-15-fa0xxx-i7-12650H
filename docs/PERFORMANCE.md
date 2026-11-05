@@ -70,3 +70,5 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   `xe-freq` (ADD thanh ghi, 1 luồng, mẫu 1 s): **Linux 4503 / 4640 / 4681 MHz** (min/avg/max, khớp turbo 4,7) — **macOS build-35 1502 / 3365 / 4586 MHz**.
   → CPU lên được ~4,6 GHz nhưng luồng không giữ được tốc độ (avg 72 % Linux). Nghi: luồng bị xếp lên E-core (CpuTopologyRebuild coi E-core là
   luồng SMT của P-core), chuyển nhân, hoặc XCPM hạ HWP desired. CHƯA XÁC MINH — cần xem từng mẫu (`XEFREQ_SAMPLES=1 ./xe-freq 1 30`).
+- **Mốc Linux (CachyOS, cùng máy, 2026-11-06): GB7 single 2195, multi 10101.** macOS tốt nhất hiện tại (XE-PM, C8/C10 tắt): 1176 / 7114
+  = **54 % / 70 %**. Single-core hụt nhiều nhất → khớp xe-freq (luồng đơn không giữ xung).
