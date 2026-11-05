@@ -747,3 +747,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-05T21:09:41 Marked build-31-20261105-205412-alc11 as known-good (user request)
 - 2026-11-05 21:09: người dùng đánh dấu **build-31 known-good**.
 - 2026-11-05 21:10: commit 17e0396 trên nhánh `bt-backlight-audio` (EFI build-31 + docs; không gồm `.claude/settings.json`, `AGENTS.md`). SMBIOS trong commit là placeholder (đã kiểm).
+- 2026-11-05 21:29: người dùng báo **camera HP Wide Vision HD (`30C9:0069`) hoạt động** trên build-31 (driver UVC sẵn có; không thay đổi EFI). DEFERRED D13 đóng. Lý do build-10 không chạy: CHƯA XÁC MINH.

@@ -23,7 +23,7 @@
 - Thử display sleep/wake (`pmset displaysleepnow`) xem con trỏ có vỡ lại (FENCEFIX chỉ chạy trong `hwSetupMemory`; `hwRestoreState` có thể ghi lại fence cũ — CHƯA XÁC MINH).
 - known-good hiện có: build-26 (bản dựng lại), **build-29** (Bluetooth + độ sáng).
 - Quyết định trước khi đẩy repo public: EFI chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — xem mục Rủi ro.
-- Còn hoãn (`docs/DEFERRED.md`): map USB 3 (cổng SS), camera, boot không cần USB, sleep/wake. (Bluetooth, độ sáng xong; audio đang làm.)
+- Còn hoãn (`docs/DEFERRED.md`): map USB 3 (cổng SS), boot không cần USB, sleep/wake, tai nghe chỉ kênh trái (D14). (Bluetooth, độ sáng, audio, camera xong.)
 
 ## Quy tắc người dùng đặt
 - **KHÔNG đọc lịch sử commit của repo này** (git log/show/các commit cũ). Chỉ dùng trạng thái hiện tại + `docs/hw-dump/` + repo tham chiếu.

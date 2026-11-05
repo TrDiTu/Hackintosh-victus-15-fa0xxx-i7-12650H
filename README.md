@@ -12,7 +12,7 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 > Four small patches fix it on this machine (see [Root causes](#các-lỗi-đã-sửa-và-nguyên-nhân)):
 > GMSFIX (accelerator), GMSFIX-FB (framebuffer), PAVPFIX and FENCEFIX. Result: desktop with Metal 2,
 > 1920×1080 @ 144 Hz. If your laptop has a fixed DVMT below 64 MB and the same panic, these patches are likely relevant.
-> Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`) and audio (AppleALC layout 11 + OCLP Modern Audio) also work.
+> Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`), audio (AppleALC layout 11 + OCLP Modern Audio) and the webcam also work.
 
 ## Trạng thái (build-31, 2026-11-05)
 
@@ -29,7 +29,8 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Pin, nhiệt độ CPU, phím độ sáng | ✅ |
 | USB (cổng HS) | ✅ USB 3 đang chạy tốc độ USB 2 (chưa map cổng SS) |
 | dGPU RTX 3050 Ti | ⛔ tắt bằng SSDT (macOS không có driver); **HDMI không dùng được** (nối vào dGPU) |
-| Camera, đầu đọc thẻ RTS5228 | ❌ chưa làm / không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
+| Camera HP Wide Vision HD (`30C9:0069`) | ✅ driver UVC có sẵn của macOS |
+| Đầu đọc thẻ RTS5228 | ❌ không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
 | Sleep, màn hình ngoài, video có DRM (PAVP) | ❌ không hỗ trợ với stack này |
 | Metal 3 | ❌ không đạt được với driver Tiger Lake |
 
