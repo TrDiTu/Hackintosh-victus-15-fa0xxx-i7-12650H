@@ -792,3 +792,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T00:14:11 Created build-34-20261106-001411-xepm (tree 358dede24487, ocvalidate: 0 errors, 0 warnings (validate-20261106T001359.md))
 - 2026-11-06T00:15:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree ac70ed69431c, verified)
 - 2026-11-06 00:15: build-34 xepm ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-33.
+- 2026-11-06 00:22 build-34 trên MÁY B: `debug.xepm` route 1, hwp 1, cst 1, d3 2, eet_off 1; dmesg `XeNG PM: profile on: HWP rescale 1 (route 1), EPP 0, EE turbo off 1, C8/C10 1, D3 2, PL1 0 W (0x0)` → XE-PM áp dụng đủ (PL1 không đổi, đúng ý). Chờ số đo.
