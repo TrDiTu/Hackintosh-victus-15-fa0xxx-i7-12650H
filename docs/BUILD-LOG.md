@@ -813,3 +813,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T02:33:01 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 13d19b792cc0, verified)
 - 2026-11-06 02:33: build-35 xepm-nocst ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
 - 2026-11-06 02:37 build-35 trên MÁY B: sysctl debug.xepm.route 1, cst 0 → `ngreenpmcst=0` (vị trí 227–240) được kernel đọc; Wi-Fi còn (-amfipassbeta không bị cắt). dmesg không còn dòng 'XeNG PM' (bộ đệm bị log 'XeNG CS' đẩy ra).
+- 2026-11-06 02:47: so GB7 macOS (~1200/7100) với Linux cùng máy (~2xxx/2xxxx): kiểm CPUID trên macOS — có AVX1.0, FMA, AVX2, BMI1/2, SHA, AES, VAES, GFNI → không phải thiếu tập lệnh. Đang kiểm đồng hồ (TSC) và xe-freq hai hệ.
