@@ -36,7 +36,6 @@
       "Bash(*efibootmgr*)",
       "Bash(*blkdiscard*)",
       "Bash(*shred*)",
-      "Bash(git push*)",
       "Bash(*make-efi.sh*)",
       "Bash(*install.sh*)",
       "Read(~/.ssh/**)",
