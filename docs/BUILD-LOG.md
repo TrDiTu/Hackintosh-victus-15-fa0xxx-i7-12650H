@@ -801,3 +801,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 00:54: powermetrics (người dùng chấp nhận rủi ro) lúc single-core build-34: nhân bận nhất 3,9–4,43 GHz, gói 21–26 W. Ghi PERFORMANCE.md.
 - 2026-11-06 01:02 build-34, tải đều 16 luồng `yes` + powermetrics: 10 CPU hiển thị đều 3,94–4,04 GHz, gói ~67 W → không có nhân kẹt xung dưới tải đều; các nhân 0,7–1,1 GHz lúc GB7 multi là pha ít luồng. Điểm lạ: powermetrics chỉ in 10 CPU (mong đợi 16) — đang kiểm sysctl hw.*.
 - 2026-11-06 01:03: sysctl MÁY B: hw.ncpu 16, physicalcpu 6, logicalcpu 16, core_count 16, thread_count 16, perflevel0.logicalcpu 16 → macOS dùng đủ 16 luồng.
+- 2026-11-06 01:13: build-34 + sysctl debug.xepm.epp=128: GB7 1222 / 5378 → EPP không ảnh hưởng multi. Tiếp: tách hwp / cst bằng sysctl.

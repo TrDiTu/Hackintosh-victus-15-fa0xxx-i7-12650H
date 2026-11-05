@@ -62,3 +62,5 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   lúc GB7 multi là pha ít luồng của Geekbench. `sysctl`: hw.ncpu = logicalcpu = thread_count = 16, **physicalcpu = 6**
   (CpuTopologyRebuild), perflevel0 = 16 luồng (macOS không tách P/E). powermetrics chỉ in 10 CPU = giới hạn hiển thị.
 - Kết luận build-34: XE-PM có lợi cho single-core (+13 %, 4,43 GHz); multi −6 % chưa tách được khỏi dao động (1 lần chạy).
+- `debug.xepm.epp=128` (sysctl, build-34): GB7 single 1222, multi **5378** → EPP không phải nguyên nhân; về lại EPP 0.
+  Multi thấp ở 2 lần chạy (5476, 5378) so với build-33 (5837, 1 lần) → khó chỉ là dao động.
