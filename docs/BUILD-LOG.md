@@ -802,3 +802,11 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 01:02 build-34, tải đều 16 luồng `yes` + powermetrics: 10 CPU hiển thị đều 3,94–4,04 GHz, gói ~67 W → không có nhân kẹt xung dưới tải đều; các nhân 0,7–1,1 GHz lúc GB7 multi là pha ít luồng. Điểm lạ: powermetrics chỉ in 10 CPU (mong đợi 16) — đang kiểm sysctl hw.*.
 - 2026-11-06 01:03: sysctl MÁY B: hw.ncpu 16, physicalcpu 6, logicalcpu 16, core_count 16, thread_count 16, perflevel0.logicalcpu 16 → macOS dùng đủ 16 luồng.
 - 2026-11-06 01:13: build-34 + sysctl debug.xepm.epp=128: GB7 1222 / 5378 → EPP không ảnh hưởng multi. Tiếp: tách hwp / cst bằng sysctl.
+- 2026-11-06T02:28:21 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = 'ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta ngreenpmcst=0' (config.plist)
+- 2026-11-06 02:14: build-34 + sysctl debug.xepm.cst=0: GB7 single 1176, multi 7114 → C8/C10 là nguyên nhân multi giảm. (debug.xepm.hwp chưa thử: lần đầu báo unknown oid vì máy boot build-33 từ ổ trong.)
+
+## Build 35 — `xepm-nocst` (2026-11-06): = build-34 + `ngreenpmcst=0` (người dùng duyệt 02:28)
+- boot-args 240 ký tự, thêm `ngreenpmcst=0` ở CUỐI. Giới hạn ~228 là bản sao boot-args của Lilu (`checkKernelArgument`: `-ngreenpm`, `-amfipassbeta`… — `-amfipassbeta` kết thúc ở 226, vẫn trong 228); `ngreenpmcst` đọc bằng `PE_parse_boot_argn` của kernel (`kern_xepm.cpp:221`), kernel nhận tới 255. CHƯA XÁC MINH trên máy.
+- XE-PM giữ HWP rescale, EPP 0, EE turbo off, D3; bỏ C8/C10 (bảng C-state gốc XCPM). plist_diff với build-34: 1 khác biệt. efi-validate 0/0 (validate-20261106T022822.md).
+- Kiểm: `sysctl debug.xepm.cst` = 0, `debug.xepm.route` = 1, dmesg `C8/C10 0`; Wi-Fi còn (AMFIPass/-amfipassbeta). Lỗi → build-34.
+- 2026-11-06T02:28:35 Created build-35-20261106-022835-xepm-nocst (tree 35c3e6125686, ocvalidate: 0 errors, 0 warnings (validate-20261106T022822.md))

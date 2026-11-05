@@ -64,3 +64,5 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
 - Kết luận build-34: XE-PM có lợi cho single-core (+13 %, 4,43 GHz); multi −6 % chưa tách được khỏi dao động (1 lần chạy).
 - `debug.xepm.epp=128` (sysctl, build-34): GB7 single 1222, multi **5378** → EPP không phải nguyên nhân; về lại EPP 0.
   Multi thấp ở 2 lần chạy (5476, 5378) so với build-33 (5837, 1 lần) → khó chỉ là dao động.
+- `debug.xepm.cst=0` (sysctl, build-34): GB7 single **1176**, multi **7114** (+22 % so build-33, +30 % so build-34 mặc định) → C8/C10
+  của XE-PM làm giảm multi-core. → build-35 `ngreenpmcst=0`.
