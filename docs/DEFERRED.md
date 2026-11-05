@@ -10,7 +10,7 @@ Lập 2026-11-02, sau build-10. Mỗi mục: trạng thái, vì sao chưa làm, 
 | D4 | **USB-C phần USB 3 / Thunderbolt 4** (`8086:461E`, `TXHC.SS01` adr 2, 20 Gbps) | USB-C chỉ có HS04 (USB 2) trên PCH; phần SS nằm ở controller TB4, chưa map | Cần xác minh macOS có nhận controller 461E không (`ioreg -p IOService -c AppleUSBXHCI`) rồi mới map | BUILD-LOG build-33 |
 | D5 | **Sleep/wake** | Chưa kiểm | Thử theo POSTINSTALL-RUNBOOK §3, gửi `pmset -g log`. Giai đoạn B dự kiến không có sleep | POSTINSTALL-RUNBOOK §3 |
 | D6 | **Boot không cần USB** | Chưa làm (OpenCore chạy từ USB MACEFI) | Chép EFI sang ESP ổ trong, thêm mục boot BIOS HP; cẩn thận `EFI/Microsoft` | POSTINSTALL-RUNBOOK §4 |
-| D7 | **Touchpad ngắt GPIO** | Đang thử ở build-32 (gỡ `force-polling`); build-31 trở về trước chạy polling | Chờ kết quả MÁY B; lỗi → quay lại build-31 | BUILD-LOG build-32 |
+| D7 | ~~**Touchpad ngắt GPIO**~~ | **XONG build-32/33** — người dùng: mượt như polling, cử chỉ bình thường (2026-11-05). Chế độ thực tế (ngắt hay VoodooI2C tự lùi polling) CHƯA XÁC MINH qua log | — | BUILD-LOG build-32 |
 | D8 | **AppleVTD** (`DisableIoMapper=false`) | Đang `true` (conventional, baseline OCLP-CustoMac). Build-07 thử `false`: Wi-Fi không thấy mạng (lúc đó chưa root patch) → chưa kết luận | Chỉ thử lại nếu cần; RTL8111 2.4.2 không hỗ trợ AppleVTD → phải đổi driver Ethernet trước | BUILD-LOG build-07/08 |
 | D9 | **Card reader RTS5228** | KHÔNG CÓ DRIVER (RealtekCardReader: "Not Yet") | Theo dõi 0xFireWolf/RealtekCardReader | DRIVER-MATRIX #19 |
 | D10 | **HDMI / màn hình ngoài** | Không dùng được (HDMI nối dGPU; dGPU tắt) | Không có hướng giải quyết trong macOS | GPU-STRATEGY §1 |
