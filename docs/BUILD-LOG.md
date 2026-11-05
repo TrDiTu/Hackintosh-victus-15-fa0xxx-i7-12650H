@@ -766,3 +766,5 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - `tools/map-usb-linux.sh`: sửa cột `peer` in chữ "peer" khi cổng không có cặp.
 - Một thay đổi so với build-32 (UTBMap). Build-32 (touchpad GPIO) chưa test riêng — nếu touchpad lỗi trên build-33: build-34 = build-33 + `force-polling` lại. efi-validate 0/0 (validate-20261105T220932.md).
 - 2026-11-05T22:09:48 Created build-33-20261105-220948-usbmap-ss (tree 26106d86cb52, ocvalidate: 0 errors, 0 warnings (validate-20261105T220932.md))
+- 2026-11-05T22:12:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4d83b78c4251, verified)
+- 2026-11-05 22:11: build-33 usbmap-ss (gồm thay đổi build-32) ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
