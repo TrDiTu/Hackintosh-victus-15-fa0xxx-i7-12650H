@@ -1,7 +1,7 @@
 # STATE — bộ nhớ giữa các phiên (Claude Code cập nhật cuối mỗi phiên/pha)
 
 - Cập nhật lần cuối: 2026-11-05 20:36
-- **2026-11-05 19:30: thư mục dự án cũ bị mất; đã dựng lại từ USB** (BUILD-LOG mục "Dựng lại dự án từ USB"). EFI dự án = build-26 (tree c69972f2ffb4). Mất: snapshot known-good build-10/21, `_cache/`, `docs/hw-dump/`, MACHINE-ANALYSIS, GRAPHICS-PANIC-ANALYSIS.
+- **2026-11-05 19:30: thư mục dự án cũ bị mất; đã dựng lại từ USB** (BUILD-LOG mục "Dựng lại dự án từ USB"). EFI dự án = build-26 (tree c69972f2ffb4). Mất: snapshot known-good build-10/21, GRAPHICS-PANIC-ANALYSIS. **Đã phục hồi (2026-11-05 22:30):** `docs/hw-dump/` (dump mới 21:47), `docs/MACHINE-ANALYSIS.md` (dựng lại), ACPI giải mã ở `_cache/acpi/` (DSDT + 16 SSDT + 8 dyn-SSDT `PmRef`). Các file gitignored này nằm ở thư mục chính; worktree dùng symlink.
 - **Giai đoạn B — ĐÃ CÓ TĂNG TỐC.** build-26 `fencefix` (trên USB MACEFI): vào desktop, **Metal 2**, 1920×1080 @ 144 Hz,
   `xe-topo` 16390 (64 EU / L3 6), con trỏ chuột hiển thị đúng (2026-11-05 03:42). Wi-Fi, Ethernet, touchpad hoạt động.
 - Stack: JulioNectar @6f03560 (user-space cài trên MÁY B) + **NootedGreen JN + patch dự án v7**
@@ -20,10 +20,10 @@
 - **HIỆN TẠI (2026-11-05 21:08): build-31 `alc11` trên USB — audio xong** (loa + mic OK; tai nghe chỉ trái, bỏ qua — DEFERRED D14). Root patch Modern Wi-Fi + Modern Audio đã áp trên MÁY B. Trước đó: build-30 `audio` (= build-29 known-good + AppleALC 1.9.8 + `layout-id` 13 @ `PciRoot(0x0)/Pci(0x1f,0x3)`). Người dùng cần: boot build-30 → OCLP-CustoMac Revert → khởi động lại → root patch **Modern Wi-Fi + Modern Audio** (KDK 25G241) → kiểm loa/jack/mic + Metal (POSTINSTALL-RUNBOOK §5). Không ra tiếng → thử layout 11, 12.
 - Đã xong hôm nay: Bluetooth (build-27), thanh độ sáng SSDT-PNLF (build-28) + `ngreenblmax=17741` (build-29, known-good). Boot-args 219, không còn `debug=0x100 keepsyms=1`.
 - Lịch sử chi tiết phiên này (dòng cũ): #8 đã duyệt → **build-27 `bluetooth`** dựng xong, efi-validate 0/0, snapshot, **đã ghi USB 19:44** (tree 6efedd66b725, SMBIOS thật); **19:55 Bluetooth bật, 3 kext nạp, firmware tải OK; 20:08 người dùng: Bluetooth hoạt động.** Đang làm: thanh độ sáng (D11) — nguyên nhân: firmware không có PNLF (AppleBacklightDisplay=0). **build-28 `pnlf`** (= build-27 + SSDT-PNLF) dựng xong, validate 0/0, snapshot; build-28 OK (slider có, AppleBacklightDisplay=1) nhưng tối đa chỉ ~18,5 % PWM (`bl hw=96000 apple=0 max=17741`). **build-29 `blmax`** = build-28 + `ngreenblmax=17741`, bỏ `debug=0x100 keepsyms=1` (boot-args 219); **ghi USB 20:24**; 20:28 độ sáng hoạt động. **Đang làm: Audio** (#14/#15 duyệt 20:31) — build-30 dựng dở (AppleALC 1.9.8 đã vào EFI), chờ: AppleHDA đã có trên MÁY B chưa + đường dẫn HDA cho `layout-id` 13. Nếu chỉ sáng ~50% → thêm `ngreenblmax` (phải bỏ `debug=0x100 keepsyms=1`). Audio để sau. Sau đó: Audio (#14/#15).
-- Thử display sleep/wake (`pmset displaysleepnow`) xem con trỏ có vỡ lại (FENCEFIX chỉ chạy trong `hwSetupMemory`; `hwRestoreState` có thể ghi lại fence cũ — CHƯA XÁC MINH).
+- Display sleep/wake: **hoạt động** trên build-31 (2026-11-05 21:35). **build-32 `tp-gpio`** (gỡ `force-polling`, thử ngắt GPIO touchpad) dựng xong — chờ ghi USB/test. **build-33 `usbmap-ss`** = build-32 + UTBMap có SS01/SS02 (dữ liệu `docs/hw-dump/usb-map-*.txt`, map trên Linux). Chưa ghi USB; build-32 và 33 test chung (touchpad GPIO + USB 3). `docs/hw-dump/` đã có lại (người dùng dump 2026-11-05).
 - known-good hiện có: build-26 (bản dựng lại), **build-29** (Bluetooth + độ sáng).
 - Quyết định trước khi đẩy repo public: EFI chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — xem mục Rủi ro.
-- Còn hoãn (`docs/DEFERRED.md`): map USB 3 (cổng SS), camera, boot không cần USB, sleep/wake. (Bluetooth, độ sáng xong; audio đang làm.)
+- Còn hoãn (`docs/DEFERRED.md`): map USB 3 (cổng SS), boot không cần USB, sleep/wake, tai nghe chỉ kênh trái (D14). (Bluetooth, độ sáng, audio, camera xong.)
 
 ## Quy tắc người dùng đặt
 - **KHÔNG đọc lịch sử commit của repo này** (git log/show/các commit cũ). Chỉ dùng trạng thái hiện tại + `docs/hw-dump/` + repo tham chiếu.

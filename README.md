@@ -12,7 +12,7 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 > Four small patches fix it on this machine (see [Root causes](#các-lỗi-đã-sửa-và-nguyên-nhân)):
 > GMSFIX (accelerator), GMSFIX-FB (framebuffer), PAVPFIX and FENCEFIX. Result: desktop with Metal 2,
 > 1920×1080 @ 144 Hz. If your laptop has a fixed DVMT below 64 MB and the same panic, these patches are likely relevant.
-> Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`) and audio (AppleALC layout 11 + OCLP Modern Audio) also work.
+> Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`), audio (AppleALC layout 11 + OCLP Modern Audio) and the webcam also work.
 
 ## Trạng thái (build-31, 2026-11-05)
 
@@ -22,18 +22,19 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | **Tăng tốc đồ hoạ iGPU** | ✅ **Metal 2**, 1920×1080 @ 144 Hz, 64 EU (`xe-topo` 16390), con trỏ hiển thị đúng |
 | Wi-Fi Intel AX210 | ✅ AirportItlwm-Tahoe 1.1.0-beta.1 (ZC28) + root patch OCLP-CustoMac |
 | Ethernet RTL8111 | ✅ RealtekRTL8111 **2.4.2** (bản 3.0.0 không chạy trên máy này) |
-| Bàn phím PS/2, touchpad ELAN0788 (I2C, polling) | ✅ |
+| Bàn phím PS/2, touchpad ELAN0788 (I2C, ngắt GPIO) | ✅ cử chỉ đa điểm |
 | Bluetooth AX210 | ✅ IntelBluetoothFirmware 2.5.3 (fork lshbluesky) + BlueToolFixup |
 | Độ sáng màn hình | ✅ thanh trượt đủ dải (SSDT-PNLF + `ngreenblmax=17741`) |
-| Audio ALC245 | ✅ loa, mic trong (AppleALC layout 11 + root patch Modern Audio); ⚠️ tai nghe 3,5 mm chỉ kênh trái (chưa rõ do jack hay layout) |
+| Audio ALC245 | ✅ loa, mic trong (AppleALC layout 11 + root patch Modern Audio); ⚠️ tai nghe 3,5 mm chỉ kênh trái do lỗi cổng jack của máy (Linux cũng bị) |
 | Pin, nhiệt độ CPU, phím độ sáng | ✅ |
-| USB (cổng HS) | ✅ USB 3 đang chạy tốc độ USB 2 (chưa map cổng SS) |
+| USB | ✅ 2 cổng USB-A có USB 3 (SS01/SS02, map từ Linux bằng `tools/map-usb-linux.sh`); USB-C qua controller TB4 do macOS tự nhận (chưa đo tốc độ) |
 | dGPU RTX 3050 Ti | ⛔ tắt bằng SSDT (macOS không có driver); **HDMI không dùng được** (nối vào dGPU) |
-| Camera, đầu đọc thẻ RTS5228 | ❌ chưa làm / không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
+| Camera HP Wide Vision HD (`30C9:0069`) | ✅ driver UVC có sẵn của macOS |
+| Đầu đọc thẻ RTS5228 | ❌ không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
 | Sleep, màn hình ngoài, video có DRM (PAVP) | ❌ không hỗ trợ với stack này |
 | Metal 3 | ❌ không đạt được với driver Tiger Lake |
 
-Chưa kiểm kỹ: tắt/bật màn hình (display sleep), chạy tải nặng lâu.
+Display sleep/wake hoạt động. Chưa kiểm kỹ: chạy tải nặng lâu.
 
 ## Cảnh báo — đọc trước khi dùng
 
@@ -75,9 +76,9 @@ Chi tiết: [`laptop-specs.md`](laptop-specs.md).
   AppleALC 1.9.8, RestrictEvents, CpuTopologyRebuild, NVMeFix, BrightnessKeys, RealtekRTL8111 2.4.2, AMFIPass, IOSkywalkFamily,
   IO80211FamilyLegacy, AirportItlwm-Tahoe, IntelBluetoothFirmware + IntelBTPatcher 2.5.3 (fork lshbluesky),
   BlueToolFixup 2.7.2, XHCI-ADL-Injector (tự viết, chỉ Info.plist cho `8086:51ED`),
-  USBToolBox + UTBMap, VoodooPS2 (bàn phím), VoodooI2C 3.0.0 (fork lzhoang2801) + VoodooI2CHID.
+  USBToolBox + UTBMap (HS01/02/04/06/07 + SS01/02), VoodooPS2 (bàn phím), VoodooI2C 3.0.0 (fork lzhoang2801) + VoodooI2CHID.
 - **iGPU:** spoof Tiger Lake `device-id 9A49`, `AAPL,ig-platform-id 0x9A490000` (theo JulioNectar).
-  **dGPU:** `disable-gpu` + SSDT. **Touchpad:** property `force-polling` trên I2C0. **Audio:** `layout-id` 11 trên
+  **dGPU:** `disable-gpu` + SSDT. **Touchpad:** ngắt GPIO (`TPD0._CRS` trả GpioInt nhờ SSDT-XOSI; không dùng `force-polling`). **Audio:** `layout-id` 11 trên
   `PciRoot(0x0)/Pci(0x1f,0x3)`. **Bluetooth:** NVRAM `bluetoothExternalDongleFailed`, `bluetoothInternalControllerInfo`.
 - **Quirk đáng chú ý:** `SetupVirtualMap = true` (thiếu nó máy treo ở `EXITBS:START`), `AppleXcpmCfgLock`
   (CFG Lock bật, BIOS không có tuỳ chọn), `DisableIoMapper = true`, `ProvideCurrentCpuInfo`.
@@ -133,7 +134,7 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 | `docs/DRIVER-MATRIX.md`, `docs/SOURCES.md` | Driver đã kiểm định, nguồn, phiên bản, SHA-256 |
 | `docs/*-RUNBOOK.md` | Hướng dẫn chạy trên laptop |
 | `docs/acpi-src/` | Mã nguồn SSDT |
-| `tools/` | Script dump phần cứng (chạy trên laptop), ocvalidate |
+| `tools/` | Script dump phần cứng và map cổng USB (chạy trên Linux của laptop), ocvalidate |
 | `.claude/` | Skill/quy tắc cho Claude Code dùng khi phát triển dự án |
 
 ## Ghi công và giấy phép

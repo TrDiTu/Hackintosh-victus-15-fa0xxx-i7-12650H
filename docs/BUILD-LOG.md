@@ -747,4 +747,32 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-05T21:09:41 Marked build-31-20261105-205412-alc11 as known-good (user request)
 - 2026-11-05 21:09: người dùng đánh dấu **build-31 known-good**.
 - 2026-11-05 21:10: commit 17e0396 trên nhánh `bt-backlight-audio` (EFI build-31 + docs; không gồm `.claude/settings.json`, `AGENTS.md`). SMBIOS trong commit là placeholder (đã kiểm).
+- 2026-11-05 21:29: người dùng báo **camera HP Wide Vision HD (`30C9:0069`) hoạt động** trên build-31 (driver UVC sẵn có; không thay đổi EFI). DEFERRED D13 đóng. Lý do build-10 không chạy: CHƯA XÁC MINH.
+- 2026-11-05T21:36:04 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x15,0x0)} (config.plist)
+- 2026-11-05 21:35: người dùng thử display sleep/wake (`pmset displaysleepnow`) trên build-31: **hoạt động**, con trỏ không vỡ lại → rủi ro "FENCEFIX mất sau wake" đóng.
+
+## Build 32 — `tp-gpio` (2026-11-05): = build-31, gỡ `force-polling` khỏi I2C0 (DEFERRED D7, người dùng yêu cầu)
+- Xoá `DeviceProperties/Add/PciRoot(0x0)/Pci(0x15,0x0)` (chỉ có `force-polling = 01000000`, thêm ở build-17). Boot-args không có `-vi2c-force-polling` từ build-17 → VoodooI2C 3.0.0 (fork lzhoang2801) sẽ thử ngắt GPIO: `TPD0._CRS` trả GpioInt qua `\_SB.GPI0` (INTC1055) khi OSYS ≥ 0x07DC — SSDT-XOSI đã bảo đảm (build-01).
+- Mục đích: bớt đánh thức CPU (pin). Rủi ro: ngắt không đến → touchpad đơ/giật; VoodooI2C có thể tự lùi về polling. Đường lui: build-31 (known-good).
+- plist_diff với build-31: 1 khác biệt. efi-validate 0/0 (validate-20261105T213604.md).
+- Kiểm trên MÁY B: touchpad chạy mượt, cử chỉ 2–3 ngón; `log show --last boot --predicate 'process == "kernel"' | grep -i -E 'VoodooI2C|VoodooGPIO' | grep -i -E 'interrupt|polling|gpio|pin' | head -20`.
+- 2026-11-05T21:36:20 Created build-32-20261105-213620-tp-gpio (tree 0819a543fd2a, ocvalidate: 0 errors, 0 warnings (validate-20261105T213604.md))
+
+## Build 33 — `usbmap-ss` (2026-11-05): = build-32 + UTBMap có cổng USB 3 (DEFERRED D3)
+- Dữ liệu: `docs/hw-dump/usb-map-20261105-220220.txt` (người dùng chạy `tools/map-usb-linux.sh` trên Linux MÁY B). Cổng gốc PCH xHCI `8086:51ED` (`\_SB.PC00.XHCI.RHUB`): `adr` sysfs = `_ADR` = số cổng macOS; `peer` ghép HS↔SS do firmware cung cấp.
+- Thực tế: USB-A trái = HS02 (2) + SS02 (0x0E); USB-A phải = HS01 (1) + SS01 (0x0D); USB-C = HS04 (4) trên PCH, phần USB 3 thuộc controller TB4 `8086:461E` (`TXHC.SS01`, 20 Gbps) — KHÔNG map (D4, chưa có hỗ trợ/kiểm chứng). HS06 camera, HS07 Bluetooth (type "not used" = nội bộ). USR1/USR2, HS03/05/08–10, SS03/04 không dùng.
+- UTBMap mới (`EFI/OC/Kexts/UTBMap.kext/Contents/Info.plist`, sửa bằng plistlib — không phải config.plist): HS01 3, HS02 3, HS04 9 (Type-C), HS06 255, HS07 255, SS01 3, SS02 3; `port-count` 0x0E. Đổi tên cổng theo ACPI (bản cũ đặt HS03/HS04/HS05 cho port 4/6/7 — địa chỉ giữ nguyên).
+- Hạn chế: thiết bị thử trên Linux là USB 2.0 (480 Mbps) → nửa SS chưa có lần cắm thật; dựa vào `peer` của firmware. Kiểm trên macOS bằng thiết bị USB 3: `system_profiler SPUSBDataType` phải báo tối đa 5/10 Gb/s.
+- `tools/map-usb-linux.sh`: sửa cột `peer` in chữ "peer" khi cổng không có cặp.
+- Một thay đổi so với build-32 (UTBMap). Build-32 (touchpad GPIO) chưa test riêng — nếu touchpad lỗi trên build-33: build-34 = build-33 + `force-polling` lại. efi-validate 0/0 (validate-20261105T220932.md).
+- 2026-11-05T22:09:48 Created build-33-20261105-220948-usbmap-ss (tree 26106d86cb52, ocvalidate: 0 errors, 0 warnings (validate-20261105T220932.md))
+- 2026-11-05T22:12:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4d83b78c4251, verified)
+- 2026-11-05 22:11: build-33 usbmap-ss (gồm thay đổi build-32) ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-05T22:17:58 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 0bead3b402f3, verified)
+- 2026-11-05 22:18: người dùng sửa SMBIOS (bộ cũ lỗi) trong file secrets; ghi lại build-33 lên MACEFI với SMBIOS mới (/dev/sdb3, kiểm hash OK). EFI dự án không đổi (vẫn placeholder).
+- 2026-11-05 22:25 kết quả build-33 (MÁY B): class count `AppleUSB30XHCIPort` = **3** (build-27: 1) → SS01/SS02 của UTBMap đã có hiệu lực; `AppleUSB20XHCIPort` = 5. **TXHC (TB4 `8086:461E`) đã được `AppleUSBXHCIPCI` gốc của macOS nhận** (`TXHC@0d000000`, active) → phần USB 3 của cổng USB-C (`TXHC.SS01`) có thể đã chạy sẵn, không cần map (UTBMap chỉ khớp `XHCI`). `system_profiler SPUSBDataType` rỗng: macOS 26 dùng `SPUSBHostDataType`. Log VoodooI2C/VoodooGPIO rỗng (bản release ít log) → chế độ touchpad chưa xác định từ log.
+- 2026-11-05 22:27: người dùng: touchpad trên build-33 mượt như trước, cử chỉ bình thường → giữ không `force-polling` (D7 đóng). Tốc độ USB 3 thực tế chưa đo.
+- 2026-11-05 22:30: dựng lại `docs/MACHINE-ANALYSIS.md` (hw-dump-reader) từ dump 21:47; giải mã ACPI vào `_cache/acpi/`.
+- 2026-11-05 22:38: bắt đầu D6 (boot không cần USB). Viết lại POSTINSTALL-RUNBOOK §4: kiểm ESP, sao lưu, chép EFI từ USB, tạo mục boot (có cách dùng Linux live). Chờ người dùng gửi `diskutil list` và nội dung ESP.
+- 2026-11-05 22:45: ESP `disk0s1` có Limine (CachyOS) → chỉ chép `EFI/OC` từ USB (build-33). `efibootmgr -c` trên CachyOS tạo **Boot0001 "OpenCore"** `HD(1,GPT,460c0790-…)/\EFI\OC\OpenCore.efi`; BootOrder `0001,0000,0003,0004,0005` (0000 = Limine `\EFI\limine\limine_x64.efi`, 0003 = "Solid State Disk" fallback, 0004/0005 = USB). Firmware Timeout 0. Chờ: khởi động không USB. Phát hiện: `PNLF` trong DSDT là trường 16-bit (DSDT:8810), không phải thiết bị → không dùng patch PNLF→XNLF. RAM 24 GB chạy 2400 MT/s.
 - 2026-11-05 21:24: push nhánh `bt-backlight-audio` lên origin (đầu 475e5d7: EFI build-31 + docs + README). Không push `main` (người dùng: không push lên main).
