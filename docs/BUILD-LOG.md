@@ -790,3 +790,5 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - Lý do: số nền build-33 (single 1076, nghỉ 7,4 W) — PERFORMANCE.md. plist_diff với build-33: 1 khác biệt. efi-validate 0/0 (validate-20261106T001359.md).
 - Kiểm trên MÁY B: `sysctl debug.xepm.route debug.xepm.hwp debug.xepm.cst debug.xepm.d3 debug.xepm.eet_off` (route phải = 1); `dmesg | grep 'XeNG PM'`; Geekbench 7 CPU + nghỉ 2 phút với `xe-monitor.py` (KHÔNG powermetrics).
 - 2026-11-06T00:14:11 Created build-34-20261106-001411-xepm (tree 358dede24487, ocvalidate: 0 errors, 0 warnings (validate-20261106T001359.md))
+- 2026-11-06T00:15:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree ac70ed69431c, verified)
+- 2026-11-06 00:15: build-34 xepm ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-33.
