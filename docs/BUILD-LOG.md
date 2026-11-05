@@ -798,3 +798,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 00:46: điểm GB7 build-34: single 1220 (+13 %), multi 5476 (−6 %) so với build-33 (1076 / 5837). Ghi PERFORMANCE.md.
 - 2026-11-06 00:50: xe-freq lần 1 trên MÁY B cho 8–24 GHz (sai): đồng hồ CLOCK_MONOTONIC_RAW nhảy nấc ~8 ms, mẫu chỉ ~50 ms. Sửa: mach_absolute_time, mẫu ~1 s, in bước đồng hồ.
 - 2026-11-06 00:52: xe-freq bản mach_absolute_time trên MÁY B: timer step 17 ns (đồng hồ ổn) nhưng vẫn 6–27 GHz → chuỗi `add $imm` bị Golden Cove gộp ở renamer (>1 lệnh/chu kỳ). Sửa: chuỗi ADD thanh ghi–thanh ghi với hạng tử đọc lúc chạy. Bản 1 (`clock_gettime`) sai vì mẫu ngắn, không phải đồng hồ hệ thống.
+- 2026-11-06 00:54: powermetrics (người dùng chấp nhận rủi ro) lúc single-core build-34: nhân bận nhất 3,9–4,43 GHz, gói 21–26 W. Ghi PERFORMANCE.md.

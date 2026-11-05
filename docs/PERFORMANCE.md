@@ -54,3 +54,7 @@ Một lần chạy mỗi bên → chưa biết dao động giữa các lần (mu
 Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều năng lượng hơn nên ngân sách PL2/tau cạn sớm hơn khi vào multi
 (gói max thấp hơn 8 W); hoặc chỉ là dao động. Thử được mà không cần build mới: XE-PM có sysctl đổi trực tiếp
 `debug.xepm.hwp` (0/1), `debug.xepm.epp` (0–255), `debug.xepm.cst` (0/1).
+- `powermetrics` lúc GB7 single-core (build-34, người dùng chấp nhận rủi ro panic): nhân bận nhất 3,9–4,43 GHz trung bình mỗi giây
+  (nominal 2680 MHz; spec turbo 4,7 GHz), luồng nhảy giữa CPU 1/3/4, gói 21–26 W → turbo đã vượt mức ~3,8 GHz. Khoảng cách
+  tới 4,7 GHz: nghi do chỉ 1–2 "favored core" lên 4,7 và scheduler macOS chuyển luồng qua lại (CHƯA XÁC MINH).
+- `tools/xe-freq.c`: bản `add $imm` cho số sai (Golden Cove gộp chuỗi cộng hằng ở renamer); bản ADD thanh ghi chưa kiểm trên MÁY B.
