@@ -42,3 +42,15 @@ Nhận định:
 - **Nghỉ 7,4 W** khá cao (nhân CPU chỉ 1,6 W; phần còn lại là uncore/SA) → gợi ý không vào C-state sâu (C8/C10), cũng là việc XE-PM xử lý.
 - **iGPU**: có tải thật (GT tới ~13 W). `gpu_util_pct` luôn 0 và `gpu_mem_MB` trống: driver TGL không có khoá
   `Device Utilization %`/`In use system memory` → cần `python3 xe-monitor.py --gpu-keys` để chọn khoá đúng.
+
+## Build-34 — XE-PM (`-ngreenpm`, PL1 của BIOS), 2026-11-06 00:37
+| | build-33 | build-34 | Chênh |
+|---|---|---|---|
+| Geekbench 7 single-core | 1076 | **1220** | +13 % |
+| Geekbench 7 multi-core | 5837 | **5476** | −6 % |
+| Công suất IA pha tải nhẹ (avg / p90) | 7,4 / 11,3 W | 12,8 / 21,9 W | |
+| Gói max / P-core max | 73,2 W / 88 °C | 64,9 W / 83 °C | |
+Một lần chạy mỗi bên → chưa biết dao động giữa các lần (multi của Geekbench thường lệch vài %). Single-core tăng ít hơn JN (+33 %).
+Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều năng lượng hơn nên ngân sách PL2/tau cạn sớm hơn khi vào multi
+(gói max thấp hơn 8 W); hoặc chỉ là dao động. Thử được mà không cần build mới: XE-PM có sysctl đổi trực tiếp
+`debug.xepm.hwp` (0/1), `debug.xepm.epp` (0–255), `debug.xepm.cst` (0/1).
