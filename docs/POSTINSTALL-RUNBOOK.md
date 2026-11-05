@@ -61,14 +61,44 @@ Claude sẽ: thêm `UTBMap.kext`, tắt `UTBDefault.kext`, validate, snapshot, g
 - **Độ sáng màn hình** (phím Fn), **pin** sau 30 phút dùng (`pmset -g batt`), **nhiệt độ/quạt** (dGPU phải tắt).
 - **Mốc trước tăng tốc** (TEST-PLAN.md): chạy 5 lệnh ở cuối TEST-PLAN, chép file về MÁY A.
 
-## 4. Boot không cần USB (tuỳ chọn, build-08 đã known-good)
-1. Trên macOS: `diskutil list` → tìm phân vùng **EFI** của ổ trong (thường `disk0s1`). `sudo diskutil mount disk0s1`.
-2. Xem nội dung `/Volumes/EFI/EFI`. **Nếu có `EFI/Microsoft` (Windows)**: KHÔNG xoá, KHÔNG ghi đè `EFI/BOOT/BOOTx64.efi` của Windows — báo Claude trước.
-   Nếu ESP trống / chỉ có EFI cũ của bạn: sao lưu thư mục đó ra Desktop trước.
-3. Chép **nguyên thư mục `EFI` từ USB MACEFI** (đã có SMBIOS thật) sang ESP: chỉ thêm `EFI/OC` và `EFI/BOOT` (nếu không đụng Windows).
-4. BIOS HP (F10): thêm mục boot trỏ tới `\EFI\OC\OpenCore.efi` (hoặc `\EFI\BOOT\BOOTx64.efi`) và đặt lên đầu — tên mục trong BIOS HP: CHƯA XÁC MINH,
-   ghi lại tên bạn thấy. Giữ USB MACEFI làm dự phòng.
-5. Lần sau Claude cập nhật EFI: vẫn ghi lên USB trước, test, rồi bạn tự chép sang ESP.
+## 4. Boot không cần USB (D6, viết lại 2026-11-05 cho build-33)
+Nguyên tắc: chép **EFI đang chạy tốt từ USB MACEFI** (đã có SMBIOS thật) sang phân vùng EFI (ESP) của ổ NVMe. USB giữ
+nguyên làm dự phòng. Claude không truy cập được MÁY B: bạn làm từng bước và báo lại.
+
+**Bước A — kiểm tra (chỉ đọc), gửi kết quả cho Claude trước khi chép:**
+```
+diskutil list
+sudo diskutil mount disk0s1          # thay disk0s1 bằng phân vùng "EFI" của ổ NVMe (APPLE_SSD/SK hynix) nếu khác
+find /Volumes/EFI -maxdepth 3 -not -path '*/.*' | head -40
+df -h /Volumes/EFI
+```
+Claude cần biết: ESP của ổ trong có gì (trống / `EFI/Microsoft` / `EFI/BOOT` của Linux / OpenCore cũ), còn trống bao nhiêu.
+
+**Bước B — sao lưu ESP hiện có** (kể cả khi gần như trống):
+```
+sudo cp -R /Volumes/EFI/EFI ~/Desktop/ESP-backup-$(date +%Y%m%d) 2>/dev/null; ls ~/Desktop/ESP-backup-*
+```
+
+**Bước C — chép OpenCore** (USB MACEFI cắm và mount ở `/Volumes/MACEFI`; đúng build đã known-good):
+- Trường hợp 1 — ESP **không có** `EFI/BOOT` và `EFI/Microsoft`:
+  `sudo cp -R /Volumes/MACEFI/EFI/BOOT /Volumes/MACEFI/EFI/OC /Volumes/EFI/EFI/`
+- Trường hợp 2 — ESP **có** `EFI/Microsoft` hoặc `EFI/BOOT` của hệ khác: **chỉ** chép `EFI/OC`
+  (`sudo cp -R /Volumes/MACEFI/EFI/OC /Volumes/EFI/EFI/`), KHÔNG đụng `EFI/BOOT`/`EFI/Microsoft`, rồi thêm mục boot ở Bước D.
+- Bỏ file rác macOS: `sudo find /Volumes/EFI/EFI/OC -name '._*' -delete`
+- Kiểm: `diff -rq -x '._*' /Volumes/MACEFI/EFI/OC /Volumes/EFI/EFI/OC` phải rỗng.
+
+**Bước D — mục boot:**
+- Trường hợp 1: firmware tự boot `\EFI\BOOT\BOOTx64.efi` của ổ NVMe. Rút USB, khởi động lại; nếu vẫn vào thẳng
+  hệ khác → F9 (Boot Menu HP) chọn ổ NVMe, hoặc F10 › Boot Options đưa ổ NVMe lên đầu (tên mục CHƯA XÁC MINH, ghi lại).
+- Trường hợp 2 (hoặc khi trường hợp 1 không tự boot): tạo mục riêng từ Linux live (Ventoy/CachyOS) trên MÁY B:
+  `sudo efibootmgr -c -d /dev/nvme0n1 -p <số phân vùng ESP> -L "OpenCore" -l '\EFI\OC\OpenCore.efi'` rồi đặt lên đầu
+  bằng `efibootmgr -o`. Gửi Claude `efibootmgr -v` trước và sau.
+
+**Quay lại khi hỏng:** cắm USB MACEFI → F9 → chọn USB (EFI trên USB không đổi). Xoá `EFI/OC` (và `EFI/BOOT` nếu bạn đã
+chép ở trường hợp 1) khỏi ESP, hoặc chép lại bản sao lưu Bước B.
+
+**Cập nhật về sau:** Claude vẫn chỉ ghi USB. Bạn boot USB (F9) để thử build mới; ổn rồi mới chép `EFI/OC` (và `EFI/BOOT`)
+từ USB sang ESP như Bước C. Đừng sửa `config.plist` trên ESP bằng tay.
 
 ## 5. Audio ALC245 (build-30, người dùng duyệt 2026-11-05)
 EFI build-30 đã có AppleALC 1.9.8 + `layout-id` 13 trên `PciRoot(0x0)/Pci(0x1f,0x3)` (HDAS). AppleALC **không ra tiếng** khi chưa có AppleHDA
