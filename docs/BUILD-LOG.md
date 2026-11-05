@@ -812,3 +812,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T02:28:35 Created build-35-20261106-022835-xepm-nocst (tree 35c3e6125686, ocvalidate: 0 errors, 0 warnings (validate-20261106T022822.md))
 - 2026-11-06T02:33:01 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 13d19b792cc0, verified)
 - 2026-11-06 02:33: build-35 xepm-nocst ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 02:37 build-35 trên MÁY B: sysctl debug.xepm.route 1, cst 0 → `ngreenpmcst=0` (vị trí 227–240) được kernel đọc; Wi-Fi còn (-amfipassbeta không bị cắt). dmesg không còn dòng 'XeNG PM' (bộ đệm bị log 'XeNG CS' đẩy ra).
