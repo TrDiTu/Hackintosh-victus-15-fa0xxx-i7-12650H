@@ -842,3 +842,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T04:25:11 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 5ee312dbe66b, verified)
 - 2026-11-06 04:24: build-37 hwpauto-on ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
 - 2026-11-06 04:28 build-37 trên MÁY B: sysctl hwpauto 1, cst 0, route 1 → boot-args 255 ký tự được kernel đọc đủ (ngreenpmauto=1 ở vị trí cuối). Người dùng chép build-37 sang ESP ổ trong (từ CachyOS).
+- 2026-11-06 04:35: cập nhật README (build-37, hiệu năng, boot-args 255 + hai giới hạn Lilu/kernel, lỗi #8–#10, cảnh báo powermetrics/chép ESP, tools), SOURCES (patch v8 + kext v8), STATE, PERFORMANCE (bảng tóm tắt), DEFERRED D11.

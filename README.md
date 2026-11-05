@@ -13,8 +13,10 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 > GMSFIX (accelerator), GMSFIX-FB (framebuffer), PAVPFIX and FENCEFIX. Result: desktop with Metal 2,
 > 1920×1080 @ 144 Hz. If your laptop has a fixed DVMT below 64 MB and the same panic, these patches are likely relevant.
 > Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`), audio (AppleALC layout 11 + OCLP Modern Audio) and the webcam also work.
+> **CPU performance:** NootedGreen XE-PM plus a new **XE-HWPAUTO** patch (HWP desired = 0, autonomous clock; v8) raise
+> Geekbench 7 from 1076 / 5837 to **2030 / 9646** — 92 % / 95 % of Linux on the same laptop (2195 / 10101).
 
-## Trạng thái (build-31, 2026-11-05)
+## Trạng thái (build-37, 2026-11-06)
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -27,7 +29,10 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Độ sáng màn hình | ✅ thanh trượt đủ dải (SSDT-PNLF + `ngreenblmax=17741`) |
 | Audio ALC245 | ✅ loa, mic trong (AppleALC layout 11 + root patch Modern Audio); ⚠️ tai nghe 3,5 mm chỉ kênh trái do lỗi cổng jack của máy (Linux cũng bị) |
 | Pin, nhiệt độ CPU, phím độ sáng | ✅ |
+| **Hiệu năng CPU** | ✅ Geekbench 7 **2030 / 9646** = 92 % / 95 % Linux cùng máy (XE-PM + XE-HWPAUTO; trước đó 1076 / 5837) — [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
+| iGPU (Geekbench 7 Metal) | 1094 (chưa có mốc so sánh cùng phiên bản) |
 | USB | ✅ 2 cổng USB-A có USB 3 (SS01/SS02, map từ Linux bằng `tools/map-usb-linux.sh`); USB-C qua controller TB4 do macOS tự nhận (chưa đo tốc độ) |
+| Boot không cần USB | ✅ OpenCore trên ESP ổ NVMe, cạnh Limine (CachyOS) — [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §4 |
 | dGPU RTX 3050 Ti | ⛔ tắt bằng SSDT (macOS không có driver); **HDMI không dùng được** (nối vào dGPU) |
 | Camera HP Wide Vision HD (`30C9:0069`) | ✅ driver UVC có sẵn của macOS |
 | Đầu đọc thẻ RTS5228 | ❌ không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
@@ -42,6 +47,8 @@ Display sleep/wake hoạt động. Chưa kiểm kỹ: chạy tải nặng lâu.
 - **Không cập nhật macOS.** Stack đồ hoạ và root patch Wi-Fi + Audio gắn với đúng 25G241; cập nhật sẽ làm hỏng cả ba.
 - Có thể gặp GPU hang / kernel panic. Luôn giữ một EFI không tăng tốc để quay về (`EFI/OC/config-install.plist`
   hoặc build nền).
+- **Không chạy `powermetrics`** khi cần ổn định: nó từng gây kernel panic trong framebuffer TGL (NULL qua `AppleGraphicsDeviceControl`). Đo xung bằng `tools/xe-freq.c`, nhiệt/công suất bằng `tools/xe-monitor.py`.
+- **Chép EFI sang ESP ổ trong từ Linux**, không từ macOS: bản chép bằng macOS làm OpenCore báo thiếu `Info.plist` của kext lồng trong `PlugIns`.
 - **Tránh System Settings › Displays** và đổi profile màu (từng gây panic với stack JulioNectar). Đổi độ phân giải /
   tần số quét bằng `tools/xe-res` của JulioNectar.
 - EFI trong repo dùng **SMBIOS giả** (`CHANGE_ME_*`). Tự sinh serial riêng; không bao giờ commit serial thật.
@@ -61,12 +68,11 @@ Display sleep/wake hoạt động. Chưa kiểm kỹ: chạy tải nặng lâu.
 | Ethernet | Realtek RTL8111 `10EC:8168` |
 | Touchpad | ELAN0788 (I2C0 `8086:51E8`) |
 | SSD | SK hynix BC711 256 GB |
-
 | Audio | Realtek ALC245 (subsys `103C8A4F`), HDA `\_SB.PC00.HDAS` = `PciRoot(0x0)/Pci(0x1f,0x3)` |
 
 Chi tiết: [`laptop-specs.md`](laptop-specs.md).
 
-## Cấu hình EFI (build-31)
+## Cấu hình EFI (build-37)
 
 - **OpenCore 1.0.8**, SMBIOS `MacBookPro16,2`.
 - **SSDT** (tự viết từ DSDT của máy, nguồn ở [`docs/acpi-src/`](docs/acpi-src/)): PLUG-ALT, EC-USBX, AWAC, XOSI
@@ -80,18 +86,23 @@ Chi tiết: [`laptop-specs.md`](laptop-specs.md).
 - **iGPU:** spoof Tiger Lake `device-id 9A49`, `AAPL,ig-platform-id 0x9A490000` (theo JulioNectar).
   **dGPU:** `disable-gpu` + SSDT. **Touchpad:** ngắt GPIO (`TPD0._CRS` trả GpioInt nhờ SSDT-XOSI; không dùng `force-polling`). **Audio:** `layout-id` 11 trên
   `PciRoot(0x0)/Pci(0x1f,0x3)`. **Bluetooth:** NVRAM `bluetoothExternalDongleFailed`, `bluetoothInternalControllerInfo`.
+- **CPU (NootedGreen XE-PM, `-ngreenpm`):** sửa turbo HWP trên CPU lai, EPP 0, tắt EE turbo, D3 cho thiết bị PCI không driver;
+  `ngreenpmcst=0` giữ bảng C-state gốc của XCPM (C8/C10 làm multi-core giảm); `ngreenpmauto=1` bật **XE-HWPAUTO** (patch v8 của dự án).
+  CpuTopologyRebuild để mặc định (6 nhân / 16 luồng; `ctrsmt=off` đo được kém hơn). PL1 giữ của BIOS.
 - **Quirk đáng chú ý:** `SetupVirtualMap = true` (thiếu nó máy treo ở `EXITBS:START`), `AppleXcpmCfgLock`
   (CFG Lock bật, BIOS không có tuỳ chọn), `DisableIoMapper = true`, `ProvideCurrentCpuInfo`.
-- **boot-args** (219 ký tự — Lilu cắt ở ~228, phải đặt tham số đồ hoạ lên đầu):
+- **boot-args** (255 ký tự):
   ```
-  ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta -v
+  ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta ngreenpmcst=0 ngreenpmauto=1
   ```
-  `keepsyms=1 debug=0x100` đã bỏ để có chỗ cho `ngreenblmax`; khi cần gỡ panic thì thêm lại tạm thời.
+  Hai giới hạn: **Lilu chỉ giữ ~228 ký tự đầu** cho cờ đọc bằng `checkKernelArgument` (`-ngreen*`, `-amfipassbeta`…), còn
+  **kernel giữ 255** cho tham số đọc bằng `PE_parse_boot_argn` (`ngreenpmcst`, `ngreenpmauto`). Vì vậy hai tham số này đứng
+  cuối (vị trí 227–255); chuỗi đã dùng hết 255. `-v`, `keepsyms=1`, `debug=0x100` đã bỏ để có chỗ — thêm lại tạm thời khi gỡ lỗi.
 
 ## Các lỗi đã sửa và nguyên nhân
 
 Các bản vá nằm trong [`patches/`](patches/), áp lên source NootedGreen của JulioNectar @ `6f03560`.
-Bản dùng hiện tại: **`patches/nootedgreen-gmsfix-v7-jn6f03560.patch`** (gồm cả các log chẩn đoán).
+Bản dùng hiện tại: **`patches/nootedgreen-gmsfix-v8-jn6f03560.patch`** (v7 + XE-HWPAUTO; gồm cả các log chẩn đoán).
 Diễn biến và số đo từng bước: [`docs/BUILD-LOG.md`](docs/BUILD-LOG.md) (build-12 → build-26).
 
 | # | Triệu chứng | Nguyên nhân | Bản vá |
@@ -103,8 +114,11 @@ Diễn biến và số đo từng bước: [`docs/BUILD-LOG.md`](docs/BUILD-LOG.
 | 5 | Con trỏ chuột vỡ thành các dải | Fence X-tile của framebuffer dài 64 MB (theo bảng Apple) tràn qua stolen 60 MB, phủ lên buffer con trỏ ở ngay sau stolen | **FENCEFIX**: cắt cuối fence về cuối vùng stolen |
 | 6 | Không có thanh độ sáng | Firmware không có thiết bị `PNLF` (`APP0002`) → macOS gắn `AppleDisplay` thay vì `AppleBacklightDisplay` | **SSDT-PNLF** tối giản (không ghi thanh ghi PWM) |
 | 7 | Độ sáng tối đa chỉ ~18,5 % | macOS không ghi chu kỳ PWM (`bl hw=96000 apple=0`), duty tối đa 17741 đi thẳng ra phần cứng | Boot-arg `ngreenblmax=17741` (XE-BLR có sẵn trong NootedGreen của JulioNectar) |
+| 8 | Geekbench 7 chỉ ~54 % Linux; P-core kẹt ~3,8 GHz | XCPM ghi giới hạn HWP sai trên CPU lai | `-ngreenpm` (XE-PM của JulioNectar): single +13 % |
+| 9 | Multi-core giảm khi bật XE-PM | C8/C10 do XE-PM bật | `ngreenpmcst=0`: multi 5476 → 7114 |
+| 10 | Single-core vẫn ~54 % Linux; luồng đơn tụt xung theo từng đợt | XNU chuyển luồng qua nhiều P-core; mỗi lần XCPM ghi HWP "desired" thấp cho nhân mới, chỉ nâng ở chu kỳ điều khiển sau | **XE-HWPAUTO** (patch v8, `ngreenpmauto=1`): desired = 0 → nhân tự chọn xung; Geekbench 7 1191 / 5637 → **2030 / 9646** |
 
-Tất cả các bản vá đều tắt được bằng boot-arg (`-ngreennogmsfix`, `-ngreennopavpfix`, `-ngreennofencefix`).
+Tất cả các bản vá đều tắt được bằng boot-arg (`-ngreennogmsfix`, `-ngreennopavpfix`, `-ngreennofencefix`); XE-HWPAUTO đổi trực tiếp bằng `sudo sysctl -w debug.xepm.hwpauto=0|1`.
 Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'xe-cur|xe-fence|xe-mm'`.
 
 ## Cài đặt (tóm tắt)
@@ -118,23 +132,26 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 4. Áp bản vá và build NootedGreen trên chính máy đó —
    [`docs/GMSFIX-RUNBOOK.md`](docs/GMSFIX-RUNBOOK.md):
    ```
-   cd ~/xe-stack && git apply nootedgreen-gmsfix-v7-jn6f03560.patch && zsh build-nootedgreen.sh
+   cd ~/xe-stack && git apply nootedgreen-gmsfix-v8-jn6f03560.patch && zsh build-nootedgreen.sh
    ```
    rồi chép `build/NootedGreen.kext` vào `EFI/OC/Kexts/`.
 5. Tự điền SMBIOS (serial, MLB, UUID, ROM) vào `config.plist` của bạn.
+6. (Tuỳ chọn) Boot không cần USB: chép `EFI/OC` vào ESP ổ trong **từ Linux**, tạo mục boot bằng `efibootmgr` —
+   [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §4.
 
 ## Cấu trúc repo
 
 | Đường dẫn | Nội dung |
 |---|---|
-| `EFI/` | EFI OpenCore hiện tại (build-31), SMBIOS giả |
+| `EFI/` | EFI OpenCore hiện tại (build-37), SMBIOS giả |
 | `patches/` | Bản vá NootedGreen (gộp `vN-jn6f03560`, tăng thêm `vN-to-vM`) |
 | `docs/STATE.md`, `docs/BUILD-LOG.md` | Trạng thái và nhật ký từng bản build |
 | `docs/GRAPHICS-PROGRESS.md` | Tiến trình thử đồ hoạ |
+| `docs/PERFORMANCE.md` | Số đo CPU/iGPU, so với Linux, từng bước cải thiện |
 | `docs/DRIVER-MATRIX.md`, `docs/SOURCES.md` | Driver đã kiểm định, nguồn, phiên bản, SHA-256 |
 | `docs/*-RUNBOOK.md` | Hướng dẫn chạy trên laptop |
 | `docs/acpi-src/` | Mã nguồn SSDT |
-| `tools/` | Script dump phần cứng và map cổng USB (chạy trên Linux của laptop), ocvalidate |
+| `tools/` | Dump phần cứng và map cổng USB (Linux của laptop); `xe-monitor.py` (nhiệt/công suất CPU, iGPU) và `xe-freq.c` (xung thực, loại nhân) chạy trên macOS; ocvalidate |
 | `.claude/` | Skill/quy tắc cho Claude Code dùng khi phát triển dự án |
 
 ## Ghi công và giấy phép

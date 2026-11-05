@@ -14,7 +14,7 @@ Lập 2026-11-02, sau build-10. Mỗi mục: trạng thái, vì sao chưa làm, 
 | D8 | **AppleVTD** (`DisableIoMapper=false`) | Đang `true` (conventional, baseline OCLP-CustoMac). Build-07 thử `false`: Wi-Fi không thấy mạng (lúc đó chưa root patch) → chưa kết luận | Chỉ thử lại nếu cần; RTL8111 2.4.2 không hỗ trợ AppleVTD → phải đổi driver Ethernet trước | BUILD-LOG build-07/08 |
 | D9 | **Card reader RTS5228** | KHÔNG CÓ DRIVER (RealtekCardReader: "Not Yet") | Theo dõi 0xFireWolf/RealtekCardReader | DRIVER-MATRIX #19 |
 | D10 | **HDMI / màn hình ngoài** | Không dùng được (HDMI nối dGPU; dGPU tắt) | Không có hướng giải quyết trong macOS | GPU-STRATEGY §1 |
-| D11 | **Độ sáng, pin dài hạn, nhiệt** | Người dùng báo pin hoạt động; chưa đo dài hạn | Kiểm theo POSTINSTALL-RUNBOOK §3 | — |
+| D11 | **Độ sáng, pin dài hạn, nhiệt** | Độ sáng XONG (build-29). Hiệu năng CPU xong (build-37, PERFORMANCE.md). Pin/nhiệt dài hạn chưa đo | Theo dõi bằng `tools/xe-monitor.py` (không dùng powermetrics) | PERFORMANCE.md |
 | D12 | **Công cụ**: `plist_edit.py` guard ROM (đã sửa); `snapshot.py` không bỏ qua known-good khi xoay vòng | Người dùng chọn xoá snapshot thủ công khi cần | Có thể sửa snapshot.py để xoay vòng bỏ qua known-good (cần người dùng đồng ý) | BUILD-LOG |
 | D13 | ~~**Camera HP Wide Vision HD**~~ (`30C9:0069`, UVC) | **XONG** — người dùng báo hoạt động trên build-31 (2026-11-05 21:29); không đổi EFI riêng cho camera. Build-10 từng báo không chạy: nguyên nhân khác biệt CHƯA XÁC MINH (cổng HS04 port 6 = Internal 255 có trong UTBMap từ build-10) | — | BUILD-LOG |
 | D14 | ~~**Tai nghe 3,5 mm chỉ kênh trái**~~ | **Đóng — lỗi phần cứng** (cổng jack): người dùng thử trên Linux cùng máy, vẫn lệch (2026-11-05). Không liên quan layout | — | — |

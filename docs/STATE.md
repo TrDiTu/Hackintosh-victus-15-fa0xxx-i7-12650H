@@ -1,6 +1,6 @@
 # STATE — bộ nhớ giữa các phiên (Claude Code cập nhật cuối mỗi phiên/pha)
 
-- Cập nhật lần cuối: 2026-11-05 20:36
+- Cập nhật lần cuối: 2026-11-06 04:35
 - **2026-11-05 19:30: thư mục dự án cũ bị mất; đã dựng lại từ USB** (BUILD-LOG mục "Dựng lại dự án từ USB"). EFI dự án = build-26 (tree c69972f2ffb4). Mất: snapshot known-good build-10/21, GRAPHICS-PANIC-ANALYSIS. **Đã phục hồi (2026-11-05 22:30):** `docs/hw-dump/` (dump mới 21:47), `docs/MACHINE-ANALYSIS.md` (dựng lại), ACPI giải mã ở `_cache/acpi/` (DSDT + 16 SSDT + 8 dyn-SSDT `PmRef`). Các file gitignored này nằm ở thư mục chính; worktree dùng symlink.
 - **Giai đoạn B — ĐÃ CÓ TĂNG TỐC.** build-26 `fencefix` (trên USB MACEFI): vào desktop, **Metal 2**, 1920×1080 @ 144 Hz,
   `xe-topo` 16390 (64 EU / L3 6), con trỏ chuột hiển thị đúng (2026-11-05 03:42). Wi-Fi, Ethernet, touchpad hoạt động.
@@ -17,11 +17,12 @@
   `IOSkywalkFamily`/`IO80211FamilyLegacy`, `.claude/worktrees/`. Chưa commit.
 
 ## Việc tiếp theo / người dùng cần làm
-- **HIỆN TẠI (2026-11-05 21:08): build-31 `alc11` trên USB — audio xong** (loa + mic OK; tai nghe chỉ trái, bỏ qua — DEFERRED D14). Root patch Modern Wi-Fi + Modern Audio đã áp trên MÁY B. Trước đó: build-30 `audio` (= build-29 known-good + AppleALC 1.9.8 + `layout-id` 13 @ `PciRoot(0x0)/Pci(0x1f,0x3)`). Người dùng cần: boot build-30 → OCLP-CustoMac Revert → khởi động lại → root patch **Modern Wi-Fi + Modern Audio** (KDK 25G241) → kiểm loa/jack/mic + Metal (POSTINSTALL-RUNBOOK §5). Không ra tiếng → thử layout 11, 12.
+- **HIỆN TẠI (2026-11-06 04:35): build-37 `hwpauto-on`** trên USB và đang chép sang ESP ổ trong (từ CachyOS). = build-33 (USB 3 map, touchpad GPIO) + XE-PM `-ngreenpm` + `ngreenpmcst=0` + NootedGreen **v8 XE-HWPAUTO** `ngreenpmauto=1`; boot-args 255 (đủ, đã kiểm). Geekbench 7 **2030 / 9646** = 92 %/95 % Linux (2195/10101). Chi tiết `docs/PERFORMANCE.md`. Cấm `powermetrics` khi cần ổn định (từng panic). Chép EFI sang ESP chỉ từ Linux.
+- Trước đó: build-31 `alc11` trên USB — audio xong** (loa + mic OK; tai nghe chỉ trái, bỏ qua — DEFERRED D14). Root patch Modern Wi-Fi + Modern Audio đã áp trên MÁY B. Trước đó: build-30 `audio` (= build-29 known-good + AppleALC 1.9.8 + `layout-id` 13 @ `PciRoot(0x0)/Pci(0x1f,0x3)`). Người dùng cần: boot build-30 → OCLP-CustoMac Revert → khởi động lại → root patch **Modern Wi-Fi + Modern Audio** (KDK 25G241) → kiểm loa/jack/mic + Metal (POSTINSTALL-RUNBOOK §5). Không ra tiếng → thử layout 11, 12.
 - Đã xong hôm nay: Bluetooth (build-27), thanh độ sáng SSDT-PNLF (build-28) + `ngreenblmax=17741` (build-29, known-good). Boot-args 219, không còn `debug=0x100 keepsyms=1`.
 - Lịch sử chi tiết phiên này (dòng cũ): #8 đã duyệt → **build-27 `bluetooth`** dựng xong, efi-validate 0/0, snapshot, **đã ghi USB 19:44** (tree 6efedd66b725, SMBIOS thật); **19:55 Bluetooth bật, 3 kext nạp, firmware tải OK; 20:08 người dùng: Bluetooth hoạt động.** Đang làm: thanh độ sáng (D11) — nguyên nhân: firmware không có PNLF (AppleBacklightDisplay=0). **build-28 `pnlf`** (= build-27 + SSDT-PNLF) dựng xong, validate 0/0, snapshot; build-28 OK (slider có, AppleBacklightDisplay=1) nhưng tối đa chỉ ~18,5 % PWM (`bl hw=96000 apple=0 max=17741`). **build-29 `blmax`** = build-28 + `ngreenblmax=17741`, bỏ `debug=0x100 keepsyms=1` (boot-args 219); **ghi USB 20:24**; 20:28 độ sáng hoạt động. **Đang làm: Audio** (#14/#15 duyệt 20:31) — build-30 dựng dở (AppleALC 1.9.8 đã vào EFI), chờ: AppleHDA đã có trên MÁY B chưa + đường dẫn HDA cho `layout-id` 13. Nếu chỉ sáng ~50% → thêm `ngreenblmax` (phải bỏ `debug=0x100 keepsyms=1`). Audio để sau. Sau đó: Audio (#14/#15).
 - Display sleep/wake: **hoạt động** trên build-31 (2026-11-05 21:35). **build-32 `tp-gpio`** (gỡ `force-polling`, thử ngắt GPIO touchpad) dựng xong — chờ ghi USB/test. **build-33 `usbmap-ss`** = build-32 + UTBMap có SS01/SS02 (dữ liệu `docs/hw-dump/usb-map-*.txt`, map trên Linux). Chưa ghi USB; build-32 và 33 test chung (touchpad GPIO + USB 3). `docs/hw-dump/` đã có lại (người dùng dump 2026-11-05).
-- known-good hiện có: build-26 (bản dựng lại), **build-29** (Bluetooth + độ sáng).
+- known-good hiện có: build-26, build-29, **build-31** (audio). build-37 chưa đánh dấu (chờ người dùng).
 - Quyết định trước khi đẩy repo public: EFI chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — xem mục Rủi ro.
 - Còn hoãn (`docs/DEFERRED.md`): map USB 3 (cổng SS), boot không cần USB, sleep/wake, tai nghe chỉ kênh trái (D14). (Bluetooth, độ sáng, audio, camera xong.)
 
@@ -77,7 +78,7 @@
 - Git: settings.json chặn `git push`; `.gitignore` đã có `.claude/worktrees/` (2026-11-05). EFI/ chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — cân nhắc trước khi đưa lên repo public.
 
 ## Bản build
-- Mới nhất: **build-26 `fencefix`** = build-21 + NootedGreen v7 (trên USB, ghi 2026-11-05 03:40). Thư mục `EFI/` dự án = build-26.
+- Mới nhất: **build-37 `hwpauto-on`** (2026-11-06 04:24, USB). Thư mục `EFI/` dự án (nhánh `bt-backlight-audio`, worktree) = build-37.
 - known-good: **build-10** (EFI nền, không tăng tốc) và **build-21** (Metal 2, con trỏ còn lỗi). Đường lui: build-21 / build-10 / `EFI/OC/config-install.plist` (= build-10).
 - Snapshot (2/10, sau khi mất thư mục cũ): `build-26-…-fencefix-restored` ★ known-good (người dùng, 2026-11-05 19:37), `build-27-…-bluetooth`. Đường lui: build-26, rồi `config-install.plist`. (Danh sách cũ 10★,18–26 đã mất.) `snapshot.py` không tự bỏ qua known-good build-10 → khi đầy phải xoá tay bản cũ nhất không phải known-good (đã xoá 12, 14, 15, 16, 17).
 
