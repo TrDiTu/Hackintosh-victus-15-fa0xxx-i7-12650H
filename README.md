@@ -25,7 +25,7 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Bàn phím PS/2, touchpad ELAN0788 (I2C, polling) | ✅ |
 | Bluetooth AX210 | ✅ IntelBluetoothFirmware 2.5.3 (fork lshbluesky) + BlueToolFixup |
 | Độ sáng màn hình | ✅ thanh trượt đủ dải (SSDT-PNLF + `ngreenblmax=17741`) |
-| Audio ALC245 | ✅ loa, mic trong (AppleALC layout 11 + root patch Modern Audio); ⚠️ tai nghe 3,5 mm chỉ kênh trái (chưa rõ do jack hay layout) |
+| Audio ALC245 | ✅ loa, mic trong (AppleALC layout 11 + root patch Modern Audio); ⚠️ tai nghe 3,5 mm chỉ kênh trái do lỗi cổng jack của máy (Linux cũng bị) |
 | Pin, nhiệt độ CPU, phím độ sáng | ✅ |
 | USB (cổng HS) | ✅ USB 3 đang chạy tốc độ USB 2 (chưa map cổng SS) |
 | dGPU RTX 3050 Ti | ⛔ tắt bằng SSDT (macOS không có driver); **HDMI không dùng được** (nối vào dGPU) |
@@ -34,7 +34,7 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Sleep, màn hình ngoài, video có DRM (PAVP) | ❌ không hỗ trợ với stack này |
 | Metal 3 | ❌ không đạt được với driver Tiger Lake |
 
-Chưa kiểm kỹ: tắt/bật màn hình (display sleep), chạy tải nặng lâu.
+Display sleep/wake hoạt động. Chưa kiểm kỹ: chạy tải nặng lâu.
 
 ## Cảnh báo — đọc trước khi dùng
 

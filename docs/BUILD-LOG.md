@@ -748,3 +748,12 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-05 21:09: người dùng đánh dấu **build-31 known-good**.
 - 2026-11-05 21:10: commit 17e0396 trên nhánh `bt-backlight-audio` (EFI build-31 + docs; không gồm `.claude/settings.json`, `AGENTS.md`). SMBIOS trong commit là placeholder (đã kiểm).
 - 2026-11-05 21:29: người dùng báo **camera HP Wide Vision HD (`30C9:0069`) hoạt động** trên build-31 (driver UVC sẵn có; không thay đổi EFI). DEFERRED D13 đóng. Lý do build-10 không chạy: CHƯA XÁC MINH.
+- 2026-11-05T21:36:04 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x15,0x0)} (config.plist)
+- 2026-11-05 21:35: người dùng thử display sleep/wake (`pmset displaysleepnow`) trên build-31: **hoạt động**, con trỏ không vỡ lại → rủi ro "FENCEFIX mất sau wake" đóng.
+
+## Build 32 — `tp-gpio` (2026-11-05): = build-31, gỡ `force-polling` khỏi I2C0 (DEFERRED D7, người dùng yêu cầu)
+- Xoá `DeviceProperties/Add/PciRoot(0x0)/Pci(0x15,0x0)` (chỉ có `force-polling = 01000000`, thêm ở build-17). Boot-args không có `-vi2c-force-polling` từ build-17 → VoodooI2C 3.0.0 (fork lzhoang2801) sẽ thử ngắt GPIO: `TPD0._CRS` trả GpioInt qua `\_SB.GPI0` (INTC1055) khi OSYS ≥ 0x07DC — SSDT-XOSI đã bảo đảm (build-01).
+- Mục đích: bớt đánh thức CPU (pin). Rủi ro: ngắt không đến → touchpad đơ/giật; VoodooI2C có thể tự lùi về polling. Đường lui: build-31 (known-good).
+- plist_diff với build-31: 1 khác biệt. efi-validate 0/0 (validate-20261105T213604.md).
+- Kiểm trên MÁY B: touchpad chạy mượt, cử chỉ 2–3 ngón; `log show --last boot --predicate 'process == "kernel"' | grep -i -E 'VoodooI2C|VoodooGPIO' | grep -i -E 'interrupt|polling|gpio|pin' | head -20`.
+- 2026-11-05T21:36:20 Created build-32-20261105-213620-tp-gpio (tree 0819a543fd2a, ocvalidate: 0 errors, 0 warnings (validate-20261105T213604.md))
