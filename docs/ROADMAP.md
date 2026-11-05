@@ -14,7 +14,7 @@ HWPAUTO và tắt C8/C10 (bỏ `ngreenpmcst=0 ngreenpmauto=1`, giải phóng 30 
 - JN: XE-GTFREQ — iGPU từng kẹt 100 MHz; sàn mặc định 1500 MHz (`ngreengtfreq=MHz`, 0 = tắt); dưới tải ~1300 MHz do giới hạn
   PL4/IccMax gói (`GT_PERF_LIMIT_REASONS` bit 8). Máy này: iGPU tối đa ~13 W lúc GB7 Metal (PERFORMANCE.md).
 - Bước 1: đo xung GT thật lúc GB7 Metal (dòng `XeNG CS … gtf=` trong `dmesg` 10 phút đầu sau boot; `xe-monitor.py` igpu_W).
-- Bước 2: tuỳ kết quả — sàn `ngreengtfreq`, topology/L3, scheduler (`ngreenSched`), so OpenCL macOS vs Linux.
+- Bước 2: tuỳ kết quả — sàn `ngreengtfreq`, topology/L3, scheduler (`ngreenSched`); so điểm Metal trước/sau.
 
 ## G2 — Vulkan
 - JN: **Vulkan 1.4 qua MoltenVK** (LunarG Vulkan SDK), không cần sửa code; `vulkaninfo` thấy GPU, `vkcube` chạy trên GPU.
