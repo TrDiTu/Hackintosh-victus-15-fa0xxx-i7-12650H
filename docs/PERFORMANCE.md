@@ -25,3 +25,20 @@ Gửi Claude: các điểm số, 4 file CSV (hoặc phần summary cuối mỗi 
   multi +16 %, nghỉ 4,6 → 3,3 W. i7-12650H (6P+4E, H-series) CHƯA có báo cáo. Boot-args 219 + 10 = 229 > 228 → phải bỏ `-v`
   (còn 226). PL1: giữ của BIOS (`-ngreenpm`), không đặt `ngreenpm=W` khi chưa đo nhiệt.
 - iGPU: xem mức dùng/công suất GT lúc benchmark để biết GPU có lên xung không (dữ liệu XE-GTF `gtf=` trong `dmesg` `XeNG CS`).
+
+## Kết quả đo nền — build-33 (2026-11-05 23:26 → 00:00, cắm sạc)
+| Bài | Điểm | Công suất gói (avg / p95 / max) | CPU (IA) | iGPU (GT) | Nhiệt P / E max |
+|---|---|---|---|---|---|
+| Nghỉ 2 phút | — | 7,4 / 8,8 / 11,9 W | 1,6 W | 0 W | 57 / 49 °C |
+| Geekbench 7 CPU | **single 1076, multi 5837** | 17,8 / 52,8 / 73,2 W | max 65,7 W | — | 88 / 79 °C |
+| Geekbench 7 GPU (Metal) | **1094** (không panic) | 14,0 / 25,4 / 44,6 W | — | avg 2,7, p95 11,5, max 12,9 W | 67 / 60 °C |
+Nguồn: `logs/idle.csv`, `logs/gb7-cpu.csv`, `logs/gb7-gpu.csv` (thư mục chính).
+
+Nhận định:
+- **Single-core thấp**: suốt phần single-core (~23:27–23:31) công suất nhân CPU chỉ 3–8 W (gói 10–15 W); một P-core
+  Alder Lake-H chạy turbo đầy thường cần nhiều hơn hẳn → P-core không lên turbo. 1076 còn thấp hơn số "trước XE-PM" của JN
+  trên i7-1360P U-series (1269). Khớp lỗi XCPM giới hạn HWP trên CPU lai mà XE-PM sửa. Thiếu `powermetrics` để xác nhận xung — CHƯA XÁC MINH.
+- **Multi-core**: gói lên tới 73 W, nhiệt 88 °C → giới hạn công suất/nhiệt của BIOS cho phép tải nặng; ngắn hạn không phải nút thắt.
+- **Nghỉ 7,4 W** khá cao (nhân CPU chỉ 1,6 W; phần còn lại là uncore/SA) → gợi ý không vào C-state sâu (C8/C10), cũng là việc XE-PM xử lý.
+- **iGPU**: có tải thật (GT tới ~13 W). `gpu_util_pct` luôn 0 và `gpu_mem_MB` trống: driver TGL không có khoá
+  `Device Utilization %`/`In use system memory` → cần `python3 xe-monitor.py --gpu-keys` để chọn khoá đúng.
