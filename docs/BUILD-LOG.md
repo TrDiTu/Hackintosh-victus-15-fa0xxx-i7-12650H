@@ -794,3 +794,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 00:15: build-34 xepm ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-33.
 - 2026-11-06 00:22 build-34 trên MÁY B: `debug.xepm` route 1, hwp 1, cst 1, d3 2, eet_off 1; dmesg `XeNG PM: profile on: HWP rescale 1 (route 1), EPP 0, EE turbo off 1, C8/C10 1, D3 2, PL1 0 W (0x0)` → XE-PM áp dụng đủ (PL1 không đổi, đúng ý). Chờ số đo.
 - 2026-11-06 00:40: thêm `tools/xe-freq.c` — đo xung thực trong user space bằng chuỗi ADD phụ thuộc (1 chu kỳ/lệnh trên Golden Cove và Gracemont), thay powermetrics. Biên dịch + chạy thử trên MÁY A chỉ để kiểm công cụ.
+- 2026-11-06 00:45 build-34 `logs/gb7-new.csv` (GB7 CPU): công suất IA ở pha tải nhẹ (2–30 W) avg 12,8 / p90 21,9 W (build-33: 7,4 / 11,3) → P-core lên turbo cao hơn; gói avg 21,9 W, max 64,9 W; P-core avg 66 °C, max 83 °C. Người dùng bỏ đo nghỉ. Chờ điểm GB7.
