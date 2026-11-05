@@ -776,3 +776,64 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-05 22:38: bắt đầu D6 (boot không cần USB). Viết lại POSTINSTALL-RUNBOOK §4: kiểm ESP, sao lưu, chép EFI từ USB, tạo mục boot (có cách dùng Linux live). Chờ người dùng gửi `diskutil list` và nội dung ESP.
 - 2026-11-05 22:45: ESP `disk0s1` có Limine (CachyOS) → chỉ chép `EFI/OC` từ USB (build-33). `efibootmgr -c` trên CachyOS tạo **Boot0001 "OpenCore"** `HD(1,GPT,460c0790-…)/\EFI\OC\OpenCore.efi`; BootOrder `0001,0000,0003,0004,0005` (0000 = Limine `\EFI\limine\limine_x64.efi`, 0003 = "Solid State Disk" fallback, 0004/0005 = USB). Firmware Timeout 0. Chờ: khởi động không USB. Phát hiện: `PNLF` trong DSDT là trường 16-bit (DSDT:8810), không phải thiết bị → không dùng patch PNLF→XNLF. RAM 24 GB chạy 2400 MT/s.
 - 2026-11-05 21:24: push nhánh `bt-backlight-audio` lên origin (đầu 475e5d7: EFI build-31 + docs + README). Không push `main` (người dùng: không push lên main).
+- 2026-11-05 22:50–23:16: boot OpenCore từ ESP lỗi "Plist …VoodooPS2Keyboard.kext\Contents\Info.plist is missing … Halting on critical error" sau 2 lần chép từ macOS (`cp -R`, rồi `ditto --norsrc --noextattr`; `diff` đều báo giống hệt). Chép lại bằng `cp -r` trên CachyOS (ESP mount `/boot`, USB `sda3` ro) → **boot từ ổ trong thành công** (người dùng). D6 xong. Nghi driver FAT của firmware đọc sai mục do msdosfs của macOS ghi — CHƯA XÁC MINH.
+- 2026-11-05 23:25: thêm `tools/xe-monitor.py` (đọc debug.xepm.sensors: nhiệt P/E/gói + RAPL gói/IA/GT; ioreg IntelAccelerator; CSV) và `docs/PERFORMANCE.md` (vòng đo nền build-33; XE-PM `-ngreenpm` là ứng viên đầu, cần bỏ `-v` để vừa 228).
+- 2026-11-06 00:05: số đo nền build-33 (Geekbench 7: single 1076, multi 5837, GPU 1094; nghỉ 7,4 W) ghi vào docs/PERFORMANCE.md. Nhận định: P-core không turbo ở single-core, nghỉ cao → ứng viên XE-PM.
+- 2026-11-06 00:07 **kernel panic** (build-33, boot từ ESP, uptime 52 phút): `Panicked task: pid 3710: powermetrics`, page fault CR2 `0xc` (NULL), RIP trong `AppleIntelTGLGraphicsFramebuffer` +0xBC88F (frame kế +0xBC8F1, +0x3B1AB, +0xE758E/+0xE79AC/+0xE7A2B), gọi từ `AppleGraphicsDeviceControl` 8.1.12. Kích hoạt bởi `sudo powermetrics --samplers cpu_power` (Claude đề nghị chạy; output bị cắt đúng lúc). Không có tên hàm vì đã bỏ `keepsyms=1` (build-29). → Cấm `powermetrics` trên stack này (PERFORMANCE.md). `xe-monitor.py`: khoá iGPU thật là `Device Utilization %` (driver để 0 kể cả khi tải) và `gartUsedBytes`; dùng `igpu_W` làm chỉ báo tải.
+- powermetrics trước panic: trung bình 1,7–2,5 GHz, một mẫu 3,58 GHz; không xác định được đó là lúc single-core.
+- 2026-11-06 00:13: người dùng xác nhận không có panic nào khác ngoài lần 00:07 (powermetrics) → không có panic ngẫu nhiên trên build-33.
+- 2026-11-06T00:13:59 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = 'ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta' (config.plist)
+
+## Build 34 — `xepm` (2026-11-06): = build-33 + XE-PM (người dùng duyệt 00:13)
+- boot-args (226 ký tự): `ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta`. Thêm `-ngreenpm`, bỏ `-v` (vừa giới hạn 228).
+- XE-PM (NootedGreen JN @6f03560 `kern_xepm.cpp`, đã có trong kext md5 3a823f7c): sau 20 s — route HWP (hàm XCPM tại `_xcpm_enable_pstate_ctrs+0x1190`, chỉ khi prologue + chỗ ghi khớp byte, 25G241), EPP 0, tắt EE turbo, bật C8/C10 trong `_xcpm_cstate_table`, D3hot cho thiết bị PCI không driver. PL1 giữ của BIOS (không `ngreenpm=W`). Tắt riêng C-state: `ngreenpmcst=0`.
+- Lý do: số nền build-33 (single 1076, nghỉ 7,4 W) — PERFORMANCE.md. plist_diff với build-33: 1 khác biệt. efi-validate 0/0 (validate-20261106T001359.md).
+- Kiểm trên MÁY B: `sysctl debug.xepm.route debug.xepm.hwp debug.xepm.cst debug.xepm.d3 debug.xepm.eet_off` (route phải = 1); `dmesg | grep 'XeNG PM'`; Geekbench 7 CPU + nghỉ 2 phút với `xe-monitor.py` (KHÔNG powermetrics).
+- 2026-11-06T00:14:11 Created build-34-20261106-001411-xepm (tree 358dede24487, ocvalidate: 0 errors, 0 warnings (validate-20261106T001359.md))
+- 2026-11-06T00:15:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree ac70ed69431c, verified)
+- 2026-11-06 00:15: build-34 xepm ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-33.
+- 2026-11-06 00:22 build-34 trên MÁY B: `debug.xepm` route 1, hwp 1, cst 1, d3 2, eet_off 1; dmesg `XeNG PM: profile on: HWP rescale 1 (route 1), EPP 0, EE turbo off 1, C8/C10 1, D3 2, PL1 0 W (0x0)` → XE-PM áp dụng đủ (PL1 không đổi, đúng ý). Chờ số đo.
+- 2026-11-06 00:40: thêm `tools/xe-freq.c` — đo xung thực trong user space bằng chuỗi ADD phụ thuộc (1 chu kỳ/lệnh trên Golden Cove và Gracemont), thay powermetrics. Biên dịch + chạy thử trên MÁY A chỉ để kiểm công cụ.
+- 2026-11-06 00:45 build-34 `logs/gb7-new.csv` (GB7 CPU): công suất IA ở pha tải nhẹ (2–30 W) avg 12,8 / p90 21,9 W (build-33: 7,4 / 11,3) → P-core lên turbo cao hơn; gói avg 21,9 W, max 64,9 W; P-core avg 66 °C, max 83 °C. Người dùng bỏ đo nghỉ. Chờ điểm GB7.
+- 2026-11-06 00:46: điểm GB7 build-34: single 1220 (+13 %), multi 5476 (−6 %) so với build-33 (1076 / 5837). Ghi PERFORMANCE.md.
+- 2026-11-06 00:50: xe-freq lần 1 trên MÁY B cho 8–24 GHz (sai): đồng hồ CLOCK_MONOTONIC_RAW nhảy nấc ~8 ms, mẫu chỉ ~50 ms. Sửa: mach_absolute_time, mẫu ~1 s, in bước đồng hồ.
+- 2026-11-06 00:52: xe-freq bản mach_absolute_time trên MÁY B: timer step 17 ns (đồng hồ ổn) nhưng vẫn 6–27 GHz → chuỗi `add $imm` bị Golden Cove gộp ở renamer (>1 lệnh/chu kỳ). Sửa: chuỗi ADD thanh ghi–thanh ghi với hạng tử đọc lúc chạy. Bản 1 (`clock_gettime`) sai vì mẫu ngắn, không phải đồng hồ hệ thống.
+- 2026-11-06 00:54: powermetrics (người dùng chấp nhận rủi ro) lúc single-core build-34: nhân bận nhất 3,9–4,43 GHz, gói 21–26 W. Ghi PERFORMANCE.md.
+- 2026-11-06 01:02 build-34, tải đều 16 luồng `yes` + powermetrics: 10 CPU hiển thị đều 3,94–4,04 GHz, gói ~67 W → không có nhân kẹt xung dưới tải đều; các nhân 0,7–1,1 GHz lúc GB7 multi là pha ít luồng. Điểm lạ: powermetrics chỉ in 10 CPU (mong đợi 16) — đang kiểm sysctl hw.*.
+- 2026-11-06 01:03: sysctl MÁY B: hw.ncpu 16, physicalcpu 6, logicalcpu 16, core_count 16, thread_count 16, perflevel0.logicalcpu 16 → macOS dùng đủ 16 luồng.
+- 2026-11-06 01:13: build-34 + sysctl debug.xepm.epp=128: GB7 1222 / 5378 → EPP không ảnh hưởng multi. Tiếp: tách hwp / cst bằng sysctl.
+- 2026-11-06T02:28:21 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = 'ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta ngreenpmcst=0' (config.plist)
+- 2026-11-06 02:14: build-34 + sysctl debug.xepm.cst=0: GB7 single 1176, multi 7114 → C8/C10 là nguyên nhân multi giảm. (debug.xepm.hwp chưa thử: lần đầu báo unknown oid vì máy boot build-33 từ ổ trong.)
+
+## Build 35 — `xepm-nocst` (2026-11-06): = build-34 + `ngreenpmcst=0` (người dùng duyệt 02:28)
+- boot-args 240 ký tự, thêm `ngreenpmcst=0` ở CUỐI. Giới hạn ~228 là bản sao boot-args của Lilu (`checkKernelArgument`: `-ngreenpm`, `-amfipassbeta`… — `-amfipassbeta` kết thúc ở 226, vẫn trong 228); `ngreenpmcst` đọc bằng `PE_parse_boot_argn` của kernel (`kern_xepm.cpp:221`), kernel nhận tới 255. CHƯA XÁC MINH trên máy.
+- XE-PM giữ HWP rescale, EPP 0, EE turbo off, D3; bỏ C8/C10 (bảng C-state gốc XCPM). plist_diff với build-34: 1 khác biệt. efi-validate 0/0 (validate-20261106T022822.md).
+- Kiểm: `sysctl debug.xepm.cst` = 0, `debug.xepm.route` = 1, dmesg `C8/C10 0`; Wi-Fi còn (AMFIPass/-amfipassbeta). Lỗi → build-34.
+- 2026-11-06T02:28:35 Created build-35-20261106-022835-xepm-nocst (tree 35c3e6125686, ocvalidate: 0 errors, 0 warnings (validate-20261106T022822.md))
+- 2026-11-06T02:33:01 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 13d19b792cc0, verified)
+- 2026-11-06 02:33: build-35 xepm-nocst ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 02:37 build-35 trên MÁY B: sysctl debug.xepm.route 1, cst 0 → `ngreenpmcst=0` (vị trí 227–240) được kernel đọc; Wi-Fi còn (-amfipassbeta không bị cắt). dmesg không còn dòng 'XeNG PM' (bộ đệm bị log 'XeNG CS' đẩy ra).
+- 2026-11-06 02:47: so GB7 macOS (~1200/7100) với Linux cùng máy (~2xxx/2xxxx): kiểm CPUID trên macOS — có AVX1.0, FMA, AVX2, BMI1/2, SHA, AES, VAES, GFNI → không phải thiếu tập lệnh. Đang kiểm đồng hồ (TSC) và xe-freq hai hệ.
+- 2026-11-06 02:54: TSC đúng (2,688 GHz, sleep 30 = 30,04 s). xe-freq 1 luồng: Linux 4503/4640/4681, macOS build-35 1502/3365/4586 MHz → luồng không giữ được xung cao. Thêm XEFREQ_SAMPLES để in từng mẫu.
+- 2026-11-06 03:08: GB7 trên CachyOS cùng máy: single 2195, multi 10101 (mốc). macOS 1176/7114 = 54 %/70 %.
+- 2026-11-06 03:11: xe-freq từng mẫu trên macOS: 1389–4679 MHz liên tục. Thêm theo dõi loại nhân/APIC id vào xe-freq.
+- 2026-11-06 03:22: xe-freq theo dõi nhân: Linux 1 nhân/4662 MHz; macOS 2–16 nhân/giây, E-core 1 %, xung giảm theo số lần đổi nhân → nút thắt single-core là chuyển nhân của scheduler. Đề xuất thử ctrsmt=off qua NVRAM.
+- 2026-11-06 03:40: patch NootedGreen v8 XE-HWPAUTO (`patches/nootedgreen-gmsfix-v7-to-v8.patch`, gộp `…-v8-jn6f03560.patch`): sysctl debug.xepm.hwpauto / boot-arg ngreenpmauto=1 → HWP desired = 0. Mặc định tắt. git apply --check sạch; clang++ -fsyntax-only 0 lỗi (MacKernelSDK 3f75008, Lilu 0249c3a). Chờ người dùng build trên MÁY B (GMSFIX-RUNBOOK §v8).
+- 2026-11-06T03:42:01 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 6f03560 + GMSFIX v8 (accel+FB+PAVP+FENCEFIX+XE-HWPAUTO, md5 5f88ee88)' (config.plist)
+
+## Build 36 — `hwpauto` (2026-11-06): = build-35 + NootedGreen v8 (MỘT thay đổi: binary kext; người dùng duyệt v8 03:36)
+- Kext build trên MÁY B (v7 + `patches/nootedgreen-gmsfix-v7-to-v8.patch`): md5 `5f88ee8829e51ebfee93665ff6b3f850`, sha256 `cb4b975faae087fb31aba86877eebbdd9c10ecf903ff2a5621642e2d7afed5bf`; chuỗi HWPAUTO 1, GMSFIX/FENCEFIX 8; Info.plist giống bản v7. Lưu `_cache/user-inputs/NootedGreen-v8-5f88ee88.kext`.
+- Boot-args không đổi (240, có `ngreenpmcst=0`); XE-HWPAUTO mặc định TẮT → bật thử bằng `sudo sysctl -w debug.xepm.hwpauto=1`. Config chỉ đổi Comment. efi-validate 0/0 (validate-20261106T034201.md).
+- 2026-11-06T03:42:59 Xoá thủ công snapshot build-27-20261105-193937-bluetooth (người dùng duyệt; cũ nhất không phải known-good, để có chỗ cho build-36)
+- 2026-11-06T03:43:00 Created build-36-20261106-034300-hwpauto (tree 68c31dc0f0d4, ocvalidate: 0 errors, 0 warnings (validate-20261106T034201.md))
+- 2026-11-06T03:43:17 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree edb09afd9f88, verified)
+- 2026-11-06 03:43: build-36 hwpauto ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 03:48: build-36 + ctrsmt=off (NVRAM còn): xe-freq hwpauto 0/1 = 4391/4376 MHz → HWPAUTO không tác dụng đo được. Kết quả xe-freq lệch lớn giữa các lần cùng cấu hình (3462 vs 4380).
+- 2026-11-06 04:05: GB7 build-36: ctrsmt=off+hwpauto=0 → 10xx/5xxx; ctrsmt=off+hwpauto=1 → 1927/9338 (88 %/92 % Linux). Đề xuất build-37: ctrsmt=off vào NVRAM/Add + ngreenpmauto=1.
+- 2026-11-06T04:22:36 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = 'ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta ngreenpmcst=0 ngreenpmauto=1' (config.plist)
+- 2026-11-06 04:22: GB7 build-36 topology mặc định: hwpauto=1 → 2030/9646 (92 %/95 % Linux); hwpauto=0 → 1191/5637. ctrsmt=off kém hơn → bỏ (người dùng đã xoá NVRAM ctrsmt).
+
+## Build 37 — `hwpauto-on` (2026-11-06): = build-36 + `ngreenpmauto=1`
+- boot-args **255 ký tự** (đúng giới hạn kernel đã thấy ở build-12): `… -amfipassbeta ngreenpmcst=0 ngreenpmauto=1`. `ngreenpmauto` đọc bằng `PE_parse_boot_argn` (patch v8). Bị cắt → chỉ mất HWPAUTO (hậu quả nhẹ); khi đó làm patch v9 bật HWPAUTO theo `-ngreenpm`.
+- Không thêm `ctrsmt` (mặc định tốt hơn `off`). plist_diff với build-36: 1 khác biệt. efi-validate 0/0 (validate-20261106T042236.md).
+- Kiểm: `sysctl debug.xepm.hwpauto` = 1 ngay sau boot (không cần sysctl -w); GB7 ≈ 2030 / 9646.
