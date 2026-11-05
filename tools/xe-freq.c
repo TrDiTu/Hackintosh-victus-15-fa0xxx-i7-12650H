@@ -10,6 +10,7 @@
 // Use:    ./xe-freq            one thread, 10 samples (~10 s, single-core turbo)
 //         ./xe-freq 16         16 threads at once        (all-core clock under full load)
 //         ./xe-freq 1 30       one thread, 30 samples (each sample ~1 s)
+//         XEFREQ_SAMPLES=1 ./xe-freq 1 30   also print every sample (shows drops/migration over time)
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -91,6 +92,13 @@ int main(int argc, char **argv) {
 		pthread_create(&th[i], NULL, worker, &jobs[i]);
 	}
 	for (int i = 0; i < threads; i++) pthread_join(th[i], NULL);
+	if (getenv("XEFREQ_SAMPLES")) {  // XEFREQ_SAMPLES=1 ./xe-freq 1 30 : one line per ~1 s sample, to see the pattern
+		for (int s = 0; s < samples; s++) {
+			printf("sample %2d:", s);
+			for (int i = 0; i < threads; i++) printf(" %5.0f", jobs[i].out[s]);
+			printf("\n");
+		}
+	}
 	for (int i = 0; i < threads; i++) {
 		double mn = 1e9, mx = 0, sum = 0;
 		for (int s = 0; s < samples; s++) { double v = jobs[i].out[s]; mn = v < mn ? v : mn; mx = v > mx ? v : mx; sum += v; }

@@ -66,3 +66,7 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   Multi thấp ở 2 lần chạy (5476, 5378) so với build-33 (5837, 1 lần) → khó chỉ là dao động.
 - `debug.xepm.cst=0` (sysctl, build-34): GB7 single **1176**, multi **7114** (+22 % so build-33, +30 % so build-34 mặc định) → C8/C10
   của XE-PM làm giảm multi-core. → build-35 `ngreenpmcst=0`.
+- So với Linux cùng máy (GB7 ~2xxx / 2xxxx): CPUID trên macOS đủ AVX/AVX2/FMA/BMI2/SHA/VAES; TSC 2,688 GHz, `sleep 30` = 30,04 s → đồng hồ đúng.
+  `xe-freq` (ADD thanh ghi, 1 luồng, mẫu 1 s): **Linux 4503 / 4640 / 4681 MHz** (min/avg/max, khớp turbo 4,7) — **macOS build-35 1502 / 3365 / 4586 MHz**.
+  → CPU lên được ~4,6 GHz nhưng luồng không giữ được tốc độ (avg 72 % Linux). Nghi: luồng bị xếp lên E-core (CpuTopologyRebuild coi E-core là
+  luồng SMT của P-core), chuyển nhân, hoặc XCPM hạ HWP desired. CHƯA XÁC MINH — cần xem từng mẫu (`XEFREQ_SAMPLES=1 ./xe-freq 1 30`).
