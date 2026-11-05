@@ -810,3 +810,5 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - XE-PM giữ HWP rescale, EPP 0, EE turbo off, D3; bỏ C8/C10 (bảng C-state gốc XCPM). plist_diff với build-34: 1 khác biệt. efi-validate 0/0 (validate-20261106T022822.md).
 - Kiểm: `sysctl debug.xepm.cst` = 0, `debug.xepm.route` = 1, dmesg `C8/C10 0`; Wi-Fi còn (AMFIPass/-amfipassbeta). Lỗi → build-34.
 - 2026-11-06T02:28:35 Created build-35-20261106-022835-xepm-nocst (tree 35c3e6125686, ocvalidate: 0 errors, 0 warnings (validate-20261106T022822.md))
+- 2026-11-06T02:33:01 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 13d19b792cc0, verified)
+- 2026-11-06 02:33: build-35 xepm-nocst ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
