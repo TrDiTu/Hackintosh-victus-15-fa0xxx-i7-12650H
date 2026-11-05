@@ -97,6 +97,7 @@ sudo cp -R /Volumes/EFI/EFI ~/Desktop/ESP-backup-$(date +%Y%m%d) 2>/dev/null; ls
 **Máy này (kết quả Bước A, 2026-11-05):** ESP `disk0s1` FAT 4 GB (trống 3 GB), mount tại `/Volumes/NO NAME`; chứa
 **Limine của CachyOS** (`EFI/BOOT/BOOTX64.EFI`, `EFI/limine/`, `limine.conf`, kernel trong thư mục máy). Ổ còn `disk0s2`
 Linux (CachyOS) và `disk0s3` APFS (macOS). → **Trường hợp 2**: chỉ chép `EFI/OC` (48 MB), giữ nguyên Limine.
+> **Chép `EFI/OC` sang ESP từ CachyOS (Linux), KHÔNG từ macOS** (2026-11-05: chép bằng `cp`/`ditto` trên macOS → `diff` giống hệt nhưng OpenCore báo thiếu `VoodooPS2Keyboard.kext/Contents/Info.plist`; chép bằng `cp -r` trên Linux → boot được. Cơ chế chính xác CHƯA XÁC MINH). Trên CachyOS: ESP = `/boot`; `udisksctl mount -b /dev/sda3 -o ro`; `sudo rm -rf /boot/EFI/OC && sudo cp -r /run/media/cyra/MACEFI/EFI/OC /boot/EFI/ && sync`.
 1. `sudo cp -R "/Volumes/NO NAME/EFI" ~/Desktop/ESP-backup-$(date +%Y%m%d)` và `sudo cp "/Volumes/NO NAME/limine.conf" ~/Desktop/`
 2. `sudo cp -R /Volumes/MACEFI/EFI/OC "/Volumes/NO NAME/EFI/"` → `sudo find "/Volumes/NO NAME/EFI/OC" -name '._*' -delete`
    → `diff -rq -x '._*' /Volumes/MACEFI/EFI/OC "/Volumes/NO NAME/EFI/OC"` (phải rỗng).
