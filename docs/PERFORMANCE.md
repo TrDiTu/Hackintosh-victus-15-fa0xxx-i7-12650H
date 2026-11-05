@@ -6,7 +6,7 @@ Mục tiêu: có số đo nền (baseline) trước, rồi mỗi lần chỉnh c
 | Việc | Công cụ | Ghi chú |
 |---|---|---|
 | Nhiệt độ P/E-core, gói; công suất gói / nhân CPU / **iGPU** | `tools/xe-monitor.py` | Đọc `sysctl debug.xepm.sensors` của NootedGreen JN @6f03560 (luôn có, không cần `-ngreenpm`) + `ioreg` IntelAccelerator. `python3 xe-monitor.py -i 1 -o <tên>.csv` |
-| Xung CPU | ⛔ **KHÔNG dùng `powermetrics`** | 2026-11-06 00:07: `powermetrics --samplers cpu_power` gây kernel panic (NULL trong framebuffer TGL qua AppleGraphicsDeviceControl). Dùng công suất IA của `xe-monitor.py` làm chỉ báo |
+| Xung CPU | `tools/xe-freq.c` (`clang -O2 -o xe-freq xe-freq.c -lpthread`; `./xe-freq` = 1 luồng, `./xe-freq 16` = toàn bộ). ⛔ **KHÔNG dùng `powermetrics`** | 2026-11-06 00:07: `powermetrics --samplers cpu_power` gây kernel panic (NULL trong framebuffer TGL qua AppleGraphicsDeviceControl). Dùng công suất IA của `xe-monitor.py` làm chỉ báo |
 | Mức dùng iGPU | Activity Monitor › Window › GPU History; `python3 xe-monitor.py --gpu-keys` | Driver TGL giả lập: khoá nào có thì dùng khoá đó |
 | Benchmark CPU | Geekbench 7 (CPU), Cinebench 2024 (CPU, chạy 10 phút để thấy giới hạn nhiệt/PL1) | |
 | Benchmark iGPU | Geekbench 7 (GPU, **Metal**) | ⚠️ Tải GPU nặng chưa từng chạy trên stack này: có thể GPU hang/panic. Lưu việc đang làm trước |
