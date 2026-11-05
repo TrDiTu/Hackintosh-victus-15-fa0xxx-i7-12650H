@@ -1,7 +1,7 @@
 # STATE — bộ nhớ giữa các phiên (Claude Code cập nhật cuối mỗi phiên/pha)
 
 - Cập nhật lần cuối: 2026-11-05 20:36
-- **2026-11-05 19:30: thư mục dự án cũ bị mất; đã dựng lại từ USB** (BUILD-LOG mục "Dựng lại dự án từ USB"). EFI dự án = build-26 (tree c69972f2ffb4). Mất: snapshot known-good build-10/21, `_cache/`, `docs/hw-dump/`, MACHINE-ANALYSIS, GRAPHICS-PANIC-ANALYSIS.
+- **2026-11-05 19:30: thư mục dự án cũ bị mất; đã dựng lại từ USB** (BUILD-LOG mục "Dựng lại dự án từ USB"). EFI dự án = build-26 (tree c69972f2ffb4). Mất: snapshot known-good build-10/21, GRAPHICS-PANIC-ANALYSIS. **Đã phục hồi (2026-11-05 22:30):** `docs/hw-dump/` (dump mới 21:47), `docs/MACHINE-ANALYSIS.md` (dựng lại), ACPI giải mã ở `_cache/acpi/` (DSDT + 16 SSDT + 8 dyn-SSDT `PmRef`). Các file gitignored này nằm ở thư mục chính; worktree dùng symlink.
 - **Giai đoạn B — ĐÃ CÓ TĂNG TỐC.** build-26 `fencefix` (trên USB MACEFI): vào desktop, **Metal 2**, 1920×1080 @ 144 Hz,
   `xe-topo` 16390 (64 EU / L3 6), con trỏ chuột hiển thị đúng (2026-11-05 03:42). Wi-Fi, Ethernet, touchpad hoạt động.
 - Stack: JulioNectar @6f03560 (user-space cài trên MÁY B) + **NootedGreen JN + patch dự án v7**
