@@ -27,8 +27,6 @@ import time
 FMT = "<4I32s32s2I3Q"
 SIZE = struct.calcsize(FMT)  # 112
 CORE_P, CORE_E = 0x40, 0x20
-GPU_KEYS = ("Device Utilization %", "Renderer Utilization %", "Tiler Utilization %", "GPU Activity(%)",
-            "In use system memory", "Alloc system memory")
 
 
 def read_sensors():
@@ -92,8 +90,9 @@ def main():
             cur = read_sensors()
             pw, cw, gw = watts(prev, cur)
             g = read_gpu()
-            util = g.get("Device Utilization %", g.get("GPU Activity(%)"))
-            mem = g.get("In use system memory")
+            # The TGL driver exposes "Device Utilization %" but leaves it at 0 under load: use igpu_W as the load signal.
+            util = g.get("Device Utilization %")
+            mem = g.get("gartUsedBytes")  # GPU-mapped system memory (inUseSysMemoryBytes overflows to negative)
             mem_mb = round(mem / 1048576, 1) if isinstance(mem, int) else None
             row = [round(pw, 2), round(cw, 2), round(gw, 2), cur["pkg_c"], cur["p_max_c"], cur["e_max_c"], util, mem_mb]
             print("  ".join("%10s" % ("-" if v is None else v) for v in row), flush=True)
