@@ -8,8 +8,9 @@ Mọi mục cần boot-arg mới (`-ngreengva`, `ngreengtfreq=`, `gfxrst=1`) đ�
 HWPAUTO và tắt C8/C10 (bỏ `ngreenpmcst=0 ngreenpmauto=1`, giải phóng 30 ký tự). Làm trước tiên khi cần chỗ.
 
 ## G1 — Hiệu năng iGPU (Metal ~1094 vs Vulkan Linux ~9xxx)
-- Lưu ý so sánh: GB7 Metal (macOS) và GB7 Vulkan (Linux) là hai API/backend khác nhau → chỉ là chỉ báo thô. Mốc tốt hơn:
-  GB7 **OpenCL** trên cả hai hệ (macOS vẫn có OpenCL) — CHƯA đo.
+- Lưu ý so sánh: GB7 Metal (macOS) và GB7 Vulkan (Linux) là hai API/backend khác nhau → chỉ là chỉ báo thô. OpenCL không có
+  trên iGPU này ở macOS (người dùng, 2026-11-06), Geekbench macOS không có Vulkan → Metal vs Vulkan là mốc duy nhất; theo dõi
+  cải thiện bằng chính điểm Metal giữa các build.
 - JN: XE-GTFREQ — iGPU từng kẹt 100 MHz; sàn mặc định 1500 MHz (`ngreengtfreq=MHz`, 0 = tắt); dưới tải ~1300 MHz do giới hạn
   PL4/IccMax gói (`GT_PERF_LIMIT_REASONS` bit 8). Máy này: iGPU tối đa ~13 W lúc GB7 Metal (PERFORMANCE.md).
 - Bước 1: đo xung GT thật lúc GB7 Metal (dòng `XeNG CS … gtf=` trong `dmesg` 10 phút đầu sau boot; `xe-monitor.py` igpu_W).
