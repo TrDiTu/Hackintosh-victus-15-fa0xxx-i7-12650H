@@ -72,3 +72,5 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   luồng SMT của P-core), chuyển nhân, hoặc XCPM hạ HWP desired. CHƯA XÁC MINH — cần xem từng mẫu (`XEFREQ_SAMPLES=1 ./xe-freq 1 30`).
 - **Mốc Linux (CachyOS, cùng máy, 2026-11-06): GB7 single 2195, multi 10101.** macOS tốt nhất hiện tại (XE-PM, C8/C10 tắt): 1176 / 7114
   = **54 % / 70 %**. Single-core hụt nhiều nhất → khớp xe-freq (luồng đơn không giữ xung).
+- `XEFREQ_SAMPLES=1 ./xe-freq 1 30` trên macOS build-35: 30 mẫu trải liên tục **1389–4679 MHz** (avg 3364), không thành hai mức P/E
+  → trong mỗi giây luồng chỉ chạy nhanh một phần thời gian. xe-freq thêm cột E-core% (CPUID 0x1A) và số nhân đã chạy qua (x2APIC, CPUID 0x0B).

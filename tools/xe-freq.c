@@ -61,21 +61,45 @@ static inline void chain(uint64_t *x, uint64_t y) {
 		: "r"(y));
 }
 
-static double measure_mhz(uint64_t iters) {
-	uint64_t x = 0, y = g_one;
-	for (uint64_t i = 0; i < iters / 10; i++) chain(&x, y);  // warm-up: let the core ramp its clock
-	uint64_t t0 = now_ns();
-	for (uint64_t i = 0; i < iters; i++) chain(&x, y);
-	uint64_t t1 = now_ns();
-	if (x == 42) puts("");  // keep x live
-	return (double)iters * ADDS_PER_ITER / ((double)(t1 - t0) / 1e3);  // adds per microsecond = MHz
+// Where is this thread running? CPUID 0x1A EAX[31:24]: 0x40 = Core (P), 0x20 = Atom (E). CPUID 0x0B EDX = x2APIC id.
+// User-space instructions: safe on macOS, no driver involved.
+static void where(unsigned *type, unsigned *apic) {
+	unsigned a, b, c, d;
+	__asm__ volatile("cpuid" : "=a"(a), "=b"(b), "=c"(c), "=d"(d) : "a"(0x1A), "c"(0));
+	*type = a >> 24;
+	__asm__ volatile("cpuid" : "=a"(a), "=b"(b), "=c"(c), "=d"(d) : "a"(0x0B), "c"(0));
+	*apic = d;
 }
 
-typedef struct { int id, samples; double *out; } job_t;
+typedef struct { double mhz, epct; int cores; } sample_t;
+
+#define CHECKS 200  // core checks per sample (~every 5 ms)
+static sample_t measure(uint64_t iters) {
+	uint64_t x = 0, y = g_one, chunk = iters / CHECKS;
+	for (uint64_t i = 0; i < iters / 10; i++) chain(&x, y);  // warm-up: let the core ramp its clock
+	int ecount = 0;
+	uint64_t seen[4] = {0};  // bitmap of x2APIC ids 0-255
+	uint64_t t0 = now_ns();
+	for (int c = 0; c < CHECKS; c++) {
+		for (uint64_t i = 0; i < chunk; i++) chain(&x, y);
+		unsigned type, apic;
+		where(&type, &apic);
+		if (type == 0x20) ecount++;
+		seen[(apic & 255) >> 6] |= 1ull << (apic & 63);
+	}
+	uint64_t t1 = now_ns();
+	if (x == 42) puts("");  // keep x live
+	int cores = 0;
+	for (int i = 0; i < 4; i++) cores += __builtin_popcountll(seen[i]);
+	sample_t r = {(double)chunk * CHECKS * ADDS_PER_ITER / ((double)(t1 - t0) / 1e3), 100.0 * ecount / CHECKS, cores};
+	return r;  // adds per microsecond = MHz
+}
+
+typedef struct { int id, samples; sample_t *out; } job_t;
 
 static void *worker(void *p) {
 	job_t *j = p;
-	for (int s = 0; s < j->samples; s++) j->out[s] = measure_mhz(40000000);  // ~1 s per sample at 4 GHz
+	for (int s = 0; s < j->samples; s++) j->out[s] = measure(40000000);  // ~1 s per sample at 4 GHz
 	return NULL;
 }
 
@@ -86,23 +110,26 @@ int main(int argc, char **argv) {
 	printf("timer step: %llu ns (must be far below the ~1 s sample)\n", (unsigned long long)timer_step_ns());
 	pthread_t th[64];
 	job_t jobs[64];
-	double *res = calloc((size_t)threads * samples, sizeof(double));
+	sample_t *res = calloc((size_t)threads * samples, sizeof(sample_t));
 	for (int i = 0; i < threads; i++) {
 		jobs[i] = (job_t){i, samples, res + (size_t)i * samples};
 		pthread_create(&th[i], NULL, worker, &jobs[i]);
 	}
 	for (int i = 0; i < threads; i++) pthread_join(th[i], NULL);
 	if (getenv("XEFREQ_SAMPLES")) {  // XEFREQ_SAMPLES=1 ./xe-freq 1 30 : one line per ~1 s sample, to see the pattern
+		printf("per sample: MHz  E-core%%  distinct-cores\n");
 		for (int s = 0; s < samples; s++) {
 			printf("sample %2d:", s);
-			for (int i = 0; i < threads; i++) printf(" %5.0f", jobs[i].out[s]);
+			for (int i = 0; i < threads; i++) printf("  %5.0f %3.0f%% %2d", jobs[i].out[s].mhz, jobs[i].out[s].epct, jobs[i].out[s].cores);
 			printf("\n");
 		}
 	}
 	for (int i = 0; i < threads; i++) {
 		double mn = 1e9, mx = 0, sum = 0;
-		for (int s = 0; s < samples; s++) { double v = jobs[i].out[s]; mn = v < mn ? v : mn; mx = v > mx ? v : mx; sum += v; }
-		printf("thread %2d: min %5.0f  avg %5.0f  max %5.0f MHz\n", i, mn, sum / samples, mx);
+		double ep = 0;
+		for (int s = 0; s < samples; s++) ep += jobs[i].out[s].epct;
+		for (int s = 0; s < samples; s++) { double v = jobs[i].out[s].mhz; mn = v < mn ? v : mn; mx = v > mx ? v : mx; sum += v; }
+		printf("thread %2d: min %5.0f  avg %5.0f  max %5.0f MHz  E-core %3.0f%%\n", i, mn, sum / samples, mx, ep / samples);
 	}
 	free(res);
 	return 0;
