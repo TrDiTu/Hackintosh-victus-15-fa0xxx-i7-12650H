@@ -29,7 +29,7 @@ table() {
     apath=$(cat "$fw/path" 2>/dev/null || echo -)
     adr=$(cat "$fw/adr" 2>/dev/null || echo -)
     ctype=$(cat "$p/connect_type" 2>/dev/null || echo -)
-    peer=$(basename "$(readlink -f "$p/peer" 2>/dev/null)" 2>/dev/null); [ -n "$peer" ] || peer=-
+    if [ -e "$p/peer" ]; then peer=$(basename "$(readlink -f "$p/peer")"); else peer=-; fi
     dev="/sys/bus/usb/devices/$bus-$n"
     if [ -e "$dev/idVendor" ]; then
       att="$(cat "$dev/idVendor"):$(cat "$dev/idProduct") speed=$(cat "$dev/speed") $(cat "$dev/product" 2>/dev/null | tr ' ' '_')"

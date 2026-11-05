@@ -38,12 +38,14 @@
 			<dict>
 				<key>port-count</key>
 				<data>
-				BwAAAA==
+				DgAAAA==
 				</data>
 				<key>ports</key>
 				<dict>
 					<key>HS01</key>
 					<dict>
+						<key>Comment</key>
+						<string>USB-A right, USB2 half</string>
 						<key>UsbConnector</key>
 						<integer>3</integer>
 						<key>port</key>
@@ -53,6 +55,8 @@
 					</dict>
 					<key>HS02</key>
 					<dict>
+						<key>Comment</key>
+						<string>USB-A left, USB2 half</string>
 						<key>UsbConnector</key>
 						<integer>3</integer>
 						<key>port</key>
@@ -60,8 +64,10 @@
 						AgAAAA==
 						</data>
 					</dict>
-					<key>HS03</key>
+					<key>HS04</key>
 					<dict>
+						<key>Comment</key>
+						<string>USB-C, USB2 half (USB3 on TB4 TXHC, not mapped)</string>
 						<key>UsbConnector</key>
 						<integer>9</integer>
 						<key>port</key>
@@ -69,8 +75,10 @@
 						BAAAAA==
 						</data>
 					</dict>
-					<key>HS04</key>
+					<key>HS06</key>
 					<dict>
+						<key>Comment</key>
+						<string>Camera 30C9:0069</string>
 						<key>UsbConnector</key>
 						<integer>255</integer>
 						<key>port</key>
@@ -78,13 +86,37 @@
 						BgAAAA==
 						</data>
 					</dict>
-					<key>HS05</key>
+					<key>HS07</key>
 					<dict>
+						<key>Comment</key>
+						<string>Bluetooth 8087:0032</string>
 						<key>UsbConnector</key>
 						<integer>255</integer>
 						<key>port</key>
 						<data>
 						BwAAAA==
+						</data>
+					</dict>
+					<key>SS01</key>
+					<dict>
+						<key>Comment</key>
+						<string>USB-A right, USB3 half (peer HS01)</string>
+						<key>UsbConnector</key>
+						<integer>3</integer>
+						<key>port</key>
+						<data>
+						DQAAAA==
+						</data>
+					</dict>
+					<key>SS02</key>
+					<dict>
+						<key>Comment</key>
+						<string>USB-A left, USB3 half (peer HS02)</string>
+						<key>UsbConnector</key>
+						<integer>3</integer>
+						<key>port</key>
+						<data>
+						DgAAAA==
 						</data>
 					</dict>
 				</dict>

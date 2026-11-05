@@ -757,3 +757,12 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - plist_diff với build-31: 1 khác biệt. efi-validate 0/0 (validate-20261105T213604.md).
 - Kiểm trên MÁY B: touchpad chạy mượt, cử chỉ 2–3 ngón; `log show --last boot --predicate 'process == "kernel"' | grep -i -E 'VoodooI2C|VoodooGPIO' | grep -i -E 'interrupt|polling|gpio|pin' | head -20`.
 - 2026-11-05T21:36:20 Created build-32-20261105-213620-tp-gpio (tree 0819a543fd2a, ocvalidate: 0 errors, 0 warnings (validate-20261105T213604.md))
+
+## Build 33 — `usbmap-ss` (2026-11-05): = build-32 + UTBMap có cổng USB 3 (DEFERRED D3)
+- Dữ liệu: `docs/hw-dump/usb-map-20261105-220220.txt` (người dùng chạy `tools/map-usb-linux.sh` trên Linux MÁY B). Cổng gốc PCH xHCI `8086:51ED` (`\_SB.PC00.XHCI.RHUB`): `adr` sysfs = `_ADR` = số cổng macOS; `peer` ghép HS↔SS do firmware cung cấp.
+- Thực tế: USB-A trái = HS02 (2) + SS02 (0x0E); USB-A phải = HS01 (1) + SS01 (0x0D); USB-C = HS04 (4) trên PCH, phần USB 3 thuộc controller TB4 `8086:461E` (`TXHC.SS01`, 20 Gbps) — KHÔNG map (D4, chưa có hỗ trợ/kiểm chứng). HS06 camera, HS07 Bluetooth (type "not used" = nội bộ). USR1/USR2, HS03/05/08–10, SS03/04 không dùng.
+- UTBMap mới (`EFI/OC/Kexts/UTBMap.kext/Contents/Info.plist`, sửa bằng plistlib — không phải config.plist): HS01 3, HS02 3, HS04 9 (Type-C), HS06 255, HS07 255, SS01 3, SS02 3; `port-count` 0x0E. Đổi tên cổng theo ACPI (bản cũ đặt HS03/HS04/HS05 cho port 4/6/7 — địa chỉ giữ nguyên).
+- Hạn chế: thiết bị thử trên Linux là USB 2.0 (480 Mbps) → nửa SS chưa có lần cắm thật; dựa vào `peer` của firmware. Kiểm trên macOS bằng thiết bị USB 3: `system_profiler SPUSBDataType` phải báo tối đa 5/10 Gb/s.
+- `tools/map-usb-linux.sh`: sửa cột `peer` in chữ "peer" khi cổng không có cặp.
+- Một thay đổi so với build-32 (UTBMap). Build-32 (touchpad GPIO) chưa test riêng — nếu touchpad lỗi trên build-33: build-34 = build-33 + `force-polling` lại. efi-validate 0/0 (validate-20261105T220932.md).
+- 2026-11-05T22:09:48 Created build-33-20261105-220948-usbmap-ss (tree 26106d86cb52, ocvalidate: 0 errors, 0 warnings (validate-20261105T220932.md))
