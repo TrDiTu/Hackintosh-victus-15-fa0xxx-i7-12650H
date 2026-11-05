@@ -1,0 +1,60 @@
+diff --git a/src/NootedGreen/kern_xepm.cpp b/src/NootedGreen/kern_xepm.cpp
+index 6df9d5a..0a9b75b 100644
+--- a/src/NootedGreen/kern_xepm.cpp
++++ b/src/NootedGreen/kern_xepm.cpp
+@@ -37,6 +37,11 @@ static inline void xpWrmsr(uint32_t m, uint64_t v) { asm volatile("wrmsr" : : "c
+ 
+ static bool gXpOn = false;
+ static int gXpHwp = 0, gXpEpp = -1;                 // sysctl debug.xepm.hwp / .epp (root)
++// XE-HWPAUTO (Victus patch v8): 1 = clear the HWP desired-performance field so the core picks its own clock (autonomous
++// HWP, like Linux intel_pstate). XCPM writes a low "desired" on a core it just moved a thread to and raises it only on
++// its next control tick; with XNU moving a single thread across 2-16 P-cores per second the clock kept dropping.
++// sysctl debug.xepm.hwpauto (live, root) or boot-arg ngreenpmauto=1.
++static int gXpAuto = 0;
+ static int gXpEet = 0, gXpCst = 0, gXpD3 = 0, gXpRoute = 0;   // status
+ static mach_vm_address_t gXpOrgSetMult = 0, gXpCstPtr = 0;
+ static bool gXpCstWant = true;   // ngreenpmcst=0 keeps XCPM's idle table (coil whine from deep C-state transitions)
+@@ -55,6 +60,7 @@ static uint64_t xpSetMult(uint64_t mult, uint64_t a1, uint64_t a2, uint64_t a3)
+ 			if (d > hi) d = hi;
+ 			nv = (nv & ~0xFFFF00ULL) | ((uint64_t)hi << 8) | ((uint64_t)d << 16);
+ 		}
++		if (gXpAuto) nv &= ~0xFF0000ULL;   // desired = 0: autonomous selection inside [min, max], guided by EPP
+ 		if (gXpEpp >= 0) nv = (nv & ~0xFF000000ULL) | ((uint64_t)gXpEpp << 24);
+ 		if (nv != v) xpWrmsr(0x774, nv);
+ 	}
+@@ -153,8 +159,8 @@ static void xpApply(thread_call_param_t, thread_call_param_t) {
+ 	gXpD3 += xpD3();
+ 	if (!gXpEet) { mp_rendezvous_no_intrs(xpEetOne, nullptr); gXpEet = (int)((xpRdmsr(0x1FC) >> 19) & 1); }
+ 	if (gXpOrgSetMult) gXpHwp = 1;   // takes effect at XCPM's next request on each CPU
+-	IOLog("XeNG PM: profile on: HWP rescale %d (route %d), EPP %d, EE turbo off %d, C8/C10 %d, D3 %d, PL1 %d W (0x%x)\n",
+-	      gXpHwp, gXpRoute, gXpEpp, gXpEet, gXpCst, gXpD3, gXpPl1, gXpPl1Set);
++	IOLog("XeNG PM: profile on: HWP rescale %d (route %d), EPP %d, EE turbo off %d, C8/C10 %d, D3 %d, PL1 %d W (0x%x), HWPAUTO %d\n",
++	      gXpHwp, gXpRoute, gXpEpp, gXpEet, gXpCst, gXpD3, gXpPl1, gXpPl1Set, gXpAuto);
+ }
+ 
+ // ─── sensors (always registered, read only): debug.xepm.sensors ──────────────────────────────────────────────────
+@@ -192,6 +198,7 @@ SYSCTL_NODE(_debug, OID_AUTO, xepm, CTLFLAG_RW, 0, "NootedGreen XE-PM");
+ SYSCTL_PROC(_debug_xepm, OID_AUTO, sensors, CTLTYPE_OPAQUE | CTLFLAG_RD | CTLFLAG_ANYBODY, nullptr, 0, xpSensors, "S", "temperatures and RAPL energy");
+ SYSCTL_INT(_debug_xepm, OID_AUTO, hwp, CTLFLAG_RW, &gXpHwp, 0, "HWP rescale on hybrid P-cores");
+ SYSCTL_INT(_debug_xepm, OID_AUTO, epp, CTLFLAG_RW, &gXpEpp, 0, "EPP override, -1 = XCPM's");
++SYSCTL_INT(_debug_xepm, OID_AUTO, hwpauto, CTLFLAG_RW, &gXpAuto, 0, "1 = HWP desired 0 (autonomous clock)");
+ SYSCTL_INT(_debug_xepm, OID_AUTO, eet_off, CTLFLAG_RD, &gXpEet, 0, "");
+ static int xpCstCtl SYSCTL_HANDLER_ARGS {   // sudo sysctl -w debug.xepm.cst=0|1 (live)
+ 	int v = gXpCst;
+@@ -217,6 +224,8 @@ void xePmInstall(KernelPatcher &patcher) {
+ 	gXpOn = true;
+ 	int e = 0;
+ 	gXpEpp = (PE_parse_boot_argn("ngreenpmepp", &e, sizeof(e)) && e >= 0 && e <= 255) ? e : 0;
++	int au = 0;
++	if (PE_parse_boot_argn("ngreenpmauto", &au, sizeof(au))) gXpAuto = au != 0;
+ 	int cw = 1;
+ 	if (PE_parse_boot_argn("ngreenpmcst", &cw, sizeof(cw))) gXpCstWant = cw != 0;
+ 	int w = 0;
+@@ -242,6 +251,7 @@ void xePmInstall(KernelPatcher &patcher) {
+ 	} else gXpRoute = 2;
+ 	sysctl_register_oid(&sysctl__debug_xepm_hwp);
+ 	sysctl_register_oid(&sysctl__debug_xepm_epp);
++	sysctl_register_oid(&sysctl__debug_xepm_hwpauto);
+ 	sysctl_register_oid(&sysctl__debug_xepm_eet_off);
+ 	sysctl_register_oid(&sysctl__debug_xepm_cst);
+ 	sysctl_register_oid(&sysctl__debug_xepm_d3);

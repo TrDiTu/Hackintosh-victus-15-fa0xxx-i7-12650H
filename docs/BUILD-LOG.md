@@ -818,3 +818,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 03:08: GB7 trên CachyOS cùng máy: single 2195, multi 10101 (mốc). macOS 1176/7114 = 54 %/70 %.
 - 2026-11-06 03:11: xe-freq từng mẫu trên macOS: 1389–4679 MHz liên tục. Thêm theo dõi loại nhân/APIC id vào xe-freq.
 - 2026-11-06 03:22: xe-freq theo dõi nhân: Linux 1 nhân/4662 MHz; macOS 2–16 nhân/giây, E-core 1 %, xung giảm theo số lần đổi nhân → nút thắt single-core là chuyển nhân của scheduler. Đề xuất thử ctrsmt=off qua NVRAM.
+- 2026-11-06 03:40: patch NootedGreen v8 XE-HWPAUTO (`patches/nootedgreen-gmsfix-v7-to-v8.patch`, gộp `…-v8-jn6f03560.patch`): sysctl debug.xepm.hwpauto / boot-arg ngreenpmauto=1 → HWP desired = 0. Mặc định tắt. git apply --check sạch; clang++ -fsyntax-only 0 lỗi (MacKernelSDK 3f75008, Lilu 0249c3a). Chờ người dùng build trên MÁY B (GMSFIX-RUNBOOK §v8).

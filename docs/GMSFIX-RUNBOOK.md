@@ -133,3 +133,19 @@ zsh build-nootedgreen.sh && md5 -q build/NootedGreen.kext/Contents/MacOS/NootedG
 strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c -E 'FENCEFIX|xe-fencefix'     # phải >= 3
 ```
 Sau khi boot: con trỏ phải lành; `ioreg -rc IntelAccelerator -d1 | grep -E 'xe-fence|xe-cur-ctl'` → `xe-fencefix-n` ≥ 1, `xe-fencefix-end` = 0x3bff000 (62910464), `xe-fence-hit` = 255.
+
+## v8 — XE-HWPAUTO (2026-11-06, người dùng duyệt): HWP desired = 0 (xung tự chủ)
+Chỉ sửa `src/NootedGreen/kern_xepm.cpp`: sysctl `debug.xepm.hwpauto` (0/1, đổi trực tiếp, root) + boot-arg `ngreenpmauto=1`;
+khi bật, `xpSetMult` xoá trường desired (bit 16–23 của MSR 0x774) sau mỗi lần XCPM ghi. Mặc định TẮT → kext v8 chạy y hệt v7.
+Kiểm trên MÁY A: `git apply --check` sạch (v7→v8 và base→v8); `clang++ -fsyntax-only` (MacKernelSDK 3f75008 + Lilu 0249c3a): 0 lỗi, cảnh báo y như v7.
+```
+cd ~/xe-stack
+git apply --check ~/patches/nootedgreen-gmsfix-v7-to-v8.patch && git apply ~/patches/nootedgreen-gmsfix-v7-to-v8.patch
+zsh build-nootedgreen.sh
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c HWPAUTO     # phải > 0
+```
+(`~/xe-stack` phải đang ở v7. Nếu không chắc: dùng bản gộp `nootedgreen-gmsfix-v8-jn6f03560.patch` trên cây JN 6f03560 sạch.)
+Chép `build/NootedGreen.kext` vào gốc USB MACEFI (ngoài `EFI`) → Claude dựng build-36 = build-35 + kext v8.
+Thử: `sudo sysctl -w debug.xepm.hwpauto=1` → `XEFREQ_SAMPLES=1 ./xe-freq 1 30` + Geekbench 7; so với `hwpauto=0`.
