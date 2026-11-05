@@ -74,3 +74,7 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   = **54 % / 70 %**. Single-core hụt nhiều nhất → khớp xe-freq (luồng đơn không giữ xung).
 - `XEFREQ_SAMPLES=1 ./xe-freq 1 30` trên macOS build-35: 30 mẫu trải liên tục **1389–4679 MHz** (avg 3364), không thành hai mức P/E
   → trong mỗi giây luồng chỉ chạy nhanh một phần thời gian. xe-freq thêm cột E-core% (CPUID 0x1A) và số nhân đã chạy qua (x2APIC, CPUID 0x0B).
+- **Nguyên nhân single-core thấp (2026-11-06 03:22, xe-freq có theo dõi nhân):** Linux — luồng ở yên **1 nhân**, 4662 MHz, E-core 0 %.
+  macOS build-35 — luồng đi qua **2–16 nhân mỗi giây**, E-core chỉ 1 % trung bình; xung tỉ lệ nghịch số nhân (2–4 nhân ≈ 4550 MHz,
+  12–16 nhân 2000–3800 MHz). → bộ lập lịch XNU chuyển luồng liên tục giữa các P-core (nhân mới còn xung thấp, cache lạnh), không phải E-core.
+  Nghi: topology SMT giả của CpuTopologyRebuild mặc định (6c/16t). Thử `ctrsmt=off` qua NVRAM (CHƯA XÁC MINH).

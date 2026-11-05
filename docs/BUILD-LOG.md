@@ -817,3 +817,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 02:54: TSC đúng (2,688 GHz, sleep 30 = 30,04 s). xe-freq 1 luồng: Linux 4503/4640/4681, macOS build-35 1502/3365/4586 MHz → luồng không giữ được xung cao. Thêm XEFREQ_SAMPLES để in từng mẫu.
 - 2026-11-06 03:08: GB7 trên CachyOS cùng máy: single 2195, multi 10101 (mốc). macOS 1176/7114 = 54 %/70 %.
 - 2026-11-06 03:11: xe-freq từng mẫu trên macOS: 1389–4679 MHz liên tục. Thêm theo dõi loại nhân/APIC id vào xe-freq.
+- 2026-11-06 03:22: xe-freq theo dõi nhân: Linux 1 nhân/4662 MHz; macOS 2–16 nhân/giây, E-core 1 %, xung giảm theo số lần đổi nhân → nút thắt single-core là chuyển nhân của scheduler. Đề xuất thử ctrsmt=off qua NVRAM.
