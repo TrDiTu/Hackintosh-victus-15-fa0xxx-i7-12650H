@@ -84,3 +84,5 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   chờ vài phút sau boot, kiểm `top` trước khi kết luận.
 - **Geekbench 7, build-36 (2026-11-06 04:05):** `ctrsmt=off` + `hwpauto=0`: 10xx / 5xxx; **`ctrsmt=off` + `hwpauto=1`: 1927 / 9338**
   = **88 % / 92 % của Linux** (2195 / 10101). HWPAUTO có tác dụng lớn với tải từng đợt (Geekbench) dù xe-freq (tải liên tục) không thấy.
+- **Geekbench 7, build-36, topology mặc định (6c/16t):** `hwpauto=1` → **2030 / 9646 (92 % / 95 % Linux)**; `hwpauto=0` → 1191 / 5637.
+  → HWPAUTO là thay đổi quyết định; `ctrsmt=off` kém hơn mặc định (1927 / 9338) → bỏ. Build-37: `ngreenpmauto=1`.

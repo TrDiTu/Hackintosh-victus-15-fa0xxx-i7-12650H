@@ -830,3 +830,10 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 03:43: build-36 hwpauto ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
 - 2026-11-06 03:48: build-36 + ctrsmt=off (NVRAM còn): xe-freq hwpauto 0/1 = 4391/4376 MHz → HWPAUTO không tác dụng đo được. Kết quả xe-freq lệch lớn giữa các lần cùng cấu hình (3462 vs 4380).
 - 2026-11-06 04:05: GB7 build-36: ctrsmt=off+hwpauto=0 → 10xx/5xxx; ctrsmt=off+hwpauto=1 → 1927/9338 (88 %/92 % Linux). Đề xuất build-37: ctrsmt=off vào NVRAM/Add + ngreenpmauto=1.
+- 2026-11-06T04:22:36 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = 'ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta ngreenpmcst=0 ngreenpmauto=1' (config.plist)
+- 2026-11-06 04:22: GB7 build-36 topology mặc định: hwpauto=1 → 2030/9646 (92 %/95 % Linux); hwpauto=0 → 1191/5637. ctrsmt=off kém hơn → bỏ (người dùng đã xoá NVRAM ctrsmt).
+
+## Build 37 — `hwpauto-on` (2026-11-06): = build-36 + `ngreenpmauto=1`
+- boot-args **255 ký tự** (đúng giới hạn kernel đã thấy ở build-12): `… -amfipassbeta ngreenpmcst=0 ngreenpmauto=1`. `ngreenpmauto` đọc bằng `PE_parse_boot_argn` (patch v8). Bị cắt → chỉ mất HWPAUTO (hậu quả nhẹ); khi đó làm patch v9 bật HWPAUTO theo `-ngreenpm`.
+- Không thêm `ctrsmt` (mặc định tốt hơn `off`). plist_diff với build-36: 1 khác biệt. efi-validate 0/0 (validate-20261106T042236.md).
+- Kiểm: `sysctl debug.xepm.hwpauto` = 1 ngay sau boot (không cần sysctl -w); GB7 ≈ 2030 / 9646.
