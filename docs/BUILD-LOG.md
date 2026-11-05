@@ -819,3 +819,12 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 03:11: xe-freq từng mẫu trên macOS: 1389–4679 MHz liên tục. Thêm theo dõi loại nhân/APIC id vào xe-freq.
 - 2026-11-06 03:22: xe-freq theo dõi nhân: Linux 1 nhân/4662 MHz; macOS 2–16 nhân/giây, E-core 1 %, xung giảm theo số lần đổi nhân → nút thắt single-core là chuyển nhân của scheduler. Đề xuất thử ctrsmt=off qua NVRAM.
 - 2026-11-06 03:40: patch NootedGreen v8 XE-HWPAUTO (`patches/nootedgreen-gmsfix-v7-to-v8.patch`, gộp `…-v8-jn6f03560.patch`): sysctl debug.xepm.hwpauto / boot-arg ngreenpmauto=1 → HWP desired = 0. Mặc định tắt. git apply --check sạch; clang++ -fsyntax-only 0 lỗi (MacKernelSDK 3f75008, Lilu 0249c3a). Chờ người dùng build trên MÁY B (GMSFIX-RUNBOOK §v8).
+- 2026-11-06T03:42:01 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 6f03560 + GMSFIX v8 (accel+FB+PAVP+FENCEFIX+XE-HWPAUTO, md5 5f88ee88)' (config.plist)
+
+## Build 36 — `hwpauto` (2026-11-06): = build-35 + NootedGreen v8 (MỘT thay đổi: binary kext; người dùng duyệt v8 03:36)
+- Kext build trên MÁY B (v7 + `patches/nootedgreen-gmsfix-v7-to-v8.patch`): md5 `5f88ee8829e51ebfee93665ff6b3f850`, sha256 `cb4b975faae087fb31aba86877eebbdd9c10ecf903ff2a5621642e2d7afed5bf`; chuỗi HWPAUTO 1, GMSFIX/FENCEFIX 8; Info.plist giống bản v7. Lưu `_cache/user-inputs/NootedGreen-v8-5f88ee88.kext`.
+- Boot-args không đổi (240, có `ngreenpmcst=0`); XE-HWPAUTO mặc định TẮT → bật thử bằng `sudo sysctl -w debug.xepm.hwpauto=1`. Config chỉ đổi Comment. efi-validate 0/0 (validate-20261106T034201.md).
+- 2026-11-06T03:42:59 Xoá thủ công snapshot build-27-20261105-193937-bluetooth (người dùng duyệt; cũ nhất không phải known-good, để có chỗ cho build-36)
+- 2026-11-06T03:43:00 Created build-36-20261106-034300-hwpauto (tree 68c31dc0f0d4, ocvalidate: 0 errors, 0 warnings (validate-20261106T034201.md))
+- 2026-11-06T03:43:17 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree edb09afd9f88, verified)
+- 2026-11-06 03:43: build-36 hwpauto ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
