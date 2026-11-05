@@ -6,21 +6,42 @@
 // which core a thread lands on (no pinning): P-core threads show the higher numbers.
 //
 // Build:  clang -O2 -o xe-freq xe-freq.c -lpthread
-// Use:    ./xe-freq            one thread, 10 samples   (single-core turbo)
+// Use:    ./xe-freq            one thread, 10 samples (~10 s, single-core turbo)
 //         ./xe-freq 16         16 threads at once        (all-core clock under full load)
-//         ./xe-freq 1 30       one thread, 30 samples
+//         ./xe-freq 1 30       one thread, 30 samples (each sample ~1 s)
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef __APPLE__
+#include <mach/mach_time.h>
+#endif
 
 #define ADDS_PER_ITER 100
 
+// mach_absolute_time on macOS: CLOCK_MONOTONIC_RAW stepped in ~8 ms increments on the Victus (first version gave 8-24 GHz).
 static uint64_t now_ns(void) {
+#ifdef __APPLE__
+	static mach_timebase_info_data_t tb;
+	if (!tb.denom) mach_timebase_info(&tb);
+	return mach_absolute_time() * tb.numer / tb.denom;
+#else
 	struct timespec t;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &t);
 	return (uint64_t)t.tv_sec * 1000000000ull + (uint64_t)t.tv_nsec;
+#endif
+}
+
+// Smallest observable step of now_ns(), to show the timer is fine enough for the sample length.
+static uint64_t timer_step_ns(void) {
+	uint64_t best = UINT64_MAX;
+	for (int i = 0; i < 50; i++) {
+		uint64_t a = now_ns(), b;
+		while ((b = now_ns()) == a) {}
+		if (b - a < best) best = b - a;
+	}
+	return best;
 }
 
 // 100 dependent adds per call; the compiler cannot reorder or drop them (asm volatile, register dependency).
@@ -48,7 +69,7 @@ typedef struct { int id, samples; double *out; } job_t;
 
 static void *worker(void *p) {
 	job_t *j = p;
-	for (int s = 0; s < j->samples; s++) j->out[s] = measure_mhz(2000000);  // ~0.05 s per sample at 4 GHz
+	for (int s = 0; s < j->samples; s++) j->out[s] = measure_mhz(40000000);  // ~1 s per sample at 4 GHz
 	return NULL;
 }
 
@@ -56,6 +77,7 @@ int main(int argc, char **argv) {
 	int threads = argc > 1 ? atoi(argv[1]) : 1;
 	int samples = argc > 2 ? atoi(argv[2]) : 10;
 	if (threads < 1 || threads > 64 || samples < 1) { fprintf(stderr, "usage: %s [threads 1-64] [samples]\n", argv[0]); return 1; }
+	printf("timer step: %llu ns (must be far below the ~1 s sample)\n", (unsigned long long)timer_step_ns());
 	pthread_t th[64];
 	job_t jobs[64];
 	double *res = calloc((size_t)threads * samples, sizeof(double));

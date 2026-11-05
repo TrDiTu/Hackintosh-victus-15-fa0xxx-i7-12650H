@@ -796,3 +796,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 00:40: thêm `tools/xe-freq.c` — đo xung thực trong user space bằng chuỗi ADD phụ thuộc (1 chu kỳ/lệnh trên Golden Cove và Gracemont), thay powermetrics. Biên dịch + chạy thử trên MÁY A chỉ để kiểm công cụ.
 - 2026-11-06 00:45 build-34 `logs/gb7-new.csv` (GB7 CPU): công suất IA ở pha tải nhẹ (2–30 W) avg 12,8 / p90 21,9 W (build-33: 7,4 / 11,3) → P-core lên turbo cao hơn; gói avg 21,9 W, max 64,9 W; P-core avg 66 °C, max 83 °C. Người dùng bỏ đo nghỉ. Chờ điểm GB7.
 - 2026-11-06 00:46: điểm GB7 build-34: single 1220 (+13 %), multi 5476 (−6 %) so với build-33 (1076 / 5837). Ghi PERFORMANCE.md.
+- 2026-11-06 00:50: xe-freq lần 1 trên MÁY B cho 8–24 GHz (sai): đồng hồ CLOCK_MONOTONIC_RAW nhảy nấc ~8 ms, mẫu chỉ ~50 ms. Sửa: mach_absolute_time, mẫu ~1 s, in bước đồng hồ.
