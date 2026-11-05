@@ -768,3 +768,5 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-05T22:09:48 Created build-33-20261105-220948-usbmap-ss (tree 26106d86cb52, ocvalidate: 0 errors, 0 warnings (validate-20261105T220932.md))
 - 2026-11-05T22:12:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4d83b78c4251, verified)
 - 2026-11-05 22:11: build-33 usbmap-ss (gồm thay đổi build-32) ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-05T22:17:58 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 0bead3b402f3, verified)
+- 2026-11-05 22:18: người dùng sửa SMBIOS (bộ cũ lỗi) trong file secrets; ghi lại build-33 lên MACEFI với SMBIOS mới (/dev/sdb3, kiểm hash OK). EFI dự án không đổi (vẫn placeholder).
