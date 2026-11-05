@@ -1,4 +1,4 @@
-# Hackintosh HP Victus 15-fa0xxx (i7-12650H, UHD 64 EU) — macOS 26 Tahoe có tăng tốc Metal
+# Hackintosh HP Victus 15-fa0xxx (i7-12650H, UHD 64 EU) — macOS 26.7.1 (25G241) with Metal Acceleration
 
 EFI OpenCore và các bản vá NootedGreen cho **HP Victus 15-fa0xxx** (board `8A4F`, i7-12650H, iGPU `8086:46A3`
 Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G241)** với **tăng tốc Metal 2** trên iGPU.
