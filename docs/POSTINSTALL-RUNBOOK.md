@@ -94,6 +94,21 @@ sudo cp -R /Volumes/EFI/EFI ~/Desktop/ESP-backup-$(date +%Y%m%d) 2>/dev/null; ls
   `sudo efibootmgr -c -d /dev/nvme0n1 -p <số phân vùng ESP> -L "OpenCore" -l '\EFI\OC\OpenCore.efi'` rồi đặt lên đầu
   bằng `efibootmgr -o`. Gửi Claude `efibootmgr -v` trước và sau.
 
+**Máy này (kết quả Bước A, 2026-11-05):** ESP `disk0s1` FAT 4 GB (trống 3 GB), mount tại `/Volumes/NO NAME`; chứa
+**Limine của CachyOS** (`EFI/BOOT/BOOTX64.EFI`, `EFI/limine/`, `limine.conf`, kernel trong thư mục máy). Ổ còn `disk0s2`
+Linux (CachyOS) và `disk0s3` APFS (macOS). → **Trường hợp 2**: chỉ chép `EFI/OC` (48 MB), giữ nguyên Limine.
+1. `sudo cp -R "/Volumes/NO NAME/EFI" ~/Desktop/ESP-backup-$(date +%Y%m%d)` và `sudo cp "/Volumes/NO NAME/limine.conf" ~/Desktop/`
+2. `sudo cp -R /Volumes/MACEFI/EFI/OC "/Volumes/NO NAME/EFI/"` → `sudo find "/Volumes/NO NAME/EFI/OC" -name '._*' -delete`
+   → `diff -rq -x '._*' /Volumes/MACEFI/EFI/OC "/Volumes/NO NAME/EFI/OC"` (phải rỗng).
+3. Khởi động vào CachyOS (Limine như cũ), chạy: `sudo efibootmgr -v` (gửi Claude), rồi
+   `sudo efibootmgr -c -d /dev/nvme0n1 -p 1 -L "OpenCore" -l '\EFI\OC\OpenCore.efi'` (mục mới tự lên đầu BootOrder),
+   `sudo efibootmgr -v` lần nữa (gửi Claude).
+4. Rút USB, khởi động lại → menu OpenCore: chọn macOS. CachyOS: OpenCore thường hiện mục "EFI"/Limine từ BootOrder
+   (ScanPolicy 0) — CHƯA XÁC MINH; nếu không có, dùng F9 chọn mục Limine, Claude sẽ thêm `Misc/Entries` trỏ
+   `\EFI\limine\limine_x64.efi`.
+- Gỡ: trong CachyOS `sudo efibootmgr -b <số mục OpenCore> -B` và xoá `EFI/OC` khỏi ESP. Limine không bị đụng tới.
+- Cập nhật CachyOS (limine-entry-tool) chỉ sửa `limine.conf`/kernel, không đụng `EFI/OC`.
+
 **Quay lại khi hỏng:** cắm USB MACEFI → F9 → chọn USB (EFI trên USB không đổi). Xoá `EFI/OC` (và `EFI/BOOT` nếu bạn đã
 chép ở trường hợp 1) khỏi ESP, hoặc chép lại bản sao lưu Bước B.
 
