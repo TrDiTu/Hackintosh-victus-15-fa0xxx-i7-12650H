@@ -837,3 +837,12 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - boot-args **255 ký tự** (đúng giới hạn kernel đã thấy ở build-12): `… -amfipassbeta ngreenpmcst=0 ngreenpmauto=1`. `ngreenpmauto` đọc bằng `PE_parse_boot_argn` (patch v8). Bị cắt → chỉ mất HWPAUTO (hậu quả nhẹ); khi đó làm patch v9 bật HWPAUTO theo `-ngreenpm`.
 - Không thêm `ctrsmt` (mặc định tốt hơn `off`). plist_diff với build-36: 1 khác biệt. efi-validate 0/0 (validate-20261106T042236.md).
 - Kiểm: `sysctl debug.xepm.hwpauto` = 1 ngay sau boot (không cần sysctl -w); GB7 ≈ 2030 / 9646.
+- 2026-11-06T04:24:17 Xoá thủ công snapshot build-28-20261105-201417-pnlf (người dùng duyệt; cũ nhất không phải known-good, chỗ cho build-37)
+- 2026-11-06T04:24:17 Created build-37-20261106-042417-hwpauto-on (tree 7dd9eda153e3, ocvalidate: 0 errors, 0 warnings (validate-20261106T042236.md))
+- 2026-11-06T04:25:11 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 5ee312dbe66b, verified)
+- 2026-11-06 04:24: build-37 hwpauto-on ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 04:28 build-37 trên MÁY B: sysctl hwpauto 1, cst 0, route 1 → boot-args 255 ký tự được kernel đọc đủ (ngreenpmauto=1 ở vị trí cuối). Người dùng chép build-37 sang ESP ổ trong (từ CachyOS).
+- 2026-11-06 04:35: cập nhật README (build-37, hiệu năng, boot-args 255 + hai giới hạn Lilu/kernel, lỗi #8–#10, cảnh báo powermetrics/chép ESP, tools), SOURCES (patch v8 + kext v8), STATE, PERFORMANCE (bảng tóm tắt), DEFERRED D11.
+- 2026-11-06T04:39:32 Marked build-37-20261106-042417-hwpauto-on as known-good (user request)
+- 2026-11-06T04:39:32 Marked build-37 known-good (người dùng).
+- 2026-11-06 04:40: người dùng đặt mục tiêu mới → docs/ROADMAP.md (G1 iGPU, G2 Vulkan, G3 HW decode, G4 boot time). JN 6f03560 có sẵn XE-GTFREQ (ngreengtfreq), -ngreengva + macos/vadriver, Vulkan qua MoltenVK, gfxrst=1.

@@ -2,6 +2,16 @@
 
 Mục tiêu: có số đo nền (baseline) trước, rồi mỗi lần chỉnh chỉ đổi MỘT thứ và đo lại cùng cách.
 
+## Tóm tắt (2026-11-06, build-37)
+| Cấu hình | GB7 single | GB7 multi | % Linux |
+|---|---|---|---|
+| build-33 (không XE-PM) | 1076 | 5837 | 49 / 58 |
+| build-34 XE-PM `-ngreenpm` | 1220 | 5476 | 56 / 54 |
+| + C8/C10 tắt (`ngreenpmcst=0`) | 1176 | 7114 | 54 / 70 |
+| **+ XE-HWPAUTO (`ngreenpmauto=1`, patch v8) = build-37** | **2030** | **9646** | **92 / 95** |
+| Linux CachyOS cùng máy | 2195 | 10101 | 100 |
+Nhật ký chi tiết bên dưới theo thứ tự thời gian.
+
 ## Công cụ
 | Việc | Công cụ | Ghi chú |
 |---|---|---|
