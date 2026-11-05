@@ -82,3 +82,5 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   → HWPAUTO không khác biệt (để tắt). Luồng chỉ qua 1–3 nhân, phần tụt là lúc ở E-core (3489 MHz, 100 % E), E-core ~15 %.
   Cùng `ctrsmt=off` lúc 03:33 chỉ 3462 MHz / tới 10 nhân → **xe-freq dao động mạnh giữa các lần** (tải nền sau boot?): cần nhiều lần đo,
   chờ vài phút sau boot, kiểm `top` trước khi kết luận.
+- **Geekbench 7, build-36 (2026-11-06 04:05):** `ctrsmt=off` + `hwpauto=0`: 10xx / 5xxx; **`ctrsmt=off` + `hwpauto=1`: 1927 / 9338**
+  = **88 % / 92 % của Linux** (2195 / 10101). HWPAUTO có tác dụng lớn với tải từng đợt (Geekbench) dù xe-freq (tải liên tục) không thấy.

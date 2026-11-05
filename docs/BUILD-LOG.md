@@ -829,3 +829,4 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T03:43:17 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree edb09afd9f88, verified)
 - 2026-11-06 03:43: build-36 hwpauto ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
 - 2026-11-06 03:48: build-36 + ctrsmt=off (NVRAM còn): xe-freq hwpauto 0/1 = 4391/4376 MHz → HWPAUTO không tác dụng đo được. Kết quả xe-freq lệch lớn giữa các lần cùng cấu hình (3462 vs 4380).
+- 2026-11-06 04:05: GB7 build-36: ctrsmt=off+hwpauto=0 → 10xx/5xxx; ctrsmt=off+hwpauto=1 → 1927/9338 (88 %/92 % Linux). Đề xuất build-37: ctrsmt=off vào NVRAM/Add + ngreenpmauto=1.
