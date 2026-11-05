@@ -58,3 +58,7 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   (nominal 2680 MHz; spec turbo 4,7 GHz), luồng nhảy giữa CPU 1/3/4, gói 21–26 W → turbo đã vượt mức ~3,8 GHz. Khoảng cách
   tới 4,7 GHz: nghi do chỉ 1–2 "favored core" lên 4,7 và scheduler macOS chuyển luồng qua lại (CHƯA XÁC MINH).
 - `tools/xe-freq.c`: bản `add $imm` cho số sai (Golden Cove gộp chuỗi cộng hằng ở renamer); bản ADD thanh ghi chưa kiểm trên MÁY B.
+- Tải đều 16 luồng (`yes`) trên build-34: mọi CPU hiển thị 3,94–4,04 GHz, gói ~67 W → không có nhân kẹt xung. Các nhân 0,7–1,1 GHz
+  lúc GB7 multi là pha ít luồng của Geekbench. `sysctl`: hw.ncpu = logicalcpu = thread_count = 16, **physicalcpu = 6**
+  (CpuTopologyRebuild), perflevel0 = 16 luồng (macOS không tách P/E). powermetrics chỉ in 10 CPU = giới hạn hiển thị.
+- Kết luận build-34: XE-PM có lợi cho single-core (+13 %, 4,43 GHz); multi −6 % chưa tách được khỏi dao động (1 lần chạy).
