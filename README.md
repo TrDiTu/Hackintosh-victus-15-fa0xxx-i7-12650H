@@ -37,7 +37,6 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Camera HP Wide Vision HD (`30C9:0069`) | ✅ driver UVC có sẵn của macOS |
 | Đầu đọc thẻ RTS5228 | ❌ không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
 | Sleep, màn hình ngoài, video có DRM (PAVP) | ❌ không hỗ trợ với stack này |
-| Metal 3 | ❌ không đạt được với driver Tiger Lake |
 
 Display sleep/wake hoạt động. Chưa kiểm kỹ: chạy tải nặng lâu.
 
@@ -47,10 +46,6 @@ Display sleep/wake hoạt động. Chưa kiểm kỹ: chạy tải nặng lâu.
 - **Không cập nhật macOS.** Stack đồ hoạ và root patch Wi-Fi + Audio gắn với đúng 25G241; cập nhật sẽ làm hỏng cả ba.
 - Có thể gặp GPU hang / kernel panic. Luôn giữ một EFI không tăng tốc để quay về (`EFI/OC/config-install.plist`
   hoặc build nền).
-- **Không chạy `powermetrics`** khi cần ổn định: nó từng gây kernel panic trong framebuffer TGL (NULL qua `AppleGraphicsDeviceControl`). Đo xung bằng `tools/xe-freq.c`, nhiệt/công suất bằng `tools/xe-monitor.py`.
-- **Chép EFI sang ESP ổ trong từ Linux**, không từ macOS: bản chép bằng macOS làm OpenCore báo thiếu `Info.plist` của kext lồng trong `PlugIns`.
-- **Tránh System Settings › Displays** và đổi profile màu (từng gây panic với stack JulioNectar). Đổi độ phân giải /
-  tần số quét bằng `tools/xe-res` của JulioNectar.
 - EFI trong repo dùng **SMBIOS giả** (`CHANGE_ME_*`). Tự sinh serial riêng; không bao giờ commit serial thật.
 - EFI cần các kext Wi-Fi của OCLP-CustoMac (`IOSkywalkFamily`, `IO80211FamilyLegacy`) — đây là binary của Apple,
   **lấy từ [kgp-macPro/OCLP-CustoMac](https://github.com/kgp-macPro/OCLP-CustoMac)**, không phân phối lại.
@@ -124,7 +119,7 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 ## Cài đặt (tóm tắt)
 
 1. Cài macOS 26.7.1 (25G241) bằng EFI **không tăng tốc** (`EFI/OC/config-install.plist` → đổi tên thành `config.plist`).
-   BIOS: Secure Boot tắt, không dùng chế độ chỉ-dGPU.
+   BIOS: Secure Boot off
 2. Root patch bằng OCLP-CustoMac 3.0.3, chọn **Modern Wireless** và **Modern Audio** (cần KDK 25G241, OCLP tự tải) —
    [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §1 và §5.
 3. Cài stack đồ hoạ JulioNectar @ `6f03560` (`zsh install.sh`, cần spoof `9A49` lúc cài) —
