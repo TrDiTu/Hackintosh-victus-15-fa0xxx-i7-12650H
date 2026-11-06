@@ -1,0 +1,438 @@
+diff --git a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+index dfb6507..16a8323 100755
+--- a/src/NootedGreen/kern_gen11.cpp
++++ b/src/NootedGreen/kern_gen11.cpp
+@@ -25,7 +25,9 @@ extern bool gXeLockRouted;
+ // layout só muda com ngreen-eu=80 (ou 64/48) e, opcional, ngreen-l3=N. Sem os args: 12 SS × 8 EU, L3 8, como antes.
+ // Dados de 80 EU (Linux, issue #3): i5-1340P = 5 DSS × 16 EU (máscara 0x1f, DSS0 presente) -> 10 SS × 8 EU.
+ // O steering MCR continua no DSS0 (presente nos chips de 80 EU vistos). ioreg: xe-topo = eu<<8 | l3 (no acelerador).
+-static uint32_t gTopoSs = 12, gTopoL3 = 8;
++// Victus patch v10: defaults are this laptop's UHD 46A3 (64 EU = 8 SS x 8 EU, L3 6) so ngreen-eu=64 ngreen-l3=6 are no
++// longer needed in boot-args (full). Hard-coded, not read from fuses (fuse reads at boot hung, see above). Args still override.
++static uint32_t gTopoSs = 8, gTopoL3 = 6;
+ static bool gTopoParsed = false;
+ static void xeTopoArgs() {
+ 	if (gTopoParsed) return;
+@@ -128,6 +130,113 @@ static uint32_t xePortGuardProbe(void *that) {
+ 	return FunctionCast(xePortGuardProbe, gXePortGuardOrg)(that);
+ }
+ 
++// xe/curdiag (2026-11-05): cursor-plane registers sampled ~200 ms after AppleIntelBaseController::hwSetCursorImage and
++// published on the accelerator (ioreg -rc IntelAccelerator -d1 | grep xe-cur). Diagnostic only, no behaviour change.
++// The boot log is useless for this: the kernel message buffer is overwritten by XeNG BLIT/V212 lines long before.
++static mach_vm_address_t gOrgHwSetCursorImage = 0;
++static thread_call_t gXeCurTc = nullptr;
++static volatile uint32_t gXeCurN = 0, gXeCurW = 0, gXeCurH = 0, gXeCurRet = 0;
++static void *volatile gXeCurCtl = nullptr, *volatile gXeCurFb = nullptr;  // xe/curdiag2: controller + framebuffer of the last call
++static volatile uint32_t gXeFenceFixN = 0, gXeFenceFixLast = 0;  // xe/fencefix: clamps done, last new end
++static void xeCurPublish(thread_call_param_t, thread_call_param_t) {
++	auto *svc = OSDynamicCast(IOService, reinterpret_cast<OSObject *>(gTopoAcc));
++	if (!svc || !NGreen::callback) return;
++	static const uint32_t regs[] = {0x70080, 0x70084, 0x70088, 0x700a0, 0x700ac};
++	static const char *const names[] = {"xe-cur-ctl", "xe-cur-base", "xe-cur-pos", "xe-cur-fbcctl", "xe-cur-surflive"};
++	for (size_t i = 0; i < arrsize(regs); i++) svc->setProperty(names[i], NGreen::callback->readReg32(regs[i]), 32);
++	svc->setProperty("xe-cur-img-w", gXeCurW, 32);
++	svc->setProperty("xe-cur-img-h", gXeCurH, 32);
++	svc->setProperty("xe-cur-ret", gXeCurRet, 32);
++	svc->setProperty("xe-cur-n", gXeCurN, 32);
++
++	// xe/curdiag2: compare what the CPU wrote (Apple's dst = ctl+0xc98 + (gaddr - ctl+0xdc0), as in hwSetCursorImage)
++	// with what the display reads (BAR2 aperture at the cursor's GGTT address), row by row, plus the 4 GGTT PTEs.
++	auto *ctl = static_cast<uint8_t *>(gXeCurCtl);
++	auto *fb = static_cast<uint8_t *>(gXeCurFb);
++	auto *cb = NGreen::callback;
++	if (ctl && fb) {
++		uint32_t idx = *reinterpret_cast<volatile uint32_t *>(fb + 0x4ad8) & 1;
++		uint32_t gaddr = *reinterpret_cast<volatile uint32_t *>(fb + 0x1f4 + idx * 4);
++		uint32_t stolenOff = *reinterpret_cast<volatile uint32_t *>(ctl + 0xdc0);
++		auto *cpuBase = *reinterpret_cast<uint8_t *volatile *>(ctl + 0xc98);
++		svc->setProperty("xe-cur-gaddr", gaddr, 32);
++		svc->setProperty("xe-cur-idx", idx, 32);
++		svc->setProperty("xe-cur-stolenoff", stolenOff, 32);
++		for (uint32_t p = 0; p < 4; p++) {
++			char k[16];
++			snprintf(k, sizeof(k), "xe-cur-pte%u", p);
++			svc->setProperty(k, ((uint64_t)cb->readReg32(GGTT_PTE_LO((gaddr >> 12) + p) + 4) << 32) | cb->readReg32(GGTT_PTE_LO((gaddr >> 12) + p)), 64);
++		}
++		const uint32_t bytes = 64 * 64 * 4;
++		volatile uint32_t *cpu = (cpuBase && gaddr >= stolenOff && (gaddr - stolenOff) + bytes <= 0x200000U) ? reinterpret_cast<volatile uint32_t *>(cpuBase + ((gaddr - stolenOff) & ~3U)) : nullptr;
++		volatile uint32_t *gpu = (cb->xeAperturePtr() && gaddr + bytes <= cb->xeApertureLen()) ? cb->xeAperturePtr() + gaddr / 4 : nullptr;
++		uint64_t rowsCpu = 0, rowsGpu = 0;
++		uint32_t diff = 0;
++		for (uint32_t r = 0; r < 64; r++) {
++			for (uint32_t x = 0; x < 64; x++) {
++				uint32_t c = cpu ? cpu[r * 64 + x] : 0, g = gpu ? gpu[r * 64 + x] : 0;
++				if (c >> 24) rowsCpu |= 1ULL << r;
++				if (g >> 24) rowsGpu |= 1ULL << r;
++				if (cpu && gpu && c != g) diff++;
++			}
++		}
++		svc->setProperty("xe-cur-rows-cpu", rowsCpu, 64);
++		svc->setProperty("xe-cur-rows-gpu", rowsGpu, 64);
++		svc->setProperty("xe-cur-diff", cpu && gpu ? diff : 0xFFFFFFFFU, 32);
++
++		// xe/curdiag3: the CPU writes the cursor through the BAR2 aperture (ctl+0xc98 = map of withSubRange(ctl+0xc80,
++		// ctl+0xdc0, ctl+0xdc8)), so a tiling fence over that range would detile CPU writes while the display reads raw
++		// memory. Publish every valid fence, the one covering the cursor, the FB's post-stolen window and the
++		// accelerator's GPU VA segment start (GMSFIX makes it 60 MB, the same place the FB window starts).
++		svc->setProperty("xe-cur-fbwin", *reinterpret_cast<volatile uint32_t *>(ctl + 0xdc8), 32);
++		uint32_t fenceHit = 0xFF, fenceValid = 0;
++		for (uint32_t i = 0; i < 32; i++) {
++			uint32_t lo = cb->readReg32(0x100000 + i * 8), hi = cb->readReg32(0x100000 + i * 8 + 4);
++			if (!(lo & 1)) continue;
++			fenceValid++;
++			char k[24];
++			snprintf(k, sizeof(k), "xe-fence%02u", i);
++			svc->setProperty(k, ((uint64_t)hi << 32) | lo, 64);
++			uint32_t start = lo & 0xFFFFF000U, end = hi & 0xFFFFF000U;
++			if (gaddr >= start && gaddr <= end + 0xFFFU && fenceHit == 0xFF) fenceHit = i;
++		}
++		svc->setProperty("xe-fence-valid", fenceValid, 32);
++		svc->setProperty("xe-fence-hit", fenceHit, 32);
++		svc->setProperty("xe-fencefix-n", gXeFenceFixN, 32);
++		svc->setProperty("xe-fencefix-end", gXeFenceFixLast, 32);
++	}
++	{
++		auto *acc = static_cast<uint8_t *>(gTopoAcc);
++		auto *mm = acc ? *reinterpret_cast<uint8_t *volatile *>(acc + 0x1260) : nullptr;
++		if (acc) svc->setProperty("xe-acc-fbreg", (uint32_t)*reinterpret_cast<volatile uint8_t *>(acc + 0x128c), 32);
++		if (mm) {
++			svc->setProperty("xe-mm-seg", *reinterpret_cast<volatile uint64_t *>(mm + 0xa8), 64);
++			svc->setProperty("xe-mm-rangestart", *reinterpret_cast<volatile uint64_t *>(mm + 0xb0), 64);
++			svc->setProperty("xe-mm-rangesize", *reinterpret_cast<volatile uint64_t *>(mm + 0xb8), 64);
++			svc->setProperty("xe-mm-stolen30", *reinterpret_cast<volatile uint64_t *>(mm + 0x30), 64);
++			svc->setProperty("xe-mm-stolen38", *reinterpret_cast<volatile uint64_t *>(mm + 0x38), 64);
++		}
++	}
++}
++static IOReturn xeHwSetCursorImage(void *that, void *fb, void *info) {
++	IOReturn r = FunctionCast(xeHwSetCursorImage, gOrgHwSetCursorImage)(that, fb, info);
++	gXeCurN++;
++	gXeCurCtl = that;
++	gXeCurFb = fb;
++	if (info) {  // IOHardwareCursorInfo: u16 major, u16 minor, u32 cursorHeight, u32 cursorWidth, ...
++		gXeCurH = *reinterpret_cast<const UInt32 *>(static_cast<const uint8_t *>(info) + 4);
++		gXeCurW = *reinterpret_cast<const UInt32 *>(static_cast<const uint8_t *>(info) + 8);
++	}
++	gXeCurRet = static_cast<uint32_t>(r);
++	if (!gXeCurTc) gXeCurTc = thread_call_allocate(xeCurPublish, nullptr);
++	if (gXeCurTc) {
++		uint64_t deadline = 0;
++		clock_interval_to_deadline(200, kMillisecondScale, &deadline);
++		thread_call_enter_delayed(gXeCurTc, deadline);
++	}
++	return r;
++}
++
+ // ==== 6 kextInfos: ICL fallback + dual TGL identities (com.xxxxx and com.apple) from /Library/Extensions ====
+ //trivial
+ // ICL FB — com.apple (fallback path)
+@@ -314,10 +423,12 @@ static bool shouldForceFullMetalPath() {
+ }
+ 
+ static int getV142SubmitBlitMode() {
+-	int parsed = 0;
++	// Victus patch v10: default 3 (Apple's original submitBlit, the JN release value); ngreenV142=N still overrides.
++	int parsed = 3;
+ 	if (PE_parse_boot_argn("ngreenV142", &parsed, sizeof(parsed))) {
+ 		return parsed;
+ 	}
++	return 3;
+ 
+ 	if (checkKernelArgument("-ngreenV142orig"))
+ 		return 3;
+@@ -1279,6 +1390,28 @@ bool Gen11::processKext(KernelPatcher &patcher, size_t index, mach_vm_address_t
+ 		auto *activeKext = (kextG11FBTA.loadIndex == index) ? &kextG11FBTA : &kextG11FBT;
+ 		NGreen::callback->setRMMIOIfNecessary();
+ 		SYSLOG("ngreen", "init AppleIntelTGLGraphicsFramebuffer");
++
++		// xe/gmsfix-fb (2026-11-03): AppleIntelBaseController::FBMemMgr_Init (TGL FB 16.0.x le, file offset 0x5e227) decodes
++		// GGC.GMS as (GGC << 17) & 0xFE000000 in 32 bits:  shll $0x11,%eax ; andl $0xfe000000,%eax
++		// GMS 0xFE (60 MB) -> 0xFC000000 (4032 MB): the FB believes almost all of the 4 GB GGTT is stolen memory.
++		// Replace with the real size: movl $real,%eax ; nop x3 (8 bytes). Same switch as GMSFIX: -ngreennogmsfix.
++		{
++			static const uint8_t fGmsFb[] = {0xc1, 0xe0, 0x11, 0x25, 0x00, 0x00, 0x00, 0xfe};
++			static uint8_t rGmsFb[] = {0xb8, 0x00, 0x00, 0x00, 0x00, 0x90, 0x90, 0x90};
++			uint32_t gmsReal = NGreen::callback->stolen_real_size;
++			if (gmsReal && !checkKernelArgument("-ngreennogmsfix")) {
++				rGmsFb[1] = (uint8_t)(gmsReal & 0xFF);
++				rGmsFb[2] = (uint8_t)((gmsReal >> 8) & 0xFF);
++				rGmsFb[3] = (uint8_t)((gmsReal >> 16) & 0xFF);
++				rGmsFb[4] = (uint8_t)((gmsReal >> 24) & 0xFF);
++				LookupPatchPlus const gmsFixFb {activeKext, fGmsFb, static_cast<const uint8_t *>(rGmsFb), arrsize(fGmsFb), 1};
++				bool gmsFbOk = gmsFixFb.apply(patcher, address, size);
++				if (!gmsFbOk) patcher.clearError();
++				IOLog("XeNG GMSFIX fb-patch: real=%u MB patch=%s\n", gmsReal >> 20, gmsFbOk ? "OK" : "FAILED");
++			} else {
++				IOLog("XeNG GMSFIX fb-patch: skipped (real=%u)\n", gmsReal);
++			}
++		}
+ 		
+ 		bool isprod=false;
+ 		auto prod=patcher.solveSymbol(index, "__ZN24AppleIntelBaseController5startEP9IOService", address, size);
+@@ -1506,6 +1639,14 @@ bool Gen11::processKext(KernelPatcher &patcher, size_t index, mach_vm_address_t
+ 				{"__ZN24AppleIntelBaseController13hwSetupMemoryEP21AppleIntelFramebufferP21AppleIntelDisplayPathP10CRTCParamsb", wrapHwSetupMemory, this->ohwSetupMemory},
+ 			};
+ 			PANIC_COND(!RouteRequestPlus::routeAll(patcher, index, requests, address, size), "ngreen","Failed to route d symbols");
++			{   // xe/curdiag: non-fatal
++				RouteRequestPlus curDiag[] = {
++					{"__ZN24AppleIntelBaseController16hwSetCursorImageEP21AppleIntelFramebufferP20IOHardwareCursorInfo", xeHwSetCursorImage, gOrgHwSetCursorImage},
++				};
++				bool curOk = RouteRequestPlus::routeAll(patcher, index, curDiag, address, size);
++				if (!curOk) patcher.clearError();
++				IOLog("XeNG CURDIAG: hwSetCursorImage route %s\n", curOk ? "OK" : "FAILED");
++			}
+ 			
+ 		}
+ 		
+@@ -2415,7 +2556,53 @@ bool Gen11::processKext(KernelPatcher &patcher, size_t index, mach_vm_address_t
+ 			};
+ 			PANIC_COND(!LookupPatchPlus::applyAll(patcher, patchesAlways, address, size), "ngreen",
+ 				"kextG11HWT Failed to apply base patches!");
+-			
++
++			// xe/gmsfix (2026-11-03): IGMemoryManager::initSegments (TGL 16.0.x le, file offset 0xec02) decodes
++			// GGC.GMS as GMS * 32 MB:  movzwl %ax,%r14d ; andl $0xff00,%r14d ; shlq $0x11,%r14
++			// Gen9+ GMS codes 0xF0..0xFE mean (GMS - 0xEF) * 4 MB (0xFE = 60 MB, fixed DVMT on many OEM laptops).
++			// Apple decodes 0xFE as 8128 MB -> the per-task GPU VA range is invalid -> IGRangeAllocator::withRange
++			// fails -> IGAccelTask::initAllocators fails -> IGAccelTask::withOptions releases a half-built task ->
++			// panic in IOAccelTask::release (CR2 0xc78). Replace the decode with the real size:
++			//   movl $real, %r14d ; nop x9   (15 bytes, zero-extends into r14)
++			// Only for GMS 0xF0..0xFE (other codes decode correctly). Non-fatal. Off: -ngreennogmsfix.
++			{
++				static const uint8_t fGms[] = {0x44, 0x0f, 0xb7, 0xf0, 0x41, 0x81, 0xe6, 0x00, 0xff, 0x00, 0x00, 0x49, 0xc1, 0xe6, 0x11};
++				static uint8_t rGms[] = {0x41, 0xbe, 0x00, 0x00, 0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
++				uint32_t gmsReal = NGreen::callback->stolen_real_size;
++				uint32_t gmsCode = NGreen::callback->stolen_gms;
++				if (gmsReal && !checkKernelArgument("-ngreennogmsfix")) {
++					rGms[2] = (uint8_t)(gmsReal & 0xFF);
++					rGms[3] = (uint8_t)((gmsReal >> 8) & 0xFF);
++					rGms[4] = (uint8_t)((gmsReal >> 16) & 0xFF);
++					rGms[5] = (uint8_t)((gmsReal >> 24) & 0xFF);
++					LookupPatchPlus const gmsFix {activeKext, fGms, static_cast<const uint8_t *>(rGms), arrsize(fGms), 1};
++					bool gmsOk = gmsFix.apply(patcher, address, size);
++					if (!gmsOk) patcher.clearError();
++					IOLog("XeNG GMSFIX: GMS=0x%x real=%u MB (Apple would use %u MB) patch=%s\n",
++						gmsCode, gmsReal >> 20, gmsCode * 32, gmsOk ? "OK" : "FAILED");
++				} else {
++					IOLog("XeNG GMSFIX: skipped (GMS=0x%x real=%u)\n", gmsCode, gmsReal);
++				}
++			}
++
++			// xe/pavpfix (2026-11-04): IntelAccelerator::PAVPCommandCallback (TGL 16.0.x le, 0x29c50) decides "PAVP on"
++			// from the hardware register 0x1082C0 (bits 1|2, set and locked by many OEM BIOSes) and then dereferences the
++			// PAVP hardware context at accel+0x1278. That context is only created in startGraphicsEngine when
++			// accel+0x1300 bit 3 is set, which is not the case here -> NULL+0xb8 page fault, called from
++			// IntelAccelerator::startGraphicsEngine (command 3). Force the "PAVP disabled" path (what Apple runs when the
++			// BIOS leaves PAVP off): cmpb $0,fPavpEnabled(%rip) ; je +0xda  ->  same cmpb ; jmp +0xdb ; nop
++			// Protected (DRM) video playback is not available with this. Non-fatal. Off: -ngreennopavpfix.
++			if (!checkKernelArgument("-ngreennopavpfix")) {
++				static const uint8_t fPavp[] = {0x80, 0x3d, 0x3c, 0x1f, 0x12, 0x00, 0x00, 0x0f, 0x84, 0xda, 0x00, 0x00, 0x00};
++				static const uint8_t rPavp[] = {0x80, 0x3d, 0x3c, 0x1f, 0x12, 0x00, 0x00, 0xe9, 0xdb, 0x00, 0x00, 0x00, 0x90};
++				LookupPatchPlus const pavpFix {activeKext, fPavp, static_cast<const uint8_t *>(rPavp), arrsize(fPavp), 1};
++				bool pavpOk = pavpFix.apply(patcher, address, size);
++				if (!pavpOk) patcher.clearError();
++				IOLog("XeNG PAVPFIX: patch=%s\n", pavpOk ? "OK" : "FAILED");
++			} else {
++				IOLog("XeNG PAVPFIX: skipped\n");
++			}
++
+ 			if (!NGreen::callback->isRealTGL) {
+ 				// RPL-only: hardcode topology and bypass BCS readiness check
+ 				xeTopoArgs();
+@@ -4044,7 +4231,7 @@ static uint32_t xeFixFilterWrite(unsigned long reg, uint32_t val) {
+ 	{
+ 		uint32_t r = (uint32_t)(reg & 0xFFFFF);
+ 		if (r == 0xC8254 || r == 0xC8258) {
+-			static int blr = -1, blmax = 0;
++			static int blr = -1, blmax = 17741;   // Victus patch v10: this panel's measured 100 % duty (ngreenblmax=17741)
+ 			if (blr < 0) { blr = checkKernelArgument("-ngreennoblr") ? 0 : 1; PE_parse_boot_argn("ngreenblmax", &blmax, sizeof(blmax)); }
+ 			if (!gBlHwFreq && NGreen::callback) gBlHwFreq = NGreen::callback->readReg32(0xC8254);
+ 			if (r == 0xC8254) {
+@@ -4735,7 +4922,7 @@ void Gen11::hwInitializeCState(AppleIntel::AppleIntelBaseController *that)
+ 	//   "adlp"            → load ADL-P DMC v2.16 blob + ADL-P display engine registers
+ 	//                       + combo PHY signal levels (PHY_A eDP)
+ 	//   "icl"             → passthrough original ICL DMC load + ICL combo PHY signal levels
+-	char dmcArg[16] = {};
++	char dmcArg[16] = "adlp";   // Victus patch v10: default ADL-P (this laptop); ngreen-dmc=skip|tgl|icl still overrides
+ 	PE_parse_boot_argn("ngreen-dmc", dmcArg, sizeof(dmcArg));
+ 
+ 	if (dmcArg[0] == 't' || dmcArg[0] == 'T') {
+@@ -5243,6 +5430,7 @@ bool Gen11::AppleIntelBaseControllerstart(AppleIntel::AppleIntelBaseController *
+ 	xeBootDiagDump("pre-FBstart");
+ 	auto ret=FunctionCast(AppleIntelBaseControllerstart, callback->oAppleIntelBaseControllerstart)(that,param_1 );
+ 	SYSLOG("ngreen", "FBController::start() returned %d", ret);
++	IOLog("XeNG GMSFIX fb: FBController::start ret=%d stolen(0xde4)=0x%x\n", (int)ret, getMember<uint32_t>(that, 0xde4));
+ 	xeBootDiagDump("post-FBstart");
+ 	{   // again 10 s and 40 s later (thread context): writes made while the boot screen/progress bar were up and at the WindowServer handoff
+ 		static thread_call_t tc10 = nullptr, tc40 = nullptr;
+@@ -5505,6 +5693,35 @@ int Gen11::wrapHwSetupMemory(AppleIntel::AppleIntelBaseController *that, AppleIn
+ 			   pteHi, pteLo, pteLo & 1, (pteLo >> 3) & 1);
+ 	}
+ 
++	// xe/fencefix (2026-11-05): hwSetupMemory (TGL FB le 0x6e03f) programs the framebuffer's X-tile fence as
++	// [surf, surf + ctl+0xde8 - 1], where ctl+0xde8 is the per-framebuffer memory size from Apple's platform table
++	// (64 MB here). With only 60 MB of stolen memory (GMSFIX) a fence over a surface at GGTT 0 runs past the end of
++	// stolen into the FB's post-stolen window, where the cursor buffers live (0x3C00000+): the CPU writes the cursor
++	// through the aperture (detiled by the fence) and the cursor plane reads it linear -> broken pointer.
++	// Clamp the fence end to the last page of stolen memory. Only for fences that start inside stolen and cross
++	// its end. Same split-write order as i915 (disable, high dword, enable). Off: -ngreennofencefix.
++	if (NGreen::callback && NGreen::callback->mmioValid() && !checkKernelArgument("-ngreennofencefix")) {
++		uint8_t fIdx = getMember<uint8_t>(fb, 0x4288);
++		uint32_t stolen = getMember<uint32_t>(that, 0xdc0);
++		if (fIdx < 32 && stolen >= 0x1000) {
++			uint32_t fLo = NGreen::callback->readReg32(0x100000 + fIdx * 8);
++			uint32_t fHi = NGreen::callback->readReg32(0x100004 + fIdx * 8);
++			uint32_t fStart = fLo & 0xFFFFF000U, fEnd = fHi & 0xFFFFF000U;
++			if ((fLo & 1) && fStart < stolen && fEnd >= stolen) {
++				uint32_t newEnd = (stolen - 0x1000U) & 0xFFFFF000U;
++				if (newEnd >= fStart) {
++					NGreen::callback->writeReg32(0x100000 + fIdx * 8, 0);
++					NGreen::callback->writeReg32(0x100004 + fIdx * 8, newEnd | (fHi & 0xFFFU));
++					NGreen::callback->writeReg32(0x100000 + fIdx * 8, fLo);
++					gXeFenceFixN++;
++					gXeFenceFixLast = newEnd;
++					if (gXeFenceFixN <= 4)
++						IOLog("XeNG FENCEFIX: fence%u end 0x%x -> 0x%x (stolen 0x%x)\n", fIdx, fEnd, newEnd, stolen);
++				}
++			}
++		}
++	}
++
+ 	return ret;
+ }
+ 
+@@ -6913,7 +7130,22 @@ void *Gen11::igAccelTaskWithOptions(void *that)
+ 		return ctx;
+ 	};
+ 
++	// xe/gmsfix diag: accel+0x1260 = IGMemoryManager, accel+0x128c = registered with the framebuffer controller,
++	// mm+0xa8 = segment start (stolen size as decoded by initSegments), mm+0xb0/0xb8 = per-task VA range {start, size}
++	{
++		static int gmsDiagCount = 0;
++		if (gmsDiagCount < 4) {
++			gmsDiagCount++;
++			auto *mm = getMember<uint8_t *>(that, 0x1260);
++			IOLog("XeNG GMSFIX diag[%d]: fbreg=%u mm=%p seg=0x%llx range=0x%llx+0x%llx\n", gmsDiagCount,
++				(unsigned)getMember<uint8_t>(that, 0x128c), mm,
++				mm ? (unsigned long long)getMember<uint64_t>(mm, 0xa8) : 0ULL,
++				mm ? (unsigned long long)getMember<uint64_t>(mm, 0xb0) : 0ULL,
++				mm ? (unsigned long long)getMember<uint64_t>(mm, 0xb8) : 0ULL);
++		}
++	}
+ 	auto *task = FunctionCast(igAccelTaskWithOptions, callback->oigAccelTaskWithOptions)(that);
++	if (!task) IOLog("XeNG GMSFIX diag: IGAccelTask::withOptions returned NULL\n");
+ 	if (isExperimentalMonitorEnabled()) {
+ 		static int v137WithOptionsCount = 0;
+ 		if (v137WithOptionsCount < 24) {
+diff --git a/src/NootedGreen/kern_green.cpp b/src/NootedGreen/kern_green.cpp
+index 44949b4..94fb6c0 100755
+--- a/src/NootedGreen/kern_green.cpp
++++ b/src/NootedGreen/kern_green.cpp
+@@ -278,6 +278,9 @@ void NGreen::processPatcher(KernelPatcher &patcher) {
+ 		} else {
+ 			SYSLOG( "ngreen", "PANIC stolen_size=0 check DVMT in bios");
+ 		}
++		// xe/gmsfix: keep the decoded size (MB -> bytes) before the 128 MB floor; used by the GMSFIX patch in kern_gen11.cpp
++		this->stolen_gms = gms;
++		this->stolen_real_size = (gms >= 0xF0 && gms <= 0xFE) ? stolen_size * (1024 * 1024) : 0;
+ 		if (stolen_size<128) stolen_size=128;
+ 		stolen_size *= (1024 * 1024);
+ 		SYSLOG("ngreen", "stolen_size 0x%x",stolen_size);
+diff --git a/src/NootedGreen/kern_green.hpp b/src/NootedGreen/kern_green.hpp
+index c279582..b989088 100755
+--- a/src/NootedGreen/kern_green.hpp
++++ b/src/NootedGreen/kern_green.hpp
+@@ -73,6 +73,9 @@ class NGreen {
+ 	static bool wrapApplePanelSetDisplay(IOService *that, IODisplay *display);
+ 	
+ 	UInt32 stolen_size;
++	// xe/gmsfix: real DSM size in bytes (before the 128 MB floor below) and the raw GGC.GMS code
++	UInt32 stolen_real_size {0};
++	UInt32 stolen_gms {0};
+ 	uint32_t framebufferId {0};
+ 	
+ 	// Public MMIO register access (used by display link training, display merge, etc.)
+@@ -282,6 +285,9 @@ class NGreen {
+     bool isGen8LPDerivative = false;
+     bool isRealTGL = false;  // true if CPU is genuine TGL (model 0x8C/0x8D), false if spoofed (RPL/ADL)
+ public:
++	// xe/curdiag2: read-only access to the BAR2 aperture mapping for diagnostics
++	volatile UInt32 *xeAperturePtr() const { return aperturePtr; }
++	uint64_t xeApertureLen() const { return apertureLen; }
+     bool getIsRealTGL() const { return isRealTGL; }
+     uint64_t mmioLength() const { return (rmmio && rmmioPtr) ? rmmio->getLength() : 0; }  // xe/rc6fw (22/10)
+ private:
+diff --git a/src/NootedGreen/kern_xepm.cpp b/src/NootedGreen/kern_xepm.cpp
+index 6df9d5a..e686f10 100644
+--- a/src/NootedGreen/kern_xepm.cpp
++++ b/src/NootedGreen/kern_xepm.cpp
+@@ -37,9 +37,16 @@ static inline void xpWrmsr(uint32_t m, uint64_t v) { asm volatile("wrmsr" : : "c
+ 
+ static bool gXpOn = false;
+ static int gXpHwp = 0, gXpEpp = -1;                 // sysctl debug.xepm.hwp / .epp (root)
++// XE-HWPAUTO (Victus patch v8): 1 = clear the HWP desired-performance field so the core picks its own clock (autonomous
++// HWP, like Linux intel_pstate). XCPM writes a low "desired" on a core it just moved a thread to and raises it only on
++// its next control tick; with XNU moving a single thread across 2-16 P-cores per second the clock kept dropping.
++// sysctl debug.xepm.hwpauto (live, root) or boot-arg ngreenpmauto=0|1.
++// Victus patch v9: on by default with -ngreenpm (ngreenpmauto=0 turns it off), so the boot-arg is no longer needed.
++static int gXpAuto = 0;
+ static int gXpEet = 0, gXpCst = 0, gXpD3 = 0, gXpRoute = 0;   // status
+ static mach_vm_address_t gXpOrgSetMult = 0, gXpCstPtr = 0;
+ static bool gXpCstWant = true;   // ngreenpmcst=0 keeps XCPM's idle table (coil whine from deep C-state transitions)
++                                 // Victus patch v9: 0 is the default with -ngreenpm; ngreenpmcst=1 adds C8/C10 again
+ 
+ // ─── 1/2: XCPM HWP request ───────────────────────────────────────────────────────────────────────────────────────
+ static uint64_t xpSetMult(uint64_t mult, uint64_t a1, uint64_t a2, uint64_t a3) {   // only edi is used by Apple
+@@ -55,6 +62,7 @@ static uint64_t xpSetMult(uint64_t mult, uint64_t a1, uint64_t a2, uint64_t a3)
+ 			if (d > hi) d = hi;
+ 			nv = (nv & ~0xFFFF00ULL) | ((uint64_t)hi << 8) | ((uint64_t)d << 16);
+ 		}
++		if (gXpAuto) nv &= ~0xFF0000ULL;   // desired = 0: autonomous selection inside [min, max], guided by EPP
+ 		if (gXpEpp >= 0) nv = (nv & ~0xFF000000ULL) | ((uint64_t)gXpEpp << 24);
+ 		if (nv != v) xpWrmsr(0x774, nv);
+ 	}
+@@ -153,8 +161,8 @@ static void xpApply(thread_call_param_t, thread_call_param_t) {
+ 	gXpD3 += xpD3();
+ 	if (!gXpEet) { mp_rendezvous_no_intrs(xpEetOne, nullptr); gXpEet = (int)((xpRdmsr(0x1FC) >> 19) & 1); }
+ 	if (gXpOrgSetMult) gXpHwp = 1;   // takes effect at XCPM's next request on each CPU
+-	IOLog("XeNG PM: profile on: HWP rescale %d (route %d), EPP %d, EE turbo off %d, C8/C10 %d, D3 %d, PL1 %d W (0x%x)\n",
+-	      gXpHwp, gXpRoute, gXpEpp, gXpEet, gXpCst, gXpD3, gXpPl1, gXpPl1Set);
++	IOLog("XeNG PM: profile on: HWP rescale %d (route %d), EPP %d, EE turbo off %d, C8/C10 %d, D3 %d, PL1 %d W (0x%x), HWPAUTO %d\n",
++	      gXpHwp, gXpRoute, gXpEpp, gXpEet, gXpCst, gXpD3, gXpPl1, gXpPl1Set, gXpAuto);
+ }
+ 
+ // ─── sensors (always registered, read only): debug.xepm.sensors ──────────────────────────────────────────────────
+@@ -192,6 +200,7 @@ SYSCTL_NODE(_debug, OID_AUTO, xepm, CTLFLAG_RW, 0, "NootedGreen XE-PM");
+ SYSCTL_PROC(_debug_xepm, OID_AUTO, sensors, CTLTYPE_OPAQUE | CTLFLAG_RD | CTLFLAG_ANYBODY, nullptr, 0, xpSensors, "S", "temperatures and RAPL energy");
+ SYSCTL_INT(_debug_xepm, OID_AUTO, hwp, CTLFLAG_RW, &gXpHwp, 0, "HWP rescale on hybrid P-cores");
+ SYSCTL_INT(_debug_xepm, OID_AUTO, epp, CTLFLAG_RW, &gXpEpp, 0, "EPP override, -1 = XCPM's");
++SYSCTL_INT(_debug_xepm, OID_AUTO, hwpauto, CTLFLAG_RW, &gXpAuto, 0, "1 = HWP desired 0 (autonomous clock)");
+ SYSCTL_INT(_debug_xepm, OID_AUTO, eet_off, CTLFLAG_RD, &gXpEet, 0, "");
+ static int xpCstCtl SYSCTL_HANDLER_ARGS {   // sudo sysctl -w debug.xepm.cst=0|1 (live)
+ 	int v = gXpCst;
+@@ -217,8 +226,14 @@ void xePmInstall(KernelPatcher &patcher) {
+ 	gXpOn = true;
+ 	int e = 0;
+ 	gXpEpp = (PE_parse_boot_argn("ngreenpmepp", &e, sizeof(e)) && e >= 0 && e <= 255) ? e : 0;
+-	int cw = 1;
+-	if (PE_parse_boot_argn("ngreenpmcst", &cw, sizeof(cw))) gXpCstWant = cw != 0;
++	// Victus patch v9: defaults HWPAUTO on and C8/C10 off (the measured best on this laptop), which frees the 30
++	// characters of "ngreenpmcst=0 ngreenpmauto=1" in boot-args (full at 255). Both boot-args still override.
++	int au = 1;
++	PE_parse_boot_argn("ngreenpmauto", &au, sizeof(au));
++	gXpAuto = au != 0;
++	int cw = 0;
++	PE_parse_boot_argn("ngreenpmcst", &cw, sizeof(cw));
++	gXpCstWant = cw != 0;
+ 	int w = 0;
+ 	if (PE_parse_boot_argn("ngreenpmpl1", &w, sizeof(w)) && w >= 5 && w <= 64) gXpPl1 = w;
+ 	else if (pmVal && pmw >= 5 && pmw <= 64) gXpPl1 = pmw;
+@@ -242,6 +257,7 @@ void xePmInstall(KernelPatcher &patcher) {
+ 	} else gXpRoute = 2;
+ 	sysctl_register_oid(&sysctl__debug_xepm_hwp);
+ 	sysctl_register_oid(&sysctl__debug_xepm_epp);
++	sysctl_register_oid(&sysctl__debug_xepm_hwpauto);
+ 	sysctl_register_oid(&sysctl__debug_xepm_eet_off);
+ 	sysctl_register_oid(&sysctl__debug_xepm_cst);
+ 	sysctl_register_oid(&sysctl__debug_xepm_d3);

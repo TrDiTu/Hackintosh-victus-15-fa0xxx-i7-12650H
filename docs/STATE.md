@@ -1,31 +1,35 @@
 # STATE — bộ nhớ giữa các phiên (Claude Code cập nhật cuối mỗi phiên/pha)
 
-- Cập nhật lần cuối: 2026-11-06 04:35
-- **2026-11-05 19:30: thư mục dự án cũ bị mất; đã dựng lại từ USB** (BUILD-LOG mục "Dựng lại dự án từ USB"). EFI dự án = build-26 (tree c69972f2ffb4). Mất: snapshot known-good build-10/21, GRAPHICS-PANIC-ANALYSIS. **Đã phục hồi (2026-11-05 22:30):** `docs/hw-dump/` (dump mới 21:47), `docs/MACHINE-ANALYSIS.md` (dựng lại), ACPI giải mã ở `_cache/acpi/` (DSDT + 16 SSDT + 8 dyn-SSDT `PmRef`). Các file gitignored này nằm ở thư mục chính; worktree dùng symlink.
-- **Giai đoạn B — ĐÃ CÓ TĂNG TỐC.** build-26 `fencefix` (trên USB MACEFI): vào desktop, **Metal 2**, 1920×1080 @ 144 Hz,
-  `xe-topo` 16390 (64 EU / L3 6), con trỏ chuột hiển thị đúng (2026-11-05 03:42). Wi-Fi, Ethernet, touchpad hoạt động.
-- Stack: JulioNectar @6f03560 (user-space cài trên MÁY B) + **NootedGreen JN + patch dự án v7**
-  (`patches/nootedgreen-gmsfix-v7-jn6f03560.patch`, kext md5 `3a823f7c`). Gồm: GMSFIX (accel), GMSFIX-FB, PAVPFIX, FENCEFIX
-  + log chẩn đoán CURDIAG (ioreg `xe-cur*`, `xe-fence*`, `xe-mm*`). Nguyên nhân từng lỗi: `docs/GRAPHICS-PANIC-ANALYSIS.md` §1–9.
-- macOS 26.7.1 (25G241). Không cập nhật (phá stack đồ hoạ + root patch Wi-Fi).
-- Wi-Fi: AirportItlwm-Tahoe 1.1.0-beta.1 ZC28 + OCLP-CustoMac 3.0.3 (root patch Modern Wi-Fi đã áp trên MÁY B).
-- **Quy tắc boot-args**: toàn chuỗi ≤ 228 ký tự (Lilu); tham số đồ hoạ đứng đầu; `bootarg-add` nối vào cuối → luôn kiểm độ dài.
-- MÁY A (Claude Code) và MÁY B (Victus) là hai máy khác nhau, dùng chung một bản CachyOS.
+- Cập nhật lần cuối: 2026-11-06 23:10
+- **Giai đoạn B — ĐÃ CÓ TĂNG TỐC (Metal 2).** Build đang chạy: **build-41 `v10-defaults`** ★ known-good, trên USB MACEFI.
+  **ESP ổ trong vẫn là build-37** (kext v8 — không khớp user-space 24450b4 đang cài) → cần chép build-41 sang ESP từ Linux.
+  1920×1080 @ 144 Hz, `xe-topo` 16390 (64 EU / L3 6). Hoạt động: Wi-Fi, Ethernet, touchpad (GPIO), Bluetooth, độ sáng, loa/mic,
+  display sleep/wake, Vulkan (MoltenVK). Geekbench 7 CPU **2030 / 9646** (92 %/95 % Linux). Boot picker → đăng nhập **23 s**.
+- Stack trên MÁY B: JulioNectar **@24450b4** (user-space, `install.sh` 2026-11-06) + NootedGreen JN + **patch v10** (kext md5 `eb2d2843`):
+  GMSFIX, GMSFIX-FB, PAVPFIX, FENCEFIX, CURDIAG, XE-HWPAUTO; v9 mặc định XE-PM; v10 mặc định 64 EU/L3 6, V142 3, blmax 17741, dmc adlp.
+  Plugin VA đã cài trong `/Library/GPUBundles` (không dùng khi thiếu `-ngreengva`).
+- macOS 26.7.1 (25G241). Không cập nhật (phá stack đồ hoạ + root patch Wi-Fi/Audio).
+- Wi-Fi: AirportItlwm-Tahoe 1.1.0-beta.1 ZC28 + OCLP-CustoMac 3.0.3 (root patch Modern Wi-Fi + Modern Audio đã áp trên MÁY B).
+- **Quy tắc boot-args**: kernel nhận ≤ 255 ký tự; bản sao của Lilu (`checkKernelArgument`) chỉ ~228 → cờ Lilu phải nằm trong 228 ký tự
+  đầu; cờ đọc bằng `PE_parse_boot_argn` được tới 255. `bootarg-add` nối vào cuối → luôn kiểm độ dài/vị trí. build-41: 163.
+- MÁY A (Claude Code) và MÁY B (Victus) là hai máy khác nhau, dùng chung một bản CachyOS. Chép EFI sang ESP chỉ từ Linux.
 - USB EFI: phân vùng MACEFI (FAT32, 3 GB, USB 29,3 GB cùng Ventoy), mount `/run/media/cyra/MACEFI`; tên thiết bị đổi mỗi lần cắm
   (`/dev/sdb3` / `/dev/sdc3`) — luôn xác nhận qua `usb-deploy-guard`.
-- Repo: `README.md` viết 2026-11-05; đã dọn (BUILD-LOG). `.gitignore` bỏ qua `logs/*.mp4` (khoá WPA), kext Apple
-  `IOSkywalkFamily`/`IO80211FamilyLegacy`, `.claude/worktrees/`. Chưa commit.
+- Làm việc trong worktree `.claude/worktrees/bt-backlight-audio` (nhánh `bt-backlight-audio`; `EFI/` ở đây = build-41). Các file
+  gitignored (`_cache/`, `docs/hw-dump/`, …) nằm ở thư mục chính; worktree dùng symlink. Docs ở worktree mới hơn `main`.
 
 ## Việc tiếp theo / người dùng cần làm
-- **Mục tiêu mới (2026-11-06): `docs/ROADMAP.md`** — G1 hiệu năng iGPU, G2 Vulkan (MoltenVK), G3 giải mã video phần cứng (`-ngreengva`), G4 boot time (`gfxrst=1`). Boot-args đầy 255 → patch v9 trước khi thêm cờ.
-- **HIỆN TẠI (2026-11-06 04:35): build-37 `hwpauto-on`** trên USB và đang chép sang ESP ổ trong (từ CachyOS). = build-33 (USB 3 map, touchpad GPIO) + XE-PM `-ngreenpm` + `ngreenpmcst=0` + NootedGreen **v8 XE-HWPAUTO** `ngreenpmauto=1`; boot-args 255 (đủ, đã kiểm). Geekbench 7 **2030 / 9646** = 92 %/95 % Linux (2195/10101). Chi tiết `docs/PERFORMANCE.md`. Cấm `powermetrics` khi cần ổn định (từng panic). Chép EFI sang ESP chỉ từ Linux.
-- Trước đó: build-31 `alc11` trên USB — audio xong** (loa + mic OK; tai nghe chỉ trái, bỏ qua — DEFERRED D14). Root patch Modern Wi-Fi + Modern Audio đã áp trên MÁY B. Trước đó: build-30 `audio` (= build-29 known-good + AppleALC 1.9.8 + `layout-id` 13 @ `PciRoot(0x0)/Pci(0x1f,0x3)`). Người dùng cần: boot build-30 → OCLP-CustoMac Revert → khởi động lại → root patch **Modern Wi-Fi + Modern Audio** (KDK 25G241) → kiểm loa/jack/mic + Metal (POSTINSTALL-RUNBOOK §5). Không ra tiếng → thử layout 11, 12.
-- Đã xong hôm nay: Bluetooth (build-27), thanh độ sáng SSDT-PNLF (build-28) + `ngreenblmax=17741` (build-29, known-good). Boot-args 219, không còn `debug=0x100 keepsyms=1`.
-- Lịch sử chi tiết phiên này (dòng cũ): #8 đã duyệt → **build-27 `bluetooth`** dựng xong, efi-validate 0/0, snapshot, **đã ghi USB 19:44** (tree 6efedd66b725, SMBIOS thật); **19:55 Bluetooth bật, 3 kext nạp, firmware tải OK; 20:08 người dùng: Bluetooth hoạt động.** Đang làm: thanh độ sáng (D11) — nguyên nhân: firmware không có PNLF (AppleBacklightDisplay=0). **build-28 `pnlf`** (= build-27 + SSDT-PNLF) dựng xong, validate 0/0, snapshot; build-28 OK (slider có, AppleBacklightDisplay=1) nhưng tối đa chỉ ~18,5 % PWM (`bl hw=96000 apple=0 max=17741`). **build-29 `blmax`** = build-28 + `ngreenblmax=17741`, bỏ `debug=0x100 keepsyms=1` (boot-args 219); **ghi USB 20:24**; 20:28 độ sáng hoạt động. **Đang làm: Audio** (#14/#15 duyệt 20:31) — build-30 dựng dở (AppleALC 1.9.8 đã vào EFI), chờ: AppleHDA đã có trên MÁY B chưa + đường dẫn HDA cho `layout-id` 13. Nếu chỉ sáng ~50% → thêm `ngreenblmax` (phải bỏ `debug=0x100 keepsyms=1`). Audio để sau. Sau đó: Audio (#14/#15).
-- Display sleep/wake: **hoạt động** trên build-31 (2026-11-05 21:35). **build-32 `tp-gpio`** (gỡ `force-polling`, thử ngắt GPIO touchpad) dựng xong — chờ ghi USB/test. **build-33 `usbmap-ss`** = build-32 + UTBMap có SS01/SS02 (dữ liệu `docs/hw-dump/usb-map-*.txt`, map trên Linux). Chưa ghi USB; build-32 và 33 test chung (touchpad GPIO + USB 3). `docs/hw-dump/` đã có lại (người dùng dump 2026-11-05).
-- known-good hiện có: build-26, build-29, build-31, **build-37** (người dùng 2026-11-06).
+- **ROADMAP (2026-11-06) kết thúc:** G1 hiệu năng iGPU ⏸ bỏ qua (GB7 GPU treo ở Feature Matching: render + compute cùng treo, stamp
+  CCS 29 mồ côi sau reset; XE-GPUREC v3 không làm). G2 Vulkan ✅. G3 giải mã video ❌ dừng (build-42 `-ngreengva`: panic NULL+0x284
+  trong `VTDecoderXPCService`; build-43 thêm `-ngreennopavpfix`: panic `PAVPCommandCallback` CR2 0xb8 lúc boot → PAVPFIX bắt buộc).
+  G4 boot time ✅ build-39 `gfxrst=1` (38 → 23 s; `gfxrst=4` thử ở build-40, bỏ).
+- **Người dùng cần:** (1) chép build-41 sang ESP ổ trong (từ Linux); (2) đặt mục tiêu mới. Tuỳ chọn: soạn issue cho JN (GB7 hang, panic giải mã).
+- Lỗi phụ đã thấy: BCS treo `MI_FLUSH_DW` ~30–60 s sau mỗi boot (Apple tự phục hồi); panic chia 0 trong `fbTimingsWorker`
+  (`-ngreenfixbootmode`) 1 lần lúc boot build-42; panic AirportItlwm 20:03:20 1 lần; `mediaanalysisd` gây GPU reset 19:51.
+- Không chạy Geekbench 7 GPU; không bật `-ngreengva`.
+- known-good hiện có: build-26, 29, 31, 37, 38, **41**. Đường lui: build-41 → build-38 → build-37 (cần user-space 6f03560) → `config-install.plist`.
 - Quyết định trước khi đẩy repo public: EFI chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — xem mục Rủi ro.
-- Còn hoãn (`docs/DEFERRED.md`): map USB 3 (cổng SS), boot không cần USB, sleep/wake, tai nghe chỉ kênh trái (D14). (Bluetooth, độ sáng, audio, camera xong.)
+- Còn hoãn (`docs/DEFERRED.md`): sleep/wake hệ thống, tai nghe chỉ kênh trái (D14).
 
 ## Quy tắc người dùng đặt
 - **KHÔNG đọc lịch sử commit của repo này** (git log/show/các commit cũ). Chỉ dùng trạng thái hiện tại + `docs/hw-dump/` + repo tham chiếu.
@@ -79,15 +83,17 @@
 - Git: settings.json chặn `git push`; `.gitignore` đã có `.claude/worktrees/` (2026-11-05). EFI/ chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — cân nhắc trước khi đưa lên repo public.
 
 ## Bản build
-- Mới nhất: **build-37 `hwpauto-on`** (2026-11-06 04:24, USB). Thư mục `EFI/` dự án (nhánh `bt-backlight-audio`, worktree) = build-37.
-- known-good: **build-10** (EFI nền, không tăng tốc) và **build-21** (Metal 2, con trỏ còn lỗi). Đường lui: build-21 / build-10 / `EFI/OC/config-install.plist` (= build-10).
-- Snapshot (2/10, sau khi mất thư mục cũ): `build-26-…-fencefix-restored` ★ known-good (người dùng, 2026-11-05 19:37), `build-27-…-bluetooth`. Đường lui: build-26, rồi `config-install.plist`. (Danh sách cũ 10★,18–26 đã mất.) `snapshot.py` không tự bỏ qua known-good build-10 → khi đầy phải xoá tay bản cũ nhất không phải known-good (đã xoá 12, 14, 15, 16, 17).
+- Mới nhất: **build-43 `gva-nopavp`** (thử, panic). Đang dùng: **build-41 `v10-defaults`** ★ (USB). `EFI/` ở worktree = build-41.
+- Snapshot 10/10 (`snapshots/`): build-26★, 29★, 31★, 37★, 38★, 39, 40, 41★, 42, 43. Bản cũ nhất không known-good: build-39.
+  `snapshot.py` không tự bỏ qua known-good khi xoay vòng → khi đầy phải xoá tay bản cũ nhất không known-good (hỏi người dùng).
+- Đường lui: build-41 → build-38 → `EFI/OC/config-install.plist` (không tăng tốc).
 
 ## Repo tham chiếu đã clone (tên @ commit)
 - victus-r1 @ e3802fa94ea26f6616d6ad87e494120bd407ab60
 - cheseecake (cheseecake/i3-1220p-macos-gpu) @ 788158727daf9ec546888910e7eb9c9028d9d944
-- juliornectar (JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe; tên thư mục gõ nhầm) @ 6f03560ef9694f9826caae15624d4a6cb1bf9ffc
+- juliornectar (JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe; tên thư mục gõ nhầm) @ 24450b476d7ca025b83c85d7b8362caf3234d2f2 (cập nhật 2026-11-06; MÁY B cài 24450b4 từ 20:12)
 - khucxtriendev (khucxtriendev/irisxegraphic-i712800h-efi) @ 26ee7f337831bc8c225dfcdfeb609bba444ac31e
+- sgiammori-nootedgreen (sgiammori/NootedGreen) @ 95f81898be65cb9f7b3d370ca78054be4cc8a62d (2026-11-06; chứa bundle driver Apple 16.0.32 — chỉ dùng tra symbol cho log panic, không phân phối)
 
 ## Rủi ro / CHƯA XÁC MINH đang mở
 - FENCEFIX sau display sleep/wake hoặc đổi chế độ màn hình (fence có thể bị ghi lại từ giá trị cache của FB).

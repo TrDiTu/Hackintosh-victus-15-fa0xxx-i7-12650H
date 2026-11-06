@@ -410,7 +410,7 @@
 				<key>BundlePath</key>
 				<string>NootedGreen.kext</string>
 				<key>Comment</key>
-				<string>NootedGreen JN 6f03560 + GMSFIX v8 (accel+FB+PAVP+FENCEFIX+XE-HWPAUTO, md5 5f88ee88)</string>
+				<string>NootedGreen JN 24450b4 + patch v10 (v9 + defaults 64EU/L3 6, V142 3, blmax 17741, dmc adlp; md5 eb2d2843)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1089,7 +1089,7 @@
 				Rg==
 				</data>
 				<key>boot-args</key>
-				<string>ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware ngreen-dmc=adlp ngreenV142=3 -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta ngreenpmcst=0 ngreenpmauto=1</string>
+				<string>-ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta gfxrst=1</string>
 				<key>csr-active-config</key>
 				<data>
 				EwoAAA==
