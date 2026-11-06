@@ -29,7 +29,7 @@ HWPAUTO và tắt C8/C10 (bỏ ` ngreenpmcst=0 ngreenpmauto=1`, giải phóng 29
   0x9a49, INTEGRATED_GPU, MoltenVK 1.4.2, apiVersion 1.4.357. Cảnh báo layer trùng (SDK cài cả `~/VulkanSDK` lẫn `/usr/local`) và lỗi
   validation `LayeredApiProperties` của vulkaninfo — vô hại. `vkcube` chạy. **G2 XONG.**
 
-## G3 — Giải mã video phần cứng — ⏸ TẠM DỪNG (build-42 panic khi giải mã: NULL+0x284 trong VTDecoderXPCService, nghi PAVPFIX; BUILD-LOG 22:35)
+## G3 — Giải mã video phần cứng — ❌ DỪNG (build-42 giải mã panic NULL+0x284; build-43 không PAVPFIX panic boot; build-44 v11 tạo context PAVP panic boot NULL+0x30 — nghi PAVP cần Intel ME; BUILD-LOG 23:32)
 - JN: **H.264 giải mã trên GPU** (bit-exact) cho app dùng VideoToolbox; cần boot-arg `-ngreengva` + plugin VA đã vá
   (`macos/vadriver/build-vadriver.sh`, build từ bundle TGL 16.0.32 trên máy). HEVC: có patch (XE-GVAHEVC) nhưng là phần
   nghiên cứu. Không có `-ngreengva` thì XE-NOGVA ẩn giải mã phần cứng → phần mềm.

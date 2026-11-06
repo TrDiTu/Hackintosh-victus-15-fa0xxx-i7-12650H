@@ -1,33 +1,36 @@
 # STATE — bộ nhớ giữa các phiên (Claude Code cập nhật cuối mỗi phiên/pha)
 
-- Cập nhật lần cuối: 2026-11-06 23:10
-- **Giai đoạn B — ĐÃ CÓ TĂNG TỐC (Metal 2).** Build đang chạy: **build-41 `v10-defaults`** ★ known-good, trên USB MACEFI.
-  **ESP ổ trong vẫn là build-37** (kext v8 — không khớp user-space 24450b4 đang cài) → cần chép build-41 sang ESP từ Linux.
+- Cập nhật lần cuối: 2026-11-07 00:31
+- **Giai đoạn B — ĐÃ CÓ TĂNG TỐC (Metal 2).** Build trên USB MACEFI: **build-46** (= build-45 ★ known-good + `config-install.plist` sửa cho Wi-Fi mới).
+  **ESP ổ trong vẫn là build-37** (kext v8, Wi-Fi kgp cần root patch đã gỡ) → **không boot ESP**; cần chép build mới sang ESP từ Linux.
   1920×1080 @ 144 Hz, `xe-topo` 16390 (64 EU / L3 6). Hoạt động: Wi-Fi, Ethernet, touchpad (GPIO), Bluetooth, độ sáng, loa/mic,
   display sleep/wake, Vulkan (MoltenVK). Geekbench 7 CPU **2030 / 9646** (92 %/95 % Linux). Boot picker → đăng nhập **23 s**.
-- Stack trên MÁY B: JulioNectar **@24450b4** (user-space, `install.sh` 2026-11-06) + NootedGreen JN + **patch v10** (kext md5 `eb2d2843`):
-  GMSFIX, GMSFIX-FB, PAVPFIX, FENCEFIX, CURDIAG, XE-HWPAUTO; v9 mặc định XE-PM; v10 mặc định 64 EU/L3 6, V142 3, blmax 17741, dmc adlp.
-  Plugin VA đã cài trong `/Library/GPUBundles` (không dùng khi thiếu `-ngreengva`).
-- macOS 26.7.1 (25G241). Không cập nhật (phá stack đồ hoạ + root patch Wi-Fi/Audio).
-- Wi-Fi: AirportItlwm-Tahoe 1.1.0-beta.1 ZC28 + OCLP-CustoMac 3.0.3 (root patch Modern Wi-Fi + Modern Audio đã áp trên MÁY B).
+- **Không còn root patch OCLP** (2026-11-07): Wi-Fi = laobamac AirportItlwm-Tahoe v2.4.0-alpha (IO80211Family/IOSkywalkFamily gốc),
+  audio = VoodooHDA 3.6.8 trong `/Library/Extensions` (MÁY B). AMFIPass + `-amfipassbeta` còn trong EFI (có thể bỏ, chưa thử).
+- Stack trên MÁY B: JulioNectar **@24450b4** (user-space) + NootedGreen JN + **patch v10** (kext md5 `eb2d2843`): GMSFIX, GMSFIX-FB,
+  PAVPFIX, FENCEFIX, CURDIAG, XE-HWPAUTO; v9 mặc định XE-PM; v10 mặc định 64 EU/L3 6, V142 3, blmax 17741, dmc adlp.
+  Plugin VA trong `/Library/GPUBundles` (không dùng khi thiếu `-ngreengva`).
+- macOS 26.7.1 (25G241). Không cập nhật (phá stack đồ hoạ; AirportItlwm laobamac chỉ nạp Darwin 25).
 - **Quy tắc boot-args**: kernel nhận ≤ 255 ký tự; bản sao của Lilu (`checkKernelArgument`) chỉ ~228 → cờ Lilu phải nằm trong 228 ký tự
-  đầu; cờ đọc bằng `PE_parse_boot_argn` được tới 255. `bootarg-add` nối vào cuối → luôn kiểm độ dài/vị trí. build-41: 163.
+  đầu; cờ đọc bằng `PE_parse_boot_argn` được tới 255. `bootarg-add` nối vào cuối → luôn kiểm độ dài/vị trí. build-45: 163.
 - MÁY A (Claude Code) và MÁY B (Victus) là hai máy khác nhau, dùng chung một bản CachyOS. Chép EFI sang ESP chỉ từ Linux.
 - USB EFI: phân vùng MACEFI (FAT32, 3 GB, USB 29,3 GB cùng Ventoy), mount `/run/media/cyra/MACEFI`; tên thiết bị đổi mỗi lần cắm
   (`/dev/sdb3` / `/dev/sdc3`) — luôn xác nhận qua `usb-deploy-guard`.
-- Làm việc trong worktree `.claude/worktrees/bt-backlight-audio` (nhánh `bt-backlight-audio`; `EFI/` ở đây = build-41). Các file
-  gitignored (`_cache/`, `docs/hw-dump/`, …) nằm ở thư mục chính; worktree dùng symlink. Docs ở worktree mới hơn `main`.
+- Làm việc trong worktree `.claude/worktrees/bt-backlight-audio` (nhánh `bt-backlight-audio`; `EFI/` ở đây = build-46 = build-45 + config-install sửa).
+  Các file gitignored (`_cache/`, `docs/hw-dump/`, …) nằm ở thư mục chính; worktree dùng symlink. Docs ở worktree mới hơn `main`.
 
 ## Việc tiếp theo / người dùng cần làm
 - **ROADMAP (2026-11-06) kết thúc:** G1 hiệu năng iGPU ⏸ bỏ qua (GB7 GPU treo ở Feature Matching: render + compute cùng treo, stamp
   CCS 29 mồ côi sau reset; XE-GPUREC v3 không làm). G2 Vulkan ✅. G3 giải mã video ❌ dừng (build-42 `-ngreengva`: panic NULL+0x284
   trong `VTDecoderXPCService`; build-43 thêm `-ngreennopavpfix`: panic `PAVPCommandCallback` CR2 0xb8 lúc boot → PAVPFIX bắt buộc).
   G4 boot time ✅ build-39 `gfxrst=1` (38 → 23 s; `gfxrst=4` thử ở build-40, bỏ).
-- **Người dùng cần:** (1) chép build-41 sang ESP ổ trong (từ Linux); (2) đặt mục tiêu mới. Tuỳ chọn: soạn issue cho JN (GB7 hang, panic giải mã).
+- **ĐANG THỬ (23:16): patch v11 XE-PAVPCTX** (opt-in `-ngreenpavpctx`, tạo context PAVP để G3 không panic) — kext v11 md5 5adbfbb7; build-44 (+`-ngreenpavpctx`) ghi USB 23:24 → **panic lúc boot** (NULL+0x30 trong `startGraphicsEngine` gốc) → v11 thất bại. **USB đang là build-44 (không boot được)**; `EFI/` = build-41. Kế hoạch: BUILD-LOG 23:32 (G3 cần phân tích driver Apple → issue cho JN) → build-45 (+`-ngreengva`).
+- **XONG 2026-11-07:** build-45 Wi-Fi laobamac + VoodooHDA → không root patch (POSTINSTALL-RUNBOOK §6, §7). build-45 ★ known-good; build-46 (config-install sửa) ghi USB 00:35. Tuỳ chọn tiếp: `itlwm_he=1` (Wi-Fi 6), bỏ AMFIPass.
+- **Người dùng cần:** (1) chép build-41 (hoặc build-45 nếu ổn) sang ESP ổ trong (từ Linux). Tuỳ chọn: soạn issue cho JN (GB7 hang, panic giải mã).
 - Lỗi phụ đã thấy: BCS treo `MI_FLUSH_DW` ~30–60 s sau mỗi boot (Apple tự phục hồi); panic chia 0 trong `fbTimingsWorker`
   (`-ngreenfixbootmode`) 1 lần lúc boot build-42; panic AirportItlwm 20:03:20 1 lần; `mediaanalysisd` gây GPU reset 19:51.
 - Không chạy Geekbench 7 GPU; không bật `-ngreengva`.
-- known-good hiện có: build-26, 29, 31, 37, 38, **41**. Đường lui: build-41 → build-38 → build-37 (cần user-space 6f03560) → `config-install.plist`.
+- known-good hiện có: build-26, 29, 31, 37, 38, 41, **45**. Đường lui: build-45 → build-41 (cần root patch Modern Wi-Fi + Audio) → `config-install.plist`.
 - Quyết định trước khi đẩy repo public: EFI chứa kext không có license (ECEnabler, USBToolBox, RTL8111) — xem mục Rủi ro.
 - Còn hoãn (`docs/DEFERRED.md`): sleep/wake hệ thống, tai nghe chỉ kênh trái (D14).
 

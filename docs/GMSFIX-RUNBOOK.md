@@ -238,3 +238,24 @@ sudo ditto macos/out/AppleIntelTGLGraphicsVADriver.bundle /Library/GPUBundles/Ap
 build-41 = build-39 + kext v10 + boot-args 163 (bỏ `ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 ngreen-dmc=adlp ngreenV142=3`).
 Kiểm sau boot (phải y như build-39): `ioreg -rc IntelAccelerator -d1 | grep xe-topo` = 16390; độ sáng tối đa đúng; con trỏ, Metal 2, Wi-Fi.
 build-42 = build-41 + ` -ngreengva` nối cuối (174 ký tự, trong 228) → G3.
+
+## v11 — XE-PAVPCTX, thử tạo context PAVP (2026-11-06, người dùng: "thử patch11 đi"; THỬ NGHIỆM)
+Mục tiêu: G3. Không có context PAVP (`accel+0x1278`) → không PAVPFIX thì panic lúc boot (build-43), có PAVPFIX thì giải mã panic NULL+0x284 (build-42).
+v11 bật `accel+0x1300` bit 3 ngay trước `IntelAccelerator::startGraphicsEngine` (điều kiện tạo context PAVP, theo ghi chú PAVPFIX) — **chỉ khi có boot-arg `-ngreenpavpctx`**; không có cờ thì kext chạy y như v10. PAVPFIX vẫn bật.
+Chẩn đoán: `ioreg -rc IntelAccelerator -d1 | grep xe-pavp` → `xe-pavp-1300-pre/-post`, `xe-pavp-ctx` (1 = đã tạo); dmesg `XeNG PAVPCTX`.
+Giả thuyết CHƯA XÁC MINH: (a) Apple có thể tính lại 0x1300 trong `startGraphicsEngine` → không tác dụng (`xe-pavp-ctx` 0); (b) BIOS HP khoá PAVP → tạo context có thể treo/panic lúc boot; (c) panic giải mã có thể không do PAVP.
+Patch: `patches/nootedgreen-gmsfix-v10-to-v11.patch` (sha256 `37e4c6bf9cdf5987879136adb824dfdb291f82b78aeb556ac2a78161253e8a24`);
+gộp trên JN 24450b4: `patches/nootedgreen-gmsfix-v11-jn24450b4.patch` (sha256 `050dab16036d0a221d89ac4845d45270a357a8677a9cd44b59d94133e98fddcc`).
+Kiểm MÁY A: apply-check sạch; `clang++ -fsyntax-only` 0 lỗi, 21 cảnh báo = JN gốc. Chưa build/chạy.
+```
+cd ~/xe-stack
+shasum -a 256 ~/patches/nootedgreen-gmsfix-v10-to-v11.patch     # 37e4c6bf…8a24
+git apply --check ~/patches/nootedgreen-gmsfix-v10-to-v11.patch && git apply ~/patches/nootedgreen-gmsfix-v10-to-v11.patch
+zsh build-nootedgreen.sh
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c PAVPCTX     # phải > 0
+```
+Chỉ build lại kext. Chép `build/NootedGreen.kext` vào gốc USB MACEFI.
+- build-44 = build-41 + kext v11 + `-ngreenpavpctx` (178 ký tự): chỉ kiểm boot + `xe-pavp-ctx`. Lỗi → build-41.
+- build-45 = build-44 + `-ngreengva` (189): chỉ khi build-44 boot ổn và `xe-pavp-ctx` = 1.

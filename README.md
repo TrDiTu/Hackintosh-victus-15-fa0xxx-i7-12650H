@@ -12,25 +12,26 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 > Four small patches fix it on this machine (see [Root causes](#các-lỗi-đã-sửa-và-nguyên-nhân)):
 > GMSFIX (accelerator), GMSFIX-FB (framebuffer), PAVPFIX and FENCEFIX. Result: desktop with Metal 2,
 > 1920×1080 @ 144 Hz. If your laptop has a fixed DVMT below 64 MB and the same panic, these patches are likely relevant.
-> Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`), audio (AppleALC layout 11 + OCLP Modern Audio) and the webcam also work.
+> Bluetooth, brightness (SSDT-PNLF + `ngreenblmax=17741`), audio (VoodooHDA 3.6.8 in /Library/Extensions) and the webcam also work.
+> **No OCLP root patch** since build-45: Wi-Fi uses laobamac AirportItlwm-Tahoe v2.4.0-alpha on Tahoe's own IO80211Family/Skywalk.
 > **CPU performance:** NootedGreen XE-PM plus a new **XE-HWPAUTO** patch (HWP desired = 0, autonomous clock; v8) raise
 > Geekbench 7 from 1076 / 5837 to **2030 / 9646** — 92 % / 95 % of Linux on the same laptop (2195 / 10101).
 > Current build-41: JulioNectar `24450b4` + project patch **v10** (machine defaults built in, boot-args 163 chars),
 > WhateverGreen `gfxrst=1` cuts boot from 38 s to 23 s. Not working: hardware video decode (`-ngreengva` panics in
 > `VTDecoderXPCService`; turning PAVPFIX off panics at boot) and the Geekbench 7 GPU run (hangs in Feature Matching).
 
-## Trạng thái (build-41, 2026-11-06)
+## Trạng thái (build-45, 2026-11-07)
 
 | Hạng mục | Trạng thái |
 |---|---|
 | Khởi động macOS 26.7.1 (25G241) | ✅ |
 | **Tăng tốc đồ hoạ iGPU** | ✅ **Metal 2**, 1920×1080 @ 144 Hz, 64 EU (`xe-topo` 16390), con trỏ hiển thị đúng |
-| Wi-Fi Intel AX210 | ✅ AirportItlwm-Tahoe 1.1.0-beta.1 (ZC28) + root patch OCLP-CustoMac |
+| Wi-Fi Intel AX210 | ✅ **laobamac AirportItlwm-Tahoe v2.4.0-alpha** (theo JulioNectar): dùng IO80211Family/IOSkywalkFamily gốc của Tahoe, **không cần root patch**; không AirDrop/AWDL, không WPA3-only |
 | Ethernet RTL8111 | ✅ RealtekRTL8111 **2.4.2** (bản 3.0.0 không chạy trên máy này) |
 | Bàn phím PS/2, touchpad ELAN0788 (I2C, ngắt GPIO) | ✅ cử chỉ đa điểm |
 | Bluetooth AX210 | ✅ IntelBluetoothFirmware 2.5.3 (fork lshbluesky) + BlueToolFixup |
 | Độ sáng màn hình | ✅ thanh trượt đủ dải (SSDT-PNLF + `ngreenblmax=17741`) |
-| Audio ALC245 | ✅ loa, mic trong (AppleALC layout 11 + root patch Modern Audio); ⚠️ tai nghe 3,5 mm chỉ kênh trái do lỗi cổng jack của máy (Linux cũng bị) |
+| Audio ALC245 | ✅ **VoodooHDA 3.6.8** trong `/Library/Extensions`, **không cần root patch**; ổn định hơn AppleHDA qua root patch (người dùng). ⚠️ tai nghe 3,5 mm chỉ kênh trái do lỗi cổng jack của máy (Linux cũng bị) |
 | Pin, nhiệt độ CPU, phím độ sáng | ✅ |
 | **Hiệu năng CPU** | ✅ Geekbench 7 **2030 / 9646** = 92 % / 95 % Linux cùng máy (XE-PM + XE-HWPAUTO; trước đó 1076 / 5837) — [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | iGPU (Geekbench 7 Metal) | ⚠️ 1094 một lần (build-33); từ build-37 bài **Feature Matching** treo GPU (render + compute cùng treo, stamp compute không trả về sau reset) → không chạy được hết — [`docs/BUILD-LOG.md`](docs/BUILD-LOG.md) |
@@ -51,7 +52,7 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 ## Cảnh báo — đọc trước khi dùng
 
 - **Bảo mật hạ thấp:** SIP `0x0A13`, AMFI tắt (`amfi_get_out_of_my_way=1`) + AMFIPass. Chỉ dùng trên máy cá nhân.
-- **Không cập nhật macOS.** Stack đồ hoạ và root patch Wi-Fi + Audio gắn với đúng 25G241; cập nhật sẽ làm hỏng cả ba.
+- **Không cập nhật macOS.** Stack đồ hoạ gắn với đúng 25G241 (Wi-Fi laobamac chỉ nạp trên Darwin 25); cập nhật có thể làm hỏng.
 - Có thể gặp GPU hang / kernel panic. Luôn giữ một EFI không tăng tốc để quay về (`EFI/OC/config-install.plist`
   hoặc build nền).
 - **Không chạy `powermetrics`** khi cần ổn định: nó từng gây kernel panic trong framebuffer TGL (NULL qua `AppleGraphicsDeviceControl`). Đo xung bằng `tools/xe-freq.c`, nhiệt/công suất bằng `tools/xe-monitor.py`.
@@ -59,8 +60,8 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 - **Tránh System Settings › Displays** và đổi profile màu (từng gây panic với stack JulioNectar). Đổi độ phân giải /
   tần số quét bằng `tools/xe-res` của JulioNectar.
 - EFI trong repo dùng **SMBIOS giả** (`CHANGE_ME_*`). Tự sinh serial riêng; không bao giờ commit serial thật.
-- EFI cần các kext Wi-Fi của OCLP-CustoMac (`IOSkywalkFamily`, `IO80211FamilyLegacy`) — đây là binary của Apple,
-  **lấy từ [kgp-macPro/OCLP-CustoMac](https://github.com/kgp-macPro/OCLP-CustoMac)**, không phân phối lại.
+- Từ build-45 EFI không cần kext Wi-Fi của OCLP-CustoMac (`IOSkywalkFamily`, `IO80211FamilyLegacy` để tắt, chỉ giữ cho đường lui;
+  là binary của Apple, không có trong repo — lấy từ [kgp-macPro/OCLP-CustoMac](https://github.com/kgp-macPro/OCLP-CustoMac) nếu cần).
 
 ## Phần cứng
 
@@ -79,15 +80,15 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 
 Chi tiết: [`laptop-specs.md`](laptop-specs.md).
 
-## Cấu hình EFI (build-41)
+## Cấu hình EFI (build-45)
 
 - **OpenCore 1.0.8**, SMBIOS `MacBookPro16,2`.
 - **SSDT** (tự viết từ DSDT của máy, nguồn ở [`docs/acpi-src/`](docs/acpi-src/)): PLUG-ALT, EC-USBX, AWAC, XOSI
   (+ patch `_OSI`→`XOSI`), **DGPU-OFF** (tắt RTX 3050 Ti), SBUS-MCHC, **PNLF** (thiết bị đèn nền dưới `PC00.GFX0`;
   firmware không có sẵn, thiếu nó macOS không hiện thanh độ sáng).
 - **Kext:** Lilu, VirtualSMC (+SMCProcessor, SMCBatteryManager), ECEnabler, WhateverGreen, **NootedGreen (bản vá)**,
-  AppleALC 1.9.8, RestrictEvents, CpuTopologyRebuild, NVMeFix, BrightnessKeys, RealtekRTL8111 2.4.2, AMFIPass, IOSkywalkFamily,
-  IO80211FamilyLegacy, AirportItlwm-Tahoe, IntelBluetoothFirmware + IntelBTPatcher 2.5.3 (fork lshbluesky),
+  AppleALC 1.9.8, RestrictEvents, CpuTopologyRebuild, NVMeFix, BrightnessKeys, RealtekRTL8111 2.4.2, AMFIPass,
+  **AirportItlwm-Tahoe v2.4.0-alpha (laobamac)**, IntelBluetoothFirmware + IntelBTPatcher 2.5.3 (fork lshbluesky),
   BlueToolFixup 2.7.2, XHCI-ADL-Injector (tự viết, chỉ Info.plist cho `8086:51ED`),
   USBToolBox + UTBMap (HS01/02/04/06/07 + SS01/02), VoodooPS2 (bàn phím), VoodooI2C 3.0.0 (fork lzhoang2801) + VoodooI2CHID.
 - **iGPU:** spoof Tiger Lake `device-id 9A49`, `AAPL,ig-platform-id 0x9A490000` (theo JulioNectar).
@@ -138,8 +139,9 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 
 1. Cài macOS 26.7.1 (25G241) bằng EFI **không tăng tốc** (`EFI/OC/config-install.plist` → đổi tên thành `config.plist`).
    BIOS: Secure Boot tắt, không dùng chế độ chỉ-dGPU.
-2. Root patch bằng OCLP-CustoMac 3.0.3, chọn **Modern Wireless** và **Modern Audio** (cần KDK 25G241, OCLP tự tải) —
-   [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §1 và §5.
+2. **Không cần root patch.** Wi-Fi chạy ngay bằng AirportItlwm laobamac trong EFI. Audio: cài VoodooHDA 3.6.8 vào
+   `/Library/Extensions` và duyệt trong Privacy & Security — [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §7
+   (đường cũ bằng OCLP-CustoMac Modern Wireless + Modern Audio: §1, §5, §6).
 3. Cài stack đồ hoạ JulioNectar @ `24450b4` (`zsh install.sh`, cần spoof `9A49` lúc cài; áp patch trước khi chạy vì
    `install.sh` build cả NootedGreen) —
    [`docs/GRAPHICS-RUNBOOK.md`](docs/GRAPHICS-RUNBOOK.md).
@@ -157,7 +159,7 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 
 | Đường dẫn | Nội dung |
 |---|---|
-| `EFI/` | EFI OpenCore hiện tại (build-41), SMBIOS giả |
+| `EFI/` | EFI OpenCore hiện tại (build-45), SMBIOS giả |
 | `patches/` | Bản vá NootedGreen (gộp `vN-jn24450b4` / `vN-jn6f03560`, tăng thêm `vN-to-vM`) |
 | `docs/STATE.md`, `docs/BUILD-LOG.md` | Trạng thái và nhật ký từng bản build |
 | `docs/GRAPHICS-PROGRESS.md` | Tiến trình thử đồ hoạ |
@@ -177,7 +179,8 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
   **NootedGreen** ([sgiammori/NootedGreen](https://github.com/sgiammori/NootedGreen)), theo giấy phép
   **Thou Shalt Not Profit License 1.0** — chỉ dùng phi lợi nhuận.
 - [acidanthera](https://github.com/acidanthera) (OpenCore, Lilu, VirtualSMC, WhateverGreen, …),
-  [kgp-macPro](https://github.com/kgp-macPro) (AirportItlwm-Tahoe, OCLP-CustoMac),
+  [laobamac/itlwm](https://github.com/laobamac/itlwm) (AirportItlwm-Tahoe 2.4.0), [CloverHackyColor/VoodooHDA](https://github.com/CloverHackyColor/VoodooHDA),
+  [kgp-macPro](https://github.com/kgp-macPro) (AirportItlwm-Tahoe 1.x, OCLP-CustoMac — dùng tới build-44),
   [Mieze](https://github.com/Mieze/RTL8111_driver_for_OS_X), [lzhoang2801/VoodooI2C](https://github.com/lzhoang2801/VoodooI2C),
   [b00t0x](https://github.com/b00t0x/CpuTopologyRebuild), [USBToolBox](https://github.com/USBToolBox/kext),
   [averycblack/ECEnabler](https://github.com/averycblack/ECEnabler),
@@ -185,5 +188,4 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 - Tham khảo: [cheseecake/i3-1220p-macos-gpu](https://github.com/cheseecake/i3-1220p-macos-gpu),
   [khucxtriendev/irisxegraphic-i712800h-efi](https://github.com/khucxtriendev/irisxegraphic-i712800h-efi),
   [sulthonuladib/victus-15-fa0xxx-hackintosh](https://github.com/sulthonuladib/victus-15-fa0xxx-hackintosh).
-- Repo này không phân phối binary của Apple. Driver Tiger Lake do `install.sh` của JulioNectar tải về trên máy bạn;
-  `AppleHDA.kext` do OCLP-CustoMac cài khi root patch Modern Audio.
+- Repo này không phân phối binary của Apple. Driver Tiger Lake do `install.sh` của JulioNectar tải về trên máy bạn.
