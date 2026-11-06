@@ -1,4 +1,4 @@
-# Hackintosh HP Victus 15-fa0xxx (i7-12650H, UHD 64 EU) — macOS 26 Tahoe có tăng tốc Metal
+# Hackintosh HP Victus 15-fa0xxx (i7-12650H, UHD 64 EU) — macOS 26.7.1 (25G241) with Metal Acceleration
 
 EFI OpenCore và các bản vá NootedGreen cho **HP Victus 15-fa0xxx** (board `8A4F`, i7-12650H, iGPU `8086:46A3`
 Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G241)** với **tăng tốc Metal 2** trên iGPU.
@@ -44,7 +44,6 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 | Đầu đọc thẻ RTS5228 | ❌ không có driver — xem [`docs/DEFERRED.md`](docs/DEFERRED.md) |
 | Giải mã video phần cứng (H.264/HEVC) | ❌ `-ngreengva`: panic NULL+0x284 trong `VTDecoderXPCService` khi tạo context giải mã; tắt PAVPFIX để thử thì panic lúc boot (`PAVPCommandCallback`) — video giải mã bằng CPU |
 | Sleep, màn hình ngoài, video có DRM (PAVP) | ❌ không hỗ trợ với stack này |
-| Metal 3 | ❌ không đạt được với driver Tiger Lake |
 
 Display sleep/wake hoạt động. Lỗi phụ đã thấy: engine blit (BCS) treo ~30–60 s sau mỗi lần boot (macOS tự phục hồi);
 một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc boot.
@@ -55,10 +54,6 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 - **Không cập nhật macOS.** Stack đồ hoạ gắn với đúng 25G241 (Wi-Fi laobamac chỉ nạp trên Darwin 25); cập nhật có thể làm hỏng.
 - Có thể gặp GPU hang / kernel panic. Luôn giữ một EFI không tăng tốc để quay về (`EFI/OC/config-install.plist`
   hoặc build nền).
-- **Không chạy `powermetrics`** khi cần ổn định: nó từng gây kernel panic trong framebuffer TGL (NULL qua `AppleGraphicsDeviceControl`). Đo xung bằng `tools/xe-freq.c`, nhiệt/công suất bằng `tools/xe-monitor.py`.
-- **Chép EFI sang ESP ổ trong từ Linux**, không từ macOS: bản chép bằng macOS làm OpenCore báo thiếu `Info.plist` của kext lồng trong `PlugIns`.
-- **Tránh System Settings › Displays** và đổi profile màu (từng gây panic với stack JulioNectar). Đổi độ phân giải /
-  tần số quét bằng `tools/xe-res` của JulioNectar.
 - EFI trong repo dùng **SMBIOS giả** (`CHANGE_ME_*`). Tự sinh serial riêng; không bao giờ commit serial thật.
 - Từ build-48 EFI không còn kext nào của OCLP-CustoMac (`IOSkywalkFamily`, `IO80211FamilyLegacy`, `AMFIPass`): Wi-Fi và audio không cần root patch.
 
@@ -138,7 +133,7 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 ## Cài đặt (tóm tắt)
 
 1. Cài macOS 26.7.1 (25G241) bằng EFI **không tăng tốc** (`EFI/OC/config-install.plist` → đổi tên thành `config.plist`).
-   BIOS: Secure Boot tắt, không dùng chế độ chỉ-dGPU.
+   BIOS: Secure Boot off
 2. **Không cần root patch.** Wi-Fi chạy ngay bằng AirportItlwm laobamac trong EFI. Audio: cài VoodooHDA 3.6.8 vào
    `/Library/Extensions` và duyệt trong Privacy & Security — [`docs/POSTINSTALL-RUNBOOK.md`](docs/POSTINSTALL-RUNBOOK.md) §7
    (đường cũ bằng OCLP-CustoMac Modern Wireless + Modern Audio: §1, §5, §6).
