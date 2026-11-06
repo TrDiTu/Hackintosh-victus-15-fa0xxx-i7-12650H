@@ -50,7 +50,7 @@
 				<key>Comment</key>
 				<string>SSDT-DGPU-OFF (docs/acpi-src)</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-DGPU-OFF.aml</string>
 			</dict>
@@ -237,13 +237,6 @@
 	<dict>
 		<key>Add</key>
 		<dict>
-			<key>PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)</key>
-			<dict>
-				<key>disable-gpu</key>
-				<data>
-				AQAAAA==
-				</data>
-			</dict>
 			<key>PciRoot(0x0)/Pci(0x2,0x0)</key>
 			<dict>
 				<key>AAPL,ig-platform-id</key>
@@ -311,6 +304,24 @@
 				<string></string>
 				<key>MinKernel</key>
 				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
+				<string>AMFIPass.kext</string>
+				<key>Comment</key>
+				<string>AMFIPass 1.4.1 (OCLP-CustoMac payloads) + -amfipassbeta - NullMoth NVIDIA driver requirement</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/AMFIPass</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string>20.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -1000,10 +1011,10 @@
 				Rg==
 				</data>
 				<key>boot-args</key>
-				<string>-ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 gfxrst=1 itlwm_he=1</string>
+				<string>-ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta gfxrst=1 itlwm_he=1 nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi=0x80 ipc_control_port_options=0</string>
 				<key>csr-active-config</key>
 				<data>
-				EwoAAA==
+				UwoAAA==
 				</data>
 				<key>prev-lang:kbd</key>
 				<data>

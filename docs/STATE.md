@@ -24,7 +24,7 @@
   trong `VTDecoderXPCService`; build-43 thêm `-ngreennopavpfix`: panic `PAVPCommandCallback` CR2 0xb8 lúc boot → PAVPFIX bắt buộc).
   G4 boot time ✅ build-39 `gfxrst=1` (38 → 23 s; `gfxrst=4` thử ở build-40, bỏ).
 - **ĐANG THỬ (23:16): patch v11 XE-PAVPCTX** (opt-in `-ngreenpavpctx`, tạo context PAVP để G3 không panic) — kext v11 md5 5adbfbb7; build-44 (+`-ngreenpavpctx`) ghi USB 23:24 → **panic lúc boot** (NULL+0x30 trong `startGraphicsEngine` gốc) → v11 thất bại. **USB đang là build-44 (không boot được)**; `EFI/` = build-41. Kế hoạch: BUILD-LOG 23:32 (G3 cần phân tích driver Apple → issue cho JN) → build-45 (+`-ngreengva`).
-- **XONG 2026-11-07:** build-45 Wi-Fi laobamac + VoodooHDA → không root patch (POSTINSTALL-RUNBOOK §6, §7). build-45 ★ known-good; build-46 (config-install sửa) ghi USB 00:35. build-47 (`itlwm_he=1`, AMFIPass tắt) OK trên MÁY B, người dùng chép sang ESP; build-48 dọn dẹp ★. **Tiếp: người dùng muốn thử driver NVIDIA (RTX 3050 Ti).**
+- **XONG 2026-11-07:** build-45 Wi-Fi laobamac + VoodooHDA → không root patch (POSTINSTALL-RUNBOOK §6, §7). build-45 ★ known-good; build-46 (config-install sửa) ghi USB 00:35. build-47 (`itlwm_he=1`, AMFIPass tắt) OK trên MÁY B, người dùng chép sang ESP; build-48 dọn dẹp ★. **Nhánh `nvidia-gpu` (worktree riêng): build-49 thử NullMoth NVIDIA driver — `docs/NVIDIA-RUNBOOK.md`.**
 - **Người dùng cần:** (1) chép build-41 (hoặc build-45 nếu ổn) sang ESP ổ trong (từ Linux). Tuỳ chọn: soạn issue cho JN (GB7 hang, panic giải mã).
 - Lỗi phụ đã thấy: BCS treo `MI_FLUSH_DW` ~30–60 s sau mỗi boot (Apple tự phục hồi); panic chia 0 trong `fbTimingsWorker`
   (`-ngreenfixbootmode`) 1 lần lúc boot build-42; panic AirportItlwm 20:03:20 1 lần; `mediaanalysisd` gây GPU reset 19:51.
@@ -34,6 +34,7 @@
 - Còn hoãn (`docs/DEFERRED.md`): sleep/wake hệ thống, tai nghe chỉ kênh trái (D14).
 
 ## Quy tắc người dùng đặt
+- **Snapshot (2026-11-07):** được xoá snapshot known-good đã cũ hơn 5 bản so với build mới nhất (ví dụ build mới nhất 49 → known-good ≤ 44). Vẫn báo người dùng khi xoá.
 - **KHÔNG đọc lịch sử commit của repo này** (git log/show/các commit cũ). Chỉ dùng trạng thái hiện tại + `docs/hw-dump/` + repo tham chiếu.
 
 ## Đã được người dùng duyệt

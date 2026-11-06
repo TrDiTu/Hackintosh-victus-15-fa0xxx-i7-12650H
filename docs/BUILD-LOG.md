@@ -1073,3 +1073,21 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-07T00:51:18 Created build-48-20261107-005118-cleanup (tree e891efd83a8e, ocvalidate: 0 errors, 0 warnings (validate-20261107T004906.md))
 - 2026-11-07T00:51:18 Marked build-48-20261107-005118-cleanup as known-good (user request)
 - 2026-11-07T00:51 Marked build-48 known-good (người dùng).
+- 2026-11-07T00:57 Đánh giá nullmoth/nvidia-macos-driver cho RTX 3050 Ti (người dùng hỏi): ghi DRIVER-MATRIX D1 (ỨNG VIÊN). Đính chính: trước đó Claude nói sai rằng Ampere chưa từng có driver macOS.
+- 2026-11-07T01:06:19 plist_edit append to Kernel/Add: BundlePath=AMFIPass.kext (config.plist)
+- 2026-11-07T01:06:19 plist_edit move Kernel/Add[BundlePath=AMFIPass.kext] to position 1 (config.plist)
+- 2026-11-07T01:06:19 plist_edit set ACPI/Add[Path=SSDT-DGPU-OFF.aml]/Enabled = False (config.plist)
+- 2026-11-07T01:06:19 plist_edit delete {DeviceProperties}/Add/{PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)} (config.plist)
+- 2026-11-07T01:06:19 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/csr-active-config = <data 530A0000> (config.plist)
+- 2026-11-07T01:06:19 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = '-ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta gfxrst=1 itlwm_he=1 nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi=0x80 ipc_control_port_options=0' (config.plist)
+
+## Branch `nvidia-gpu` (2026-11-07 01:05; người dùng: "tạo một build để thử nghiệm, đồng thời tạo branch làm việc khác liên quan tới nvidia-gpu")
+- Worktree `.claude/worktrees/nvidia-gpu`, nhánh `nvidia-gpu` tách từ `bt-backlight-audio` @5f37564 (build-48). Symlink dùng chung: `_cache`, `snapshots`, `config/usb-mount.txt`, `docs/hw-dump`, `docs/MACHINE-ANALYSIS.md`. **Thiếu `secrets/smbios.json`** (Claude không được tạo) → người dùng tự tạo trước khi ghi USB.
+- Đọc NullMoth v2.7.2 (clone `_cache/refs/nullmoth-nvidia` @18ba05f): LICENSE = **PolyForm Noncommercial 1.0.0**. `package/install.sh`: cài NVRM/NVAccel/NVRMFB/NVRMAGDC vào `/Library/Extensions`, bundle vào `/Library/GPUBundles`, firmware GSP `/Library/NullMoth/nvfw`; dựng lại Auxiliary KC từ toàn bộ `/Library/Extensions` (gồm TGL/HookCase/VoodooHDA); **trên macOS ≥ 26 tự thêm `NMXAudio.kext`** nếu có bộ điều khiển HDA (không có cờ tắt) → đụng VoodooHDA; `CHECK=1` chỉ dựng thử KC. Boot guard: tắt driver sau 2 lần khởi động không bật màn hình (máy muxless: rủi ro, CHƯA XÁC MINH). Cờ `nvfb/nvaccel/nvfbheads/-nvkmsnosmooth` đọc bằng `PE_parse_boot_argn`.
+
+## Build 49 — `nvidia-try` (nhánh `nvidia-gpu`): = build-48 + điều kiện OpenCore của NullMoth
+- `SSDT-DGPU-OFF.aml` Enabled=false; xoá DeviceProperties `PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)` (`disable-gpu`); AMFIPass.kext (từ snapshot build-47) bật lại, đặt sau Lilu; `csr-active-config` 0x0A13 → **0x0A53** (chứa 0x0A43 theo README); boot-args 160 → **255**: `… amfi_get_out_of_my_way=1 -amfipassbeta gfxrst=1 itlwm_he=1 nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi=0x80 ipc_control_port_options=0` (`-amfipassbeta` kết thúc ở 154 ≤ 228). SecureBootModel đã Disabled.
+- plist_diff với build-48: 5 khác biệt. efi-validate 0/0 (validate-20261107T010620.md). Runbook: `docs/NVIDIA-RUNBOOK.md`.
+- Bảo mật: SIP thêm 0x40 (CSR_ALLOW_UNRESTRICTED_NVRAM: ghi NVRAM không giới hạn), AMFI vẫn tắt + `amfi=0x80`. Lùi: build-48.
+- 2026-11-07T01:08:59 Xoá thủ công snapshot build-46-20261107-003442-config-install-wifi (người dùng duyệt; chỗ cho build-49). Quy tắc mới (người dùng): được xoá snapshot known-good đã cũ hơn 5 bản so với build mới nhất.
+- 2026-11-07T01:08:59 Created build-49-20261107-010859-nvidia-try (tree 347f3e5b4a67, ocvalidate: 0 errors, 0 warnings (validate-20261107T010620.md))
