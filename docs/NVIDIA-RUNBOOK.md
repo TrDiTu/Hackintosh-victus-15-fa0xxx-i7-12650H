@@ -16,7 +16,13 @@ Nguồn: github.com/nullmoth/nvidia-macos-driver, release **v2.7.2** (2026-11-05
 | `csr-active-config` | `0x0A13` | **`0x0A53`** | phải chứa `0x0A43` (README) |
 | boot-args | 160 | **255** (đầy) | thêm `nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi=0x80 ipc_control_port_options=0` (đều đọc bằng `PE_parse_boot_argn`) |
 
-`SecureBootModel` đã là `Disabled`. Resizable BAR: tác giả khuyên bật; BIOS HP có tuỳ chọn không — CHƯA XÁC MINH.
+`SecureBootModel` đã là `Disabled`.
+
+**Còn thiếu so với README NullMoth (phát hiện sau build-49/50):**
+- `gfxrst=4` khi có WhateverGreen (README dòng 129, TROUBLESHOOTING dòng 56): không có thì panic `IOFramebuffer::postOpen` / `memcpy`
+  khi màn hình NVIDIA mở. Mâu thuẫn với `gfxrst=1` (G4, nhánh chính: boot 38 → 23 s, theo JN + XE-BOOTHOLD) → **chọn một**:
+  nhánh chính giữ `gfxrst=1`; nhánh `nvidia-gpu` dùng `gfxrst=4` (build-40 đã thử: không chậm hơn `gfxrst=1`, màn hình boot xấu hơn).
+- SMBIOS: README thử với Mac **có GPU rời** (`iMacPro1,1`); dự án dùng `MacBookPro16,2` (không có GPU rời) — CHƯA XÁC MINH có ảnh hưởng. Resizable BAR: tác giả khuyên bật; BIOS HP có tuỳ chọn không — CHƯA XÁC MINH.
 
 ## Bước 1 — boot build-49, CHƯA cài driver
 Mục đích: biết riêng ảnh hưởng của việc để dGPU sống.
