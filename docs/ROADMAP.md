@@ -14,6 +14,8 @@ HWPAUTO và tắt C8/C10 (bỏ `ngreenpmcst=0 ngreenpmauto=1`, giải phóng 30 
 - JN: XE-GTFREQ — iGPU từng kẹt 100 MHz; sàn mặc định 1500 MHz (`ngreengtfreq=MHz`, 0 = tắt); dưới tải ~1300 MHz do giới hạn
   PL4/IccMax gói (`GT_PERF_LIMIT_REASONS` bit 8). Máy này: iGPU tối đa ~13 W lúc GB7 Metal (PERFORMANCE.md).
 - Bước 1: đo xung GT thật lúc GB7 Metal (dòng `XeNG CS … gtf=` trong `dmesg` 10 phút đầu sau boot; `xe-monitor.py` igpu_W).
+- **2026-11-06: GB7 GPU treo ở Feature Matching** (GPU reset → stamp CCS mồ côi → WindowServer watchdog; BUILD-LOG). Nghi libxedrv v20;
+  JN HEAD `24450b4` có libxedrv v21 (compute barrier/thứ tự). → đề xuất nâng stack lên JN `24450b4` (chờ duyệt). Không chạy GB7 GPU tới lúc đó.
 - Bước 2: tuỳ kết quả — sàn `ngreengtfreq`, topology/L3, scheduler (`ngreenSched`); so điểm Metal trước/sau.
 
 ## G2 — Vulkan ✅

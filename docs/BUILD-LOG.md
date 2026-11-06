@@ -848,3 +848,14 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06 04:40: người dùng đặt mục tiêu mới → docs/ROADMAP.md (G1 iGPU, G2 Vulkan, G3 HW decode, G4 boot time). JN 6f03560 có sẵn XE-GTFREQ (ngreengtfreq), -ngreengva + macos/vadriver, Vulkan qua MoltenVK, gfxrst=1.
 - 2026-11-06 05:01: G2 Vulkan — MoltenVK thấy iGPU (Intel(R) TGL, 0x9a49, Vulkan 1.4.357, MoltenVK 1.4.2). Ghi ROADMAP.
 - 2026-11-06 05:02: vkcube chạy → G2 Vulkan xong (README thêm dòng Vulkan).
+
+## GPU treo khi chạy Geekbench 7 GPU — bài Feature Matching (2026-11-06 16:3x–17:07, build-37)
+- Triệu chứng (người dùng): iGPU < 1 W ở Feature Matching, > 30 phút không qua; máy gần như không dùng được. `pkill` Geekbench → màn hình đứng, bàn phím còn.
+- ioreg: `xe-rec-resets 1`, `sibrestores 1`, `sibreplays 1`, `rcu 1`, `exfix 2`, `recoveryCount 0` → một lần GPU treo thật, XE-GPUREC (v2, có trong JN 6f03560) đã reset + bật lại CCS.
+- kernel log từ trước 16:36:28 tới 17:03, mỗi ~5 s: `checkGPUProgress() - Signaling hardware error on channel 30` → `GPURestartSkipped stampIdx=30` → `no channel associated with stamp_idx 30` → stamp 30 (dải 24–31, kênh CCS) mồ côi, không bao giờ trả về; Geekbench chờ mãi; CPU 93 % idle.
+- `logs/WindowServer-2026-11-06-170608.ips` (bug_type 409, WATCHDOG): "unresponsive work processor(s): WindowServer main thread", 80 s không check-in (sau pkill).
+- `logs/Kernel_2026-11-06-170747_…gpuRestart` (Intel GPU Hang Summary): **BCS ring "Appears hung"** (HEAD 0xd4, TAIL 0xd8, lệnh cuối `0x13004103` MI_FLUSH_DW), RCS/CCS ring idle, stamp idx 32 submitted 5 / returned 3. → hậu quả sau pkill (blit của WindowServer), không phải lần treo gốc.
+- Lần treo gốc trong Feature Matching chưa có log (dmesg đã trôi, dòng XeNG GPUREC đầu tiên không bắt được).
+- Nghi nguyên nhân gốc (CHƯA XÁC MINH): libxedrv v20 của JN 6f03560 — JN HEAD `24450b4` (libxedrv **v21**, 2026-10-28) sửa "compute work ordered against render/blit, and working compute barriers" (serial compute encoder bỏ qua `memoryBarrierWithScope:` → dispatch đọc dữ liệu chưa ghi). Feature Matching = chuỗi compute dispatch.
+- Patch dự án v8 áp lên JN HEAD bằng `patch --fuzz=3`: 7 hunk kern_gen11.cpp khớp (hunk 1 fuzz 2, cần soát), 3 file còn lại sạch.
+- Tạm thời: KHÔNG chạy Geekbench 7 GPU trên build-37.
