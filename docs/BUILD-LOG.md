@@ -846,3 +846,230 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-06T04:39:32 Marked build-37-20261106-042417-hwpauto-on as known-good (user request)
 - 2026-11-06T04:39:32 Marked build-37 known-good (người dùng).
 - 2026-11-06 04:40: người dùng đặt mục tiêu mới → docs/ROADMAP.md (G1 iGPU, G2 Vulkan, G3 HW decode, G4 boot time). JN 6f03560 có sẵn XE-GTFREQ (ngreengtfreq), -ngreengva + macos/vadriver, Vulkan qua MoltenVK, gfxrst=1.
+- 2026-11-06 05:01: G2 Vulkan — MoltenVK thấy iGPU (Intel(R) TGL, 0x9a49, Vulkan 1.4.357, MoltenVK 1.4.2). Ghi ROADMAP.
+- 2026-11-06 05:02: vkcube chạy → G2 Vulkan xong (README thêm dòng Vulkan).
+
+## GPU treo khi chạy Geekbench 7 GPU — bài Feature Matching (2026-11-06 16:3x–17:07, build-37)
+- Triệu chứng (người dùng): iGPU < 1 W ở Feature Matching, > 30 phút không qua; máy gần như không dùng được. `pkill` Geekbench → màn hình đứng, bàn phím còn.
+- ioreg: `xe-rec-resets 1`, `sibrestores 1`, `sibreplays 1`, `rcu 1`, `exfix 2`, `recoveryCount 0` → một lần GPU treo thật, XE-GPUREC (v2, có trong JN 6f03560) đã reset + bật lại CCS.
+- kernel log từ trước 16:36:28 tới 17:03, mỗi ~5 s: `checkGPUProgress() - Signaling hardware error on channel 30` → `GPURestartSkipped stampIdx=30` → `no channel associated with stamp_idx 30` → stamp 30 (dải 24–31, kênh CCS) mồ côi, không bao giờ trả về; Geekbench chờ mãi; CPU 93 % idle.
+- `logs/WindowServer-2026-11-06-170608.ips` (bug_type 409, WATCHDOG): "unresponsive work processor(s): WindowServer main thread", 80 s không check-in (sau pkill).
+- `logs/Kernel_2026-11-06-170747_…gpuRestart` (Intel GPU Hang Summary): **BCS ring "Appears hung"** (HEAD 0xd4, TAIL 0xd8, lệnh cuối `0x13004103` MI_FLUSH_DW), RCS/CCS ring idle, stamp idx 32 submitted 5 / returned 3. → hậu quả sau pkill (blit của WindowServer), không phải lần treo gốc.
+- Lần treo gốc trong Feature Matching chưa có log (dmesg đã trôi, dòng XeNG GPUREC đầu tiên không bắt được).
+- Nghi nguyên nhân gốc (CHƯA XÁC MINH): libxedrv v20 của JN 6f03560 — JN HEAD `24450b4` (libxedrv **v21**, 2026-10-28) sửa "compute work ordered against render/blit, and working compute barriers" (serial compute encoder bỏ qua `memoryBarrierWithScope:` → dispatch đọc dữ liệu chưa ghi). Feature Matching = chuỗi compute dispatch.
+- Patch dự án v8 áp lên JN HEAD bằng `patch --fuzz=3`: 7 hunk kern_gen11.cpp khớp (hunk 1 fuzz 2, cần soát), 3 file còn lại sạch.
+- Tạm thời: KHÔNG chạy Geekbench 7 GPU trên build-37.
+
+## Nâng stack lên JN 24450b4 + patch v9 (2026-11-06 19:49, người dùng duyệt)
+- Người dùng: "duyệt nâng lên commit mới nhất của JN. đồng thời viết patch". `clone_ref.py --update`: JN HEAD vẫn là `24450b4` (2026-11-03), là commit duy nhất sau 6f03560.
+- 6f03560→24450b4: libxedrv v21 (compute xếp thứ tự với render/blit bằng MTLSharedEvent; serial compute encoder → concurrent + barrier trước mỗi dispatch), v23 (sửa ô vuông blur khi hover, chỉ WindowServer), v24 (công tắc `/private/var/tmp/xedrv.off`: `o`/`b`/`x`); kernel: XE-PORTGUARD (route `AppleIntelPort::probePortState`, bật mặc định trên đường spoof, tắt `-ngreennoportguard`), XE-AUXBL khi thanh ghi PWM period = 0 (chỉ khi có `ngreenauxbl=N` — dự án không dùng), XE-HWCAPS114C (chỉ tác dụng khi 0x114c = 0). Tất cả JN ghi "testing".
+- Patch v9 `patches/nootedgreen-gmsfix-v9-jn24450b4.patch` (sha256 3685fa72…cf0a): v8 áp bằng `patch --fuzz=3` — kern_gen11 hunk 1 fuzz 2 (JN chèn XE-PORTGUARD ngay sau `gTopoTc`; khối CURDIAG/FENCEFIX của dự án nằm sau XE-PORTGUARD, vẫn phạm vi file), 6 hunk còn lại chỉ lệch dòng; không .rej; không trùng route (PORTGUARD route probePortState, dự án route hwSetCursorImage). Thêm: `xePmInstall` mặc định `ngreenpmauto`=1, `ngreenpmcst`=0 (boot-arg vẫn ghi đè).
+- Kiểm MÁY A: `git apply --check` sạch trên JN 24450b4; `clang++ -fsyntax-only` (MacKernelSDK 3f75008, Lilu 0249c3a) kern_gen11/kern_green/kern_xepm: 0 lỗi, cảnh báo 21/18/0 = JN gốc. Chưa build/chạy.
+- Runbook: GMSFIX-RUNBOOK §v9 (lần này chạy `install.sh` để cài libxedrv mới; sao lưu /Library trước; không chép ESP từ macOS). DRIVER-MATRIX G2b, SOURCES.
+- Kế hoạch build-38 = build-37 + kext v9 + boot-args bỏ ` ngreenpmcst=0 ngreenpmauto=1` (255 → 226). Chờ kext từ MÁY B.
+- 2026-11-06T20:12:50 plist_edit bootarg-remove ngreenpmcst=0 (config.plist)
+- 2026-11-06T20:12:50 plist_edit bootarg-remove ngreenpmauto=1 (config.plist)
+- 2026-11-06T20:12:50 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v9 (GMSFIX accel+FB+PAVP+FENCEFIX+XE-HWPAUTO default on, md5 7f51634a)' (config.plist)
+
+## Build 38 — `jn24450b4-v9` (2026-11-06): = build-37 + NootedGreen JN 24450b4 + patch v9; boot-args bỏ ` ngreenpmcst=0 ngreenpmauto=1`
+- Người dùng trên MÁY B: `~/xe-stack` → 24450b4 + v9, `install.sh --check` qua hết (Mode: update, 25G241, 9A49, NootedGreen loaded), `install.sh` đã cài user-space 24450b4 (libxedrv v21–v24).
+- Kext: md5 `7f51634a8e8c5e122009d5653e1ed2a7`, sha256 `68a44a3a49ec8abb37398347a092bda69f9d3e60832d51288426b2111558e29a` (khớp bản trên USB); `strings | grep -c 'HWPAUTO|PORTGUARD|GMSFIX'` = 11; Info.plist giống bản v8. Lưu `_cache/user-inputs/NootedGreen-v9-7f51634a.kext`.
+- boot-args 255 → **226** (cờ Lilu `-amfipassbeta` giờ kết thúc ở 226, trong 228). HWPAUTO/C8-C10 nay là mặc định của v9.
+- plist_diff với build-37: 2 khác biệt (Comment NootedGreen, boot-args). efi-validate 0/0 (validate-20261106T201258.md).
+- Kiểm sau boot: `sysctl debug.xepm.hwpauto debug.xepm.cst debug.xepm.route` = 1/0/1; Metal; `dmesg | grep PORTGUARD`; Wi-Fi còn. Lỗi → build-37 (lưu ý: user-space đã là 24450b4; quay hẳn về → GMSFIX-RUNBOOK §v9 "Quay về").
+- 2026-11-06T20:13:28 Xoá thủ công snapshot build-30-20261105-203431-audio (người dùng duyệt; cũ nhất không phải known-good, chỗ cho build-38)
+- 2026-11-06T20:13:28 Created build-38-20261106-201328-jn24450b4-v9 (tree e88df0f328fe, ocvalidate: 0 errors, 0 warnings (validate-20261106T201258.md))
+- 2026-11-06T20:15:43 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 82ca41d345a9, verified)
+- 2026-11-06T20:15 build-38 jn24450b4-v9 ghi lên MACEFI (/dev/sdb3, kiểm hash OK, tree 82ca41d345a9, SMBIOS thật).
+- 2026-11-06 20:19 build-38 trên MÁY B (boot USB): NootedGreen + HookCase nạp, Metal 2; sysctl debug.xepm hwpauto 1 / cst 0 / route 1 → mặc định v9 hoạt động khi không có boot-arg; xe-topo 16390, xe-fencefix-n 3, xe-rowchk-post 0xffffffffffffc000 (16 bit thấp 0xc000, đúng theo JN). dmesg không có PORTGUARD/HWCAPS (HWCAPS chỉ log khi 0x114c = 0; PORTGUARD có thể bị đẩy khỏi buffer) → kiểm bằng log show. Chờ GB7 GPU.
+- 2026-11-06 20:21 `log show --last boot`: 0 dòng XeNG (cả CURDIAG/GMSFIX đã biết là có) → IOLog của NootedGreen không vào unified log; trạng thái XE-PORTGUARD (armed) không kiểm được qua log, chỉ qua dmesg sớm. Không chặn test. Dòng HWCAPS Apple: DualSubSliceCountFuse 0x33, 64 EU, Sku 2 → fuse đúng, XE-HWCAPS114C không tác dụng (đúng dự kiến).
+- 2026-11-06 20:26 build-38 GB7 GPU: VẪN kẹt ở Feature Matching (iGPU 0,1–0,2 W), xe-rec-resets 1, recoveryCount 0 → giả thuyết libxedrv v20 BỊ BÁC BỎ (libxedrv v24 cùng triệu chứng). JN STATUS.md: triệu chứng stamp CCS 24–31 'no channel associated' = CCS mất cấu hình sau reset domain render (XE-GPUREC v2 xử lý RCU_MODE); JN không công bố kết quả GB GPU. Đang thu: xe-rec-* đầy đủ, .gpuRestart đầu tiên, log AppleIntelTGLGraphics (vào được unified log).
+
+## Phân tích GB7 GPU treo trên build-38 (2026-11-06 20:35; `logs/gb7/`)
+- Dòng thời gian (`restart-log.txt`, `log show --last boot`): 20:25:01.550 `checkGPUProgress` báo lỗi **cùng lúc** kênh 1 (stamp 1, RCS) và kênh 29 (stamp 29, dải CCS 24–31). 20:25:04 Apple restart kênh 1 (`GPURestartBegin/End stampIdx=1`) → đây là lần reset XE-GPUREC đếm (`xe-rec-resets` 1, `xe-rec-last` 0x40005D10 = own RCS, ret 1, kick 0, did 0xD: khôi phục CCS + replay CCS + RCU_MODE; CCS HWS_PGA 0x40005xxx). Ngay sau đó stamp 29: `GPURestartSkipped` / `no channel associated with stamp_idx 29` mỗi ~5 s tới khi tắt máy (70 lần). Không có reset nào khác.
+- → Bài Feature Matching treo **cả RCS lẫn CCS**. Reset miền render chỉ phục hồi kênh RCS; stamp CCS đang chạy bị phần cứng bỏ, replay của XE-GPUREC không trả nó về và CCS không còn context hoạt động → Apple không restart được kênh → Geekbench chờ mãi. Khác với lỗi JN đã sửa (CCS bị tắt sau reset): ở đây RCU_MODE đã bật lại (`xe-rec-rcu` 1, `exfix` 2) mà stamp vẫn mồ côi. Nguyên nhân treo gốc trong shader/compute: CHƯA XÁC MINH.
+- Giả thuyết libxedrv v20 bị bác bỏ (v24 cùng triệu chứng).
+- `.gpuRestart` 17:07, 17:32, 20:03:46, 20:17:17: **giống hệt nhau** (BCS ring treo HEAD 0xd4 / TAIL 0xd8, `MI_FLUSH_DW` 0x13004103, context ID 5, stamp 32 submitted 5 / returned 3), xảy ra ~30–60 s sau mỗi lần boot; Apple tự phục hồi (BCS ngoài miền render, XE-GPUREC không đếm). Lỗi riêng, lặp mỗi boot, chưa thấy hậu quả. 20:25 không có file `.gpuRestart` (DumpGPURestart bị sandbox chặn `CrashReporterSupportHelper`).
+- `.gpuRestart` 19:51: `mediaanalysisd` (JN STATUS: tác nhân treo hay gặp nhất; `launchctl disable gui/$UID/com.apple.mediaanalysisd`).
+- `Kernel-2026-11-06-200320.panic`: page fault trong **AirportItlwm** (Wi-Fi) — không liên quan GPU; ghi riêng.
+- 2026-11-06T20:37:42 Marked build-38-20261106-201328-jn24450b4-v9 as known-good (user request)
+- 2026-11-06T20:44 build-38 đánh dấu known-good (người dùng). XE-GPUREC v3: DỪNG, chưa viết patch.
+- 2026-11-06T20:53:10 plist_edit bootarg-add gfxrst=1 (config.plist)
+
+## Build 39 — `gfxrst` (2026-11-06, ROADMAP G4; người dùng: "bỏ qua G1, tiếp tục G3 và G4"): = build-38 + `gfxrst=1`
+- Bằng chứng: JN CHANGELOG 2026-10-21 / STATUS "Boot screen": `Resolution=Max` + `gfxrst=1` bỏ ~18 s chép framebuffer boot (3840×2400). WhateverGreen 1.7.1 `kern_weg.cpp:101` đọc `gfxrst` bằng `PE_parse_boot_argn` (giới hạn kernel 255, không phải bản sao Lilu 228); mặc định iGPU = `FB_COPY` (2), `1` = `FB_RESET`. Dự án đã có `Resolution=Max`.
+- Panel 1920×1080 = 22 % số pixel của 3840×2400 → ước tiết kiệm ~4 s (CHƯA XÁC MINH, phải đo).
+- boot-args 226 → 235 (nối cuối; `-amfipassbeta` vẫn kết thúc ở 226 ≤ 228). efi-validate 0/0 (validate-20261106T205310.md).
+- Cần đo cùng cách trên build-38 và build-39 (ROADMAP G4).
+- 2026-11-06T21:00:07 Xoá thủ công snapshot build-32-20261105-213620-tp-gpio (người dùng duyệt; chỗ cho build-39)
+- 2026-11-06T21:00:07 Created build-39-20261106-210007-gfxrst (tree ded3ee3a7014, ocvalidate: 0 errors, 0 warnings (validate-20261106T205310.md))
+- 2026-11-06 21:07 Mốc G4 build-38 (boot USB): bấm giờ picker OpenCore → màn hình đăng nhập **38 s** (người dùng). kern.boottime 21:05:52.606 → loginwindow 'Login Window Application Started' 21:05:57.481 (+4,9 s), WindowServer dòng đầu 21:05:57.236 (+4,6 s). Khoảng kernel→loginwindow ngắn bất thường so với 38 s → phần lớn thời gian nằm trước mốc kern.boottime hoặc sau loginwindow (CHƯA XÁC MINH).
+- 2026-11-06T21:10:35 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 1b21524cc8e5, verified)
+- 2026-11-06T21:10 build-39 gfxrst ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 21:12 build-39 đo G4: picker → đăng nhập **23 s** (build-38: 38 s; -15 s, lớn hơn ước 4 s). Log: system boot 21:11:46.000 → WindowServer có token loginwindow 21:12:00.718 (+14,7 s) → ~8 s trước kernel (picker + OpenCore + boot.efi). Màn hình nháy đen ngắn khi framebuffer khởi tạo (FB_RESET xoá console thay vì chép logo) — đúng dự kiến của gfxrst=1.
+- 2026-11-06T21:16:08 plist_edit bootarg-remove gfxrst=1 (config.plist)
+- 2026-11-06T21:16:08 plist_edit bootarg-add gfxrst=4 (config.plist)
+- 2026-11-06T21:20:54 Xoá thủ công snapshot build-33-20261105-220948-usbmap-ss (người dùng duyệt; chỗ cho build-40)
+
+## Build 40 — `gfxrst4` (2026-11-06, thử nghiệm G4; người dùng: "thử build 40, tệ quá thì về build 39"): = build-39, `gfxrst=1` → `gfxrst=4`
+- Mục tiêu: bỏ nháy đen của FB_RESET mà giữ tốc độ. `4` = `FB_NONE` (WhateverGreen không chép, không xoá). Có thể lộ rác hình ở lần đặt chế độ đầu; XE-BOOTHOLD (JN) giữ plane + đèn nền tắt tới khi ring WindowServer quay vòng — CHƯA XÁC MINH có che được không.
+- boot-args 235 (không đổi độ dài). efi-validate 0/0 (validate-20261106T211609.md). Lùi: build-39.
+- 2026-11-06T21:20:55 Created build-40-20261106-212055-gfxrst4 (tree 20efbf85549f, ocvalidate: 0 errors, 0 warnings (validate-20261106T211609.md))
+- 2026-11-06T21:26:31 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree eb8c609f3dca, verified)
+- 2026-11-06T21:26 build-40 gfxrst4 ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06T21:30:05 plist_edit bootarg-remove gfxrst=4 (config.plist)
+- 2026-11-06T21:30:05 plist_edit bootarg-add gfxrst=1 (config.plist)
+- 2026-11-06 21:29 build-40 trên MÁY B: không nhanh hơn build-39, hình lúc boot khó chịu hơn (người dùng); Wi-Fi OK ở cả build-39 và 40. → **Giữ `gfxrst=1` (build-39).** `EFI/` dự án quay về build-39 (plist_diff 0 khác biệt; snapshot SKIP trùng build-39). Chờ cắm USB để ghi lại build-39.
+
+## Patch v10 (2026-11-06 21:45; người dùng hỏi "sao không patch để ngreen-eu/ngreen-l3 mặc định 64 và 6")
+- `kern_gen11.cpp`: mặc định khi không có boot-arg = giá trị máy này: `gTopoSs` 12→8, `gTopoL3` 8→6 (xeTopoArgs, dòng 28), `getV142SubmitBlitMode` → 3, `blmax` 0→17741, `dmcArg` ""→"adlp". Boot-arg vẫn ghi đè. Không dò fuse (JN dòng 23–25: đọc fuse lúc boot làm treo boot). Đã soát: `gTopoSs/gTopoL3` dùng trực tiếp (patch r3b/r3bbb dòng 2606, initHardwareCaps 6847), không có chỗ coi 12/8 là "không ghi đè" (chỉ nhãn log "(default)"). `ngreenblmax`, `ngreen-dmc`, `ngreen-eu`, `ngreen-l3` chỉ đọc ở 1 chỗ mỗi cái.
+- Patch: `patches/nootedgreen-gmsfix-v9-to-v10.patch` (sha256 9599beee…6b6d), gộp `…-v10-jn24450b4.patch` (sha256 1b232960…0567). apply-check sạch; clang++ -fsyntax-only 0 lỗi, 21 cảnh báo = JN gốc.
+- Kế hoạch: build-41 = build-39 + kext v10 + boot-args 235 → 163; build-42 = + `-ngreengva` (G3). Runbook GMSFIX-RUNBOOK §v10 (gồm build plugin VA cùng lúc).
+- (Ghi chú) Thư mục scratch bị xoá khi phiên khôi phục; cây v10 dựng lại từ JN 24450b4 + v9 + 4 thay thế (mỗi chuỗi khớp đúng 1 lần).
+- 2026-11-06T22:09:07 plist_edit bootarg-remove ngreen-eu=64 (config.plist)
+- 2026-11-06T22:09:07 plist_edit bootarg-remove ngreen-l3=6 (config.plist)
+- 2026-11-06T22:09:07 plist_edit bootarg-remove ngreenblmax=17741 (config.plist)
+- 2026-11-06T22:09:07 plist_edit bootarg-remove ngreen-dmc=adlp (config.plist)
+- 2026-11-06T22:09:07 plist_edit bootarg-remove ngreenV142=3 (config.plist)
+- 2026-11-06T22:09:07 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v10 (v9 + defaults 64EU/L3 6, V142 3, blmax 17741, dmc adlp; md5 eb2d2843)' (config.plist)
+
+## Build 41 — `v10-defaults` (2026-11-06): = build-39 + NootedGreen v10; boot-args bỏ `ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 ngreen-dmc=adlp ngreenV142=3`
+- Kext build trên MÁY B (`~/xe-stack` v9 + `nootedgreen-gmsfix-v9-to-v10.patch`): md5 `eb2d28435631595d630ed5fa9a241250`, sha256 `bc3b8ea293ba4a9836275a5845b92a756e8810a14f8cacbd0e222a6ef1c733cb` (khớp bản trên USB); strings HWPAUTO|PORTGUARD|GMSFIX = 11; Info.plist như v9. Lưu `_cache/user-inputs/NootedGreen-v10-eb2d2843.kext`.
+- boot-args 235 → **163**. plist_diff với build-39: 2 khác biệt (Comment, boot-args). efi-validate 0/0 (validate-20261106T220908.md).
+- Kiểm: phải y như build-39 — `xe-topo` 16390, độ sáng tối đa, con trỏ, Metal 2, Wi-Fi, `sysctl debug.xepm.hwpauto/cst` 1/0.
+- 2026-11-06T22:09:46 Xoá thủ công snapshot build-34-20261106-001411-xepm (người dùng duyệt; chỗ cho build-41)
+- 2026-11-06T22:09:46 Created build-41-20261106-220946-v10-defaults (tree ed250ffb6334, ocvalidate: 0 errors, 0 warnings (validate-20261106T220908.md))
+- 2026-11-06T22:09:51 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4f653f06cdc4, verified)
+- 2026-11-06T22:09 build-41 v10-defaults ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 22:12 build-41 trên MÁY B: xe-topo 16390, xe-fencefix-n 3, hwpauto 1 / cst 0, Metal 2 → mặc định v10 đúng khi không có boot-arg. Plugin VA CHƯA cài (/Library/GPUBundles không có VADriver). Chờ: độ sáng/con trỏ/Wi-Fi.
+- 2026-11-06 22:14 build-41: độ sáng, con trỏ, Wi-Fi bình thường (người dùng). Plugin VA đã cài trên MÁY B (người dùng).
+- 2026-11-06T22:14:58 plist_edit bootarg-add -ngreengva (config.plist)
+
+## Build 42 — `gva` (2026-11-06, ROADMAP G3): = build-41 (known-good chưa đánh dấu) + `-ngreengva`
+- JN STATUS: H.264 giải mã phần cứng (VDBOX, bit-exact so với giải mã phần mềm) với `-ngreengva` + plugin VA vá; HEVC: XE-GVAHEVC (`IOGVAHEVCDecode`=2) + sửa HCP trong plugin. NootedGreen tự đặt `hwgva-id`/IOVARendererID (XE-GVAID) khi có cờ. FairPlay hỏng (JN #11); Safari vẫn giải mã CPU.
+- `-ngreengva` đọc bằng `checkKernelArgument` (Lilu) → nối cuối, kết thúc ở 174 ≤ 228. boot-args 163 → 174. efi-validate 0/0 (validate-20261106T221459.md).
+- Plugin VA đã cài trên MÁY B (`/Library/GPUBundles/AppleIntelTGLGraphicsVADriver.bundle`, người dùng 22:14).
+- Rủi ro CHƯA XÁC MINH: PAVPFIX của dự án (tắt nhánh PAVP) với đường giải mã; stolen 60 MB.
+- 2026-11-06T22:16:11 Marked build-41-20261106-220946-v10-defaults as known-good (user request)
+- 2026-11-06T22:16:11 Xoá thủ công snapshot build-35-20261106-022835-xepm-nocst (người dùng duyệt; chỗ cho build-42)
+- 2026-11-06T22:16:11 Created build-42-20261106-221611-gva (tree d3c96a1d1ea6, ocvalidate: 0 errors, 0 warnings (validate-20261106T221459.md))
+- 2026-11-06T22:23:17 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree f00197872b84, verified)
+- 2026-11-06T22:23 build-42 gva ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 22:25 build-42 trên MÁY B: VTIsHardwareDecodeSupported H264 true, HEVC true (VideoToolbox báo có bộ giải mã phần cứng). Chưa thử giải mã thật.
+
+## build-42 `gva`: 2 kernel panic (2026-11-06 22:31 / 22:33; `logs/Kernel-2026-11-06-223132.panic`, `…223332.panic`)
+- **Panic 1 (22:31:32, uptime 7,7 s, kernel_task):** `divide error` trong `com.xxxxx.driver.AppleIntelTGLGraphicsFramebuffer` (+0x6c0c7), gọi từ NootedGreen `fbTimingsWorker(void*, void*)+0x145` (thread call của `-ngreenfixbootmode`, gọi `hwCRTCToIODetailedTimingInformation` sớm lúc boot). JN đã chặn một số chia (p->0x164 = 0) nhưng lần này vẫn có phép chia cho 0 khác / chạy đua lúc boot. Lần đầu thấy; không liên quan rõ tới `-ngreengva`. Tần suất: 1 lần. CHƯA XÁC MINH.
+- **Panic 2 (22:33:32, uptime 86 s, `VTDecoderXPCService` pid 787 — lúc phát video):** page fault CR2 `0x284` (NULL+0x284) trong `com.xxxxx.driver.AppleIntelTGLGraphics` (+0x3a217), ngăn xếp từ NootedGreen `Gen11::IGHardwareContextwithOptions+0x24` → `IGHardwareContextinitWithOptions+0x21` → hàm gốc của Apple. → Tạo hardware context cho bộ giải mã video làm panic.
+- Giả thuyết (CHƯA XÁC MINH): PAVPFIX của dự án ép nhánh "PAVP disabled" vì context PAVP (`accel+0x1278`) không được tạo trên máy này; context giải mã video có thể tham chiếu context PAVP đó → NULL+0x284. Máy JN (giải mã H.264 chạy) không cần PAVPFIX.
+- Quyết định đề xuất: **quay về build-41** (không `-ngreengva`) — mọi giải mã phần cứng (QuickTime, Photos, thumbnail Finder) đều có thể kích hoạt panic 2. G3 tạm dừng.
+- 2026-11-06T22:45:13 plist_edit bootarg-remove -ngreengva (config.plist)
+- 2026-11-06T22:47:08 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4f653f06cdc4, verified)
+- 2026-11-06T22:47 Quay về build-41 (người dùng): bỏ `-ngreengva`, plist_diff với build-41 = 0, ghi MACEFI (/dev/sdb3, kiểm hash OK). G3 tạm dừng.
+- 2026-11-06 22:51 build-41 boot lại trên MÁY B: nvram boot-args = 163 ký tự đúng build-41 (không -ngreengva); VTIsHardwareDecodeSupported H264 false, HEVC false → giải mã quay về phần mềm (XE-NOGVA), đúng dự kiến.
+- 2026-11-06T22:52:53 plist_edit bootarg-add -ngreengva (config.plist)
+- 2026-11-06T22:52:54 plist_edit bootarg-add -ngreennopavpfix (config.plist)
+- 2026-11-06T22:54:29 Xoá thủ công snapshot build-36-20261106-034300-hwpauto (người dùng duyệt; chỗ cho build-43)
+
+## Build 43 — `gva-nopavp` (2026-11-06, người dùng: "thử -ngreengva với -ngreennopavpfix"): = build-41 + `-ngreengva -ngreennopavpfix`
+- Kiểm giả thuyết panic 2 của build-42 (NULL+0x284 khi tạo context giải mã ← PAVPFIX). Cả hai cờ đọc bằng `checkKernelArgument` → nối cuối, kết thúc ở 191 ≤ 228. boot-args 163 → 191. efi-validate 0/0 (validate-20261106T225254.md).
+- Rủi ro: không PAVPFIX → có thể quay lại panic `PAVPCommandCallback` CR2 0xb8 lúc `startGraphicsEngine` (build-20/21). Lùi: ghi lại build-41 lên USB từ Linux (ESP ổ trong còn build-37).
+- 2026-11-06T22:54:29 Created build-43-20261106-225429-gva-nopavp (tree 9da654d0f7d2, ocvalidate: 0 errors, 0 warnings (validate-20261106T225254.md))
+- 2026-11-06T22:54:30 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 6b233893684b, verified)
+- 2026-11-06T22:54 build-43 gva-nopavp ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06T22:58:12 plist_edit bootarg-remove -ngreennopavpfix (config.plist)
+- 2026-11-06T22:58:12 plist_edit bootarg-remove -ngreengva (config.plist)
+- 2026-11-06T22:58:26 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4f653f06cdc4, verified)
+- 2026-11-06 22:58 build-43 trên MÁY B: **panic** (người dùng: "có vẻ như panic rồi"; chưa có file `.panic`). → Tắt PAVPFIX không dùng được trên máy này (khớp panic PAVPCommandCallback cũ, CHƯA XÁC MINH vì chưa có log). Quay về build-41: plist_diff = 0, ghi MACEFI (/dev/sdb3, kiểm hash OK). G3 dừng: cần PAVPFIX để boot, nhưng với PAVPFIX thì tạo context giải mã panic NULL+0x284.
+- 2026-11-06 23:02 Xác nhận panic build-43: `logs/Kernel-2026-11-06-225630.panic` và `…230004.panic` (2 lần boot, boot-args có `-ngreengva -ngreennopavpfix`), cả hai giống hệt: uptime ~14 s, kernel_task, page fault **CR2 0xb8** (RAX/RBX/RCX = 0) trong `com.xxxxx.driver.AppleIntelTGLGraphics` +0x29dc7 = `IntelAccelerator::PAVPCommandCallback` (0x29c50 theo ghi chú PAVPFIX) +0x177, gọi từ NootedGreen trong lúc start. Đúng panic PAVPFIX đã sửa (context PAVP `accel+0x1278` NULL). → **PAVPFIX bắt buộc trên máy này.** G3 dừng hẳn với stack hiện tại.
+- 2026-11-06 23:12 build-41 dùng thường (App Store, Photos, YouTube trên Chrome), xe-monitor 201 mẫu: igpu_W min/avg/max 0,0/0,4/2,8; cpu_W 2,5/13,7/43,4; pkg 8,0/20,5/53,0 W. Không có xe-rec-resets (chưa reset), dmesg không có checkGPUProgress/GPURestart, không .gpuRestart mới → GPU làm việc bình thường; iGPU thấp vì tải compositing nhẹ; CPU cao do giải mã video phần mềm (không có HW decode).
+
+## Patch v11 XE-PAVPCTX (2026-11-06 23:20; người dùng: "thử patch11 đi")
+- Wrapper `Gen11::startGraphicsEngine` (route có sẵn của JN, V163): nếu không phải TGL thật và có `-ngreenpavpctx` → `accel+0x1300 |= 0x8` trước khi gọi hàm gốc; sau đó ghi ioreg `xe-pavp-1300-pre/-post`, `xe-pavp-ctx` + IOLog `XeNG PAVPCTX`. Dựa hoàn toàn trên ghi chú PAVPFIX (2026-11-04) của dự án; không phân tích thêm binary Apple. PAVPFIX giữ nguyên.
+- Patch `nootedgreen-gmsfix-v10-to-v11.patch` (sha256 37e4c6bf…8a24), gộp `…-v11-jn24450b4.patch` (sha256 050dab16…ddcc); apply-check sạch; syntax 0 lỗi, 21 cảnh báo.
+- Kế hoạch: build-44 (kext v11 + `-ngreenpavpctx`) → kiểm boot + `xe-pavp-ctx`; rồi build-45 (+ `-ngreengva`). Lùi: build-41.
+- 2026-11-06T23:22:38 plist_edit bootarg-add -ngreenpavpctx (config.plist)
+- 2026-11-06T23:22:38 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v11 (v10 + XE-PAVPCTX opt-in -ngreenpavpctx; md5 5adbfbb7)' (config.plist)
+- 2026-11-06T23:23:14 Xoá thủ công snapshot build-39-20261106-210007-gfxrst (người dùng duyệt; chỗ cho build-44)
+
+## Build 44 — `pavpctx` (2026-11-06): = build-41 + NootedGreen v11 + `-ngreenpavpctx`
+- Kext v11 build trên MÁY B: md5 `5adbfbb74709d48e50674299b0b8e729`, sha256 `7b6aee4a7f42a3b8ba3b29d9911a8a2087c38244dd1448afd01f36b3296e6291` (khớp USB); strings PAVPCTX = 1; Info.plist như v10. Lưu `_cache/user-inputs/NootedGreen-v11-5adbfbb7.kext`.
+- boot-args 163 → 178 (`-ngreenpavpctx` là cờ Lilu, kết thúc ở 178 ≤ 228). efi-validate 0/0 (validate-20261106T232238.md).
+- Kiểm: boot được không; `ioreg … grep xe-pavp` (`xe-pavp-ctx` 1?); `dmesg | grep PAVP`. Lỗi → build-41.
+- 2026-11-06T23:23:14 Created build-44-20261106-232314-pavpctx (tree 504a24139653, ocvalidate: 0 errors, 0 warnings (validate-20261106T232238.md))
+- 2026-11-06T23:23:22 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 7c084247530d, verified)
+- 2026-11-06T23:23 build-44 pavpctx ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-06 23:28 build-44 trên MÁY B: **panic lúc boot** (`logs/Kernel-2026-11-06-232542.panic`, uptime 7,9 s, kernel_task): page fault **CR2 0x30** trong `com.xxxxx.driver.AppleIntelTGLGraphics` +0x13e80, ngăn xếp: NootedGreen `Gen11::start+0x1f94` → `Gen11::startGraphicsEngine+0x308` (lời gọi hàm gốc) → Apple (+0x2514b, +0x28f6f, +0x13e80). → Bật `accel+0x1300` bit 3 làm `startGraphicsEngine` đi đường tạo PAVP nhưng thiếu điều kiện khác (con trỏ NULL+0x30) → **v11 thất bại.** G3 dừng hẳn; còn hướng issue cho JN. Quay về build-41.
+- 2026-11-06T23:29:00 plist_edit bootarg-remove -ngreenpavpctx (config.plist)
+- 2026-11-06T23:29:00 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v10 (v9 + defaults 64EU/L3 6, V142 3, blmax 17741, dmc adlp; md5 eb2d2843)' (config.plist)
+- 2026-11-06 23:32 Phân tích panic build-44 (người dùng: "phân tích panic và lên kế hoạch patch mới, không cần ghi lại USB"):
+  - Chắc chắn: panic nằm **bên trong hàm gốc** `IntelAccelerator::startGraphicsEngine` (khung NG `startGraphicsEngine+0x308` = ngay sau lời gọi hàm gốc), lúc 7,9 s, đọc trường +0x30 của một con trỏ NULL. Không có `-ngreenpavpctx` thì cùng kext/boot-args không panic (build-41). → Bit 3 của `accel+0x1300` đúng là mở đường tạo PAVP, nhưng đường đó cần một đối tượng không tồn tại trên máy này.
+  - Giả thuyết (CHƯA XÁC MINH): đối tượng thiếu là giao diện tới Intel ME/CSE — JN #11: plugin VA báo "ME not loaded" và FairPlay không chạy; PAVP phần cứng cần phiên với ME, mà macOS trên máy này không có driver ME (HECI). Nếu đúng thì **không thể tạo context PAVP thật**, và mọi cách bật PAVP đều sẽ panic.
+  - Hệ quả cho G3: chỉ còn hướng làm cho đường tạo context giải mã **không cần** context PAVP (panic NULL+0x284). Muốn làm phải biết hàm tạo context của Apple đọc gì từ context PAVP — việc này cần phân tích mã máy driver của Apple; Claude không làm được trong dự án này (lần thử 2026-11-06 20:4x bị bộ lọc an toàn chặn). → chuyển cho JN (issue) hoặc người có công cụ RE.
+  - Kế hoạch patch mới khả thi (không cần phân tích driver Apple): **v12 chẩn đoán + an toàn**: (1) trong wrapper `IGHardwareContextinitWithOptions` có sẵn của NootedGreen, nếu `accel+0x1278` NULL và lời gọi đến từ client video thì trả lỗi thay vì gọi hàm gốc → VideoToolbox lùi về giải mã phần mềm, không panic; (2) ghi `params`/loại context ra ioreg để đính kèm issue. Không đem lại giải mã phần cứng; chỉ cho phép để `-ngreengva` mà không panic (vô ích nếu không có HW decode) → **giá trị thấp, chưa làm**.
+  - Trạng thái: USB = build-44 (panic lúc boot, người dùng chưa cho ghi lại); `EFI/` dự án = build-41 (plist_diff 0, kext v10).
+- 2026-11-06 23:40 Người dùng đo build-41: dùng thường pkg avg 20,6 W (CPU 13,7, iGPU 0,39); nghỉ 52 s pkg avg 11,7 / med 9,7 / min 7,9 W (CPU med 3,9 W). Ghi PERFORMANCE.md; CSV chép vào logs/*-build41.csv.
+- 2026-11-06 23:44 Đo nghỉ A/B/C (cst, EPP): đều ~8 W → giữ mặc định v9 (cst 0, EPP 0). Ghi PERFORMANCE.md.
+- 2026-11-07T00:12:21 plist_edit set Kernel/Add[BundlePath=AirportItlwm.kext]/Comment = 'AirportItlwm-Tahoe v2.4.0-alpha (laobamac/itlwm 7204c69, official release) - native IO80211Family/IOSkywalkFamily, no Modern Wireless root patch' (config.plist)
+- 2026-11-07T00:12:22 plist_edit set Kernel/Add[BundlePath=AirportItlwm.kext]/MinKernel = '25.0.0' (config.plist)
+- 2026-11-07T00:12:22 plist_edit set Kernel/Add[BundlePath=AirportItlwm.kext]/MaxKernel = '25.99.99' (config.plist)
+- 2026-11-07T00:12:22 plist_edit set Kernel/Add[BundlePath=IOSkywalkFamily.kext]/Enabled = False (config.plist)
+- 2026-11-07T00:12:22 plist_edit set Kernel/Add[BundlePath=IO80211FamilyLegacy.kext]/Enabled = False (config.plist)
+- 2026-11-07T00:12:29 plist_edit set Kernel/Block[0]/Enabled = False (config.plist)
+
+## Build 45 — `wifi-laobamac` (2026-11-07 00:12; người dùng: "thử đổi sang driver wifi của JN", duyệt DRIVER-MATRIX W-alt 00:10): = build-41 + Wi-Fi laobamac
+- `release-fetch`: laobamac/itlwm `v2.4.0-alpha` (pre-release, người dùng yêu cầu), asset `AirportItlwm-Tahoe-v2.4.0-RELEASE-alpha-7204c69.zip`, sha256 A5D098E6…FCF9 khớp GitHub digest. Info.plist: `com.zxystd.AirportItlwm` 2.4.0, phụ thuộc `com.apple.iokit.IO80211Family` + `IOSkywalkFamily` gốc, có ID `0x27258086` (AX210). JN dùng bản tự build `738d4c6` — dự án dùng release chính thức.
+- config (plist_diff với build-41, 6 khác biệt): AirportItlwm Comment + MinKernel 25.0.0 / MaxKernel 25.99.99 (như JN); `IOSkywalkFamily.kext`, `IO80211FamilyLegacy.kext` Enabled=false; Block `com.apple.iokit.IOSkywalkFamily` Enabled=false. Giữ AMFIPass/`-amfipassbeta` (root patch Modern Audio), `DisableIoMapper` true. Chưa thêm `itlwm_he=1`.
+- efi-validate 0/0 (validate-20261107T001229.md). Runbook MÁY B: POSTINSTALL-RUNBOOK §6 (Revert root patch, áp lại chỉ Modern Audio).
+- 2026-11-07T00:13:33 Xoá thủ công snapshot build-40-20261106-212055-gfxrst4 (người dùng duyệt; chỗ cho build-45)
+- 2026-11-07T00:13:33 Created build-45-20261107-001333-wifi-laobamac (tree 28037590c2c7, ocvalidate: 0 errors, 0 warnings (validate-20261107T001229.md))
+- 2026-11-07T00:17:08 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree be02082846cc, verified)
+- 2026-11-07T00:17 build-45 wifi-laobamac ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-07T00:21 build-45 trên MÁY B: Wi-Fi hoạt động (người dùng). Chưa có output kmutil / chưa rõ đã Revert root patch Modern Wi-Fi chưa.
+- 2026-11-07 00:25 Audio không root patch: người dùng chọn **VoodooHDA** (thay SimpleHDA — không license + binary Apple). `release-fetch` CloverHackyColor/VoodooHDA `Release368` (3.6.8, bản ổn định), sha256 9AAA01B2…ADB0 khớp digest; `org.voodoo.driver.VoodooHDA`, phụ thuộc IOAudioFamily → cài `/Library/Extensions` trên MÁY B (Dortania), không đổi EFI. DRIVER-MATRIX #15b, POSTINSTALL-RUNBOOK §7.
+- 2026-11-07T00:29:46 plist_edit set Kernel/Add[BundlePath=IOSkywalkFamily.kext]/Enabled = False (config-install.plist)
+- 2026-11-07T00:29:46 plist_edit set Kernel/Add[BundlePath=IO80211FamilyLegacy.kext]/Enabled = False (config-install.plist)
+- 2026-11-07T00:29:46 plist_edit set Kernel/Block[0]/Enabled = False (config-install.plist)
+- 2026-11-07T00:29:46 plist_edit set Kernel/Add[BundlePath=AirportItlwm.kext]/MinKernel = '25.0.0' (config-install.plist)
+- 2026-11-07T00:29:46 plist_edit set Kernel/Add[BundlePath=AirportItlwm.kext]/MaxKernel = '25.99.99' (config-install.plist)
+- 2026-11-07T00:29:46 plist_edit set Kernel/Add[BundlePath=AirportItlwm.kext]/Comment = 'AirportItlwm-Tahoe v2.4.0-alpha (laobamac/itlwm 7204c69, official release) - native IO80211Family/IOSkywalkFamily, no Modern Wireless root patch' (config-install.plist)
+- 2026-11-07 00:29 MÁY B (build-45): Revert root patch OCLP xong; **VoodooHDA 3.6.8 hoạt động** (người dùng: "ổn định hơn root patching"); Wi-Fi laobamac hoạt động. → Máy **không còn root patch nào**.
+- 2026-11-07 00:30 `config-install.plist` (cấu hình dự phòng không tăng tốc) vẫn bơm IOSkywalkFamily/IO80211FamilyLegacy + Block Skywalk gốc → không hợp với AirportItlwm laobamac. Sửa giống `config.plist` (6 mục: 2 kext + Block Enabled=false, AirportItlwm MinKernel 25.0.0 / MaxKernel 25.99.99, Comment). efi-validate 0/0 (validate-20261107T002946.md). → build-46 (chỉ khác build-45 ở config-install.plist).
+- 2026-11-07T00:34:42 Marked build-45-20261107-001333-wifi-laobamac as known-good (user request)
+- 2026-11-07T00:34:42 Xoá thủ công snapshot build-42-20261106-221611-gva (người dùng duyệt; chỗ cho build-46). build-45 đánh dấu known-good (người dùng).
+- 2026-11-07T00:34:42 Created build-46-20261107-003442-config-install-wifi (tree 1e857ce7d220, ocvalidate: 0 errors, 0 warnings (validate-20261107T002946.md))
+- 2026-11-07T00:35:52 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4d8c13b03131, verified)
+- 2026-11-07T00:35 build-46 config-install-wifi ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-07T00:39:05 plist_edit set Kernel/Add[BundlePath=AMFIPass.kext]/Enabled = False (config.plist)
+- 2026-11-07T00:39:05 plist_edit bootarg-remove -amfipassbeta (config.plist)
+- 2026-11-07T00:39:05 plist_edit bootarg-add itlwm_he=1 (config.plist)
+
+## Build 47 — `wifi6-noamfipass` (2026-11-07 00:39; người dùng: "bật wifi 6 và bỏ amfipass"): = build-46 + `itlwm_he=1`, AMFIPass tắt
+- `itlwm_he`: laobamac `AirportItlwm/AirportItlwmV2.cpp:335` (7204c69) `PE_parse_boot_argn("itlwm_he")` == 1 → `IEEE80211_F_HEON`; chuỗi có trong binary Tahoe. README laobamac: HE tắt mặc định trên macOS 26, bật bằng `itlwm_he=1`.
+- AMFIPass + `-amfipassbeta` chỉ phục vụ root patch OCLP (W4), máy không còn root patch; AMFI vẫn tắt bằng `amfi_get_out_of_my_way=1` (stack đồ hoạ cần). `AMFIPass.kext` Enabled=false (file giữ để lùi). JN không dùng AMFIPass.
+- boot-args 163 → 160. plist_diff với build-46: 2 khác biệt. efi-validate 0/0 (validate-20261107T003905.md). Hai thay đổi trong một build theo yêu cầu người dùng; lỗi → build-46, rồi tách từng cái.
+- Lỗi công cụ: `plist_edit.py bootarg-remove/bootarg-add --dry-run` GHI THẬT vào config (lần chạy thật sau đó báo "No change"/ERROR). Kết quả cuối vẫn đúng (kiểm bằng plist_diff). Cần sửa script.
+- 2026-11-07T00:39:54 Xoá thủ công snapshot build-43-20261106-225429-gva-nopavp (người dùng duyệt; chỗ cho build-47)
+- 2026-11-07T00:39:54 Created build-47-20261107-003954-wifi6-noamfipass (tree 0974eff308b3, ocvalidate: 0 errors, 0 warnings (validate-20261107T003905.md))
+- 2026-11-07T00:39:57 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 3780be079449, verified)
+- 2026-11-07T00:39 build-47 wifi6-noamfipass ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-07T00:43 build-47 trên MÁY B: hoạt động (người dùng: "được rồi"). Người dùng sẽ chép EFI sang ESP ổ trong.
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext/Contents/PlugIns/AirPortBrcmNIC.kext] (config.plist)
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext] (config.plist)
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=IOSkywalkFamily.kext] (config.plist)
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=AMFIPass.kext] (config.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Block[Identifier=com.apple.iokit.IOSkywalkFamily] (config.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext/Contents/PlugIns/AirPortBrcmNIC.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=IOSkywalkFamily.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=AMFIPass.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Block[Identifier=com.apple.iokit.IOSkywalkFamily] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit bootarg-remove -amfipassbeta (config-install.plist)
+- 2026-11-07T00:51:18 Xoá thủ công snapshot build-44-20261106-232314-pavpctx (người dùng duyệt; chỗ cho build-48)
+
+## Build 48 — `cleanup` (2026-11-07 00:49; người dùng: "dọn dẹp file rồi push"): = build-47, gỡ hẳn mục đã tắt
+- `config.plist` + `config-install.plist`: xoá Kernel/Add `AMFIPass.kext`, `IOSkywalkFamily.kext`, `IO80211FamilyLegacy.kext` (+ plugin AirPortBrcmNIC), Kernel/Block `com.apple.iokit.IOSkywalkFamily`; `config-install.plist` bỏ `-amfipassbeta`. Xoá thư mục ba kext khỏi `EFI/OC/Kexts`. Lúc chạy giống build-47 (các mục đã Enabled=false). plist_diff với build-47: 5 mục xoá + đổi chỉ số (thứ tự tương đối giữ nguyên). efi-validate 0/0 (validate-20261107T004906.md); ocvalidate config-install: No issues.
+- Sửa `plist_edit.py`: `bootarg-*` với từ bắt đầu bằng `-` chèn `--` trước từ đó nên `--dry-run`/`--file` phía sau thành tham số vị trí → dry-run ghi thật. Nay `--` + từ đặt cuối argv. Kiểm: 3 lệnh dry-run trên bản sao không đổi hash.
+- build-48 ★ known-good (người dùng: "giữ build 48 known good"). USB và ESP hiện là build-47 (chạy giống hệt).
+- 2026-11-07T00:51:18 Created build-48-20261107-005118-cleanup (tree e891efd83a8e, ocvalidate: 0 errors, 0 warnings (validate-20261107T004906.md))
+- 2026-11-07T00:51:18 Marked build-48-20261107-005118-cleanup as known-good (user request)
+- 2026-11-07T00:51 Marked build-48 known-good (người dùng).

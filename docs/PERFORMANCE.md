@@ -96,3 +96,15 @@ Giả thuyết multi giảm (CHƯA XÁC MINH): pha single-core tiêu nhiều nă
   = **88 % / 92 % của Linux** (2195 / 10101). HWPAUTO có tác dụng lớn với tải từng đợt (Geekbench) dù xe-freq (tải liên tục) không thấy.
 - **Geekbench 7, build-36, topology mặc định (6c/16t):** `hwpauto=1` → **2030 / 9646 (92 % / 95 % Linux)**; `hwpauto=0` → 1191 / 5637.
   → HWPAUTO là thay đổi quyết định; `ctrsmt=off` kém hơn mặc định (1927 / 9338) → bỏ. Build-37: `ngreenpmauto=1`.
+
+## Build-41 — dùng thường và nghỉ (2026-11-06 23:08–23:36; `logs/normal-usage-build41.csv`, `logs/idle-build41.csv`)
+XE-PM mặc định v9/v10: HWPAUTO 1, C8/C10 tắt (`cst` 0), EPP 0.
+
+| Tình huống | Mẫu | pkg avg / med / p95 / max | CPU avg / med | iGPU avg / max | P-core max |
+|---|---|---|---|---|---|
+| Dùng thường (App Store, Photos, YouTube trên Chrome) | 201 | 20,6 / 18,3 / 42,9 / 53,0 W | 13,7 / 11,5 W | 0,39 / 2,8 W | 78 °C |
+| Nghỉ (không dùng gì) | 52 | 11,7 / 9,7 / 19,9 / 23,2 W | 5,8 / 3,9 W | 0,08 / 1,1 W | 75 °C |
+
+- Nghỉ **cao hơn mốc build-33** (7,4 W avg, CPU 1,6 W): min vẫn 7,9 W, nhưng CPU có nhiều đợt 13–16 W → việc chạy nền (sau khi mở Photos: `mediaanalysisd`/`photoanalysisd`, Spotlight) và/hoặc XE-PM EPP 0 + HWPAUTO (mỗi lần thức dậy nhân lên xung tối đa). Mẫu nghỉ chỉ 52 s — cần đo lại ≥ 2 phút.
+- Ứng viên (đổi trực tiếp, không cần build): `debug.xepm.cst=1` (C8/C10, JN: nghỉ 4,6 → 3,3 W), `debug.xepm.epp` 0 → 64/128 (cân bằng), tắt `mediaanalysisd`.
+- 2026-11-06 23:44 (người dùng): A (cst 0, EPP 0), B (cst 1), C (cst 1 + EPP 128) — **cả ba nghỉ quanh 8 W** khi không đụng vào máy. → C8/C10 và EPP không đổi mức nền; 11,7 W lần trước là do việc chạy nền. Mức nền ~8 W nằm ở uncore/SA (CPU cores chỉ ~2,4 W lúc thấp nhất), không phải ở nhân. Ứng viên: gói CPU không vào được package C-state sâu (PC8/PC10) do màn hình 144 Hz không có PSR/FBC (engine hiển thị + RAM luôn chạy), dGPU/PCIe/NVMe chưa vào trạng thái ngủ — CHƯA XÁC MINH. Cần mốc Linux cùng máy và thử 60 Hz.

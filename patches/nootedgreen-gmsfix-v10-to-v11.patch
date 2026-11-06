@@ -1,0 +1,37 @@
+diff --git a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+index 16a8323..17a1dbf 100755
+--- a/src/NootedGreen/kern_gen11.cpp
++++ b/src/NootedGreen/kern_gen11.cpp
+@@ -7628,8 +7628,32 @@ unsigned long Gen11::startGraphicsEngine(void *that)
+ 		applyPreStartEngineWorkarounds(startCount);
+ 	}
+ 
++	// xe/pavpctx (Victus patch v11, opt-in -ngreenpavpctx): the PAVP hardware context (accel+0x1278) is only created by
++	// startGraphicsEngine when accel+0x1300 bit 3 is set (see xe/pavpfix). It is not set on this laptop, so the context stays
++	// NULL: PAVPCommandCallback panics without PAVPFIX, and with PAVPFIX hardware video decode (-ngreengva) panics at
++	// NULL+0x284 while creating its hardware context (hypothesis: it reads the PAVP context). Set the bit before Apple's start
++	// so the context is created; PAVPFIX stays on. Readback: ioreg xe-pavp-1300-pre/-post, xe-pavp-ctx (1 = created).
++	static int pavpCtxOn = -1;
++	if (pavpCtxOn < 0) pavpCtxOn = (!NGreen::callback->isRealTGL && checkKernelArgument("-ngreenpavpctx")) ? 1 : 0;
++	uint8_t pavpPre = 0;
++	if (pavpCtxOn == 1 && that) {
++		pavpPre = getMember<uint8_t>(that, 0x1300);
++		getMember<uint8_t>(that, 0x1300) = pavpPre | 0x8;
++	}
++
+ 	unsigned long ret = FunctionCast(startGraphicsEngine, callback->ostartGraphicsEngine)(that);
+ 
++	if (pavpCtxOn == 1 && that) {
++		auto *svc = reinterpret_cast<IOService *>(that);
++		uint8_t pavpPost = getMember<uint8_t>(that, 0x1300);
++		bool pavpCtx = getMember<void *>(that, 0x1278) != nullptr;
++		svc->setProperty("xe-pavp-1300-pre", pavpPre, 8);
++		svc->setProperty("xe-pavp-1300-post", pavpPost, 8);
++		svc->setProperty("xe-pavp-ctx", pavpCtx ? 1 : 0, 8);
++		IOLog("XeNG PAVPCTX: 0x1300 0x%02x -> 0x%02x, PAVP context %s (ret=%lu)\n", pavpPre, pavpPost,
++		      pavpCtx ? "created" : "NULL", ret);
++	}
++
+ 	if (!NGreen::callback->isRealTGL) {
+ 		// Masked clear: mask=bit14, value=0 → 0x40000000
+ 		NGreen::callback->writeReg32(GEN7_FF_SLICE_CS_CHICKEN1,

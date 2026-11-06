@@ -142,3 +142,46 @@ EFI build-30 đã có AppleALC 1.9.8 + `layout-id` 13 trên `PciRoot(0x0)/Pci(0x
 ## 7. Trước Giai đoạn B
 - Sao lưu toàn bộ (Time Machine hoặc ảnh ổ). Stack đồ họa và root patch đều sửa hệ thống; Giai đoạn B: không sleep, không màn hình ngoài, có thể GPU hang/panic.
 - Chỉ bắt đầu khi bạn viết đúng câu: **"EFI nền đã ổn định, bắt đầu tăng tốc đồ họa"**.
+
+## 6. Đổi Wi-Fi sang laobamac AirportItlwm-Tahoe v2.4.0-alpha (build-45, người dùng duyệt 2026-11-07 00:10)
+Wi-Fi mới dùng IO80211Family/IOSkywalkFamily **gốc** của Tahoe → bỏ root patch **Modern Wi-Fi**, giữ **Modern Audio** (AppleHDA).
+EFI build-45 đã tắt IOSkywalkFamily, IO80211FamilyLegacy và Block `com.apple.iokit.IOSkywalkFamily`; AMFIPass + `-amfipassbeta` giữ (root patch Audio cần).
+Cần Ethernet (RTL8111) suốt quá trình. Không cập nhật macOS.
+1. Boot **build-45 từ USB**. Root patch Modern Wi-Fi cũ vẫn còn trên hệ thống → Wi-Fi có thể không chạy, thậm chí panic (CHƯA XÁC MINH).
+   Panic → boot lại bằng build-41 (Claude ghi lại USB), làm bước 2 trên build-41 rồi mới quay lại build-45.
+2. Mở **OCLP-CustoMac** → Post-Install Root Patch → **Revert Root Patches** → khởi động lại (vẫn build-45).
+3. OCLP-CustoMac → Post-Install Root Patch → màn hình chọn: **BỎ chọn Modern Wi-Fi**, giữ **Modern Audio** → Start Root Patching
+   (KDK 25G241, cần mạng Ethernet) → khởi động lại (build-45). Nếu OCLP không cho bỏ chọn Modern Wi-Fi: dừng, gửi ảnh màn hình.
+4. Kiểm:
+   ```
+   kmutil showloaded --list-only | grep -i -E "AirportItlwm|IO80211|Skywalk|AMFIPass"
+   ifconfig -l
+   ioreg -r -c AirportItlwm -l -w0 | grep -i -E 'IOModel|firmware|version' | head
+   ```
+   Mong: `com.zxystd.AirportItlwm (2.4.0)`, `IO80211Family` gốc (không có `IO80211FamilyLegacy`); menu Wi-Fi có mạng, kết nối được; loa/mic còn.
+   Nếu System Settings › Network có service "Ethernet" thừa cho en0: xoá, rồi "+" → Wi-Fi (JN INSTALL).
+5. Chưa bật `itlwm_he=1` (Wi-Fi 6) ở build-45 — bước riêng sau khi build-45 ổn.
+Quay về: build-41 + OCLP Revert + áp lại Modern Wi-Fi + Modern Audio (§1, §5).
+
+## 7. Audio bằng VoodooHDA, không root patch (2026-11-07, người dùng chọn)
+VoodooHDA 3.6.8 (CloverHackyColor, BSD-2-Clause) thay AppleHDA. Cài trong `/Library/Extensions` (Auxiliary KC), không đụng volume hệ thống;
+EFI không đổi (build-45). AppleALC trong EFI giữ nguyên (không có AppleHDA thì không tác dụng). Không dùng cùng AppleHDA.
+1. Sao lưu: không cần thêm (EFI không đổi). Ghi lại: `kmutil showloaded --list-only | grep -i -E "TGL|HookCase|AirportItlwm"`.
+2. Nếu còn root patch: OCLP-CustoMac → Post-Install Root Patch → **Revert Root Patches** → khởi động lại (build-45). Sau bước này không còn root patch nào.
+3. Tải bản chính thức trên MÁY B và kiểm SHA-256:
+   ```
+   cd ~/Downloads
+   curl -fLO https://github.com/CloverHackyColor/VoodooHDA/releases/download/Release368/VoodooHDA.kext-368.zip
+   shasum -a 256 VoodooHDA.kext-368.zip        # 9aaa01b245f4827b2de5edfdc028700b9bc8823f03bfb1daf280b8571f88adb0
+   ditto -x -k VoodooHDA.kext-368.zip voodoo && ls voodoo
+   ```
+4. Cài:
+   ```
+   sudo cp -R voodoo/VoodooHDA.kext /Library/Extensions/
+   sudo chown -R root:wheel /Library/Extensions/VoodooHDA.kext && sudo chmod -R 755 /Library/Extensions/VoodooHDA.kext
+   sudo kmutil load -p /Library/Extensions/VoodooHDA.kext
+   ```
+   macOS hỏi duyệt → System Settings › Privacy & Security › Allow → khởi động lại.
+5. Kiểm: `kmutil showloaded | grep -i voodoo`; System Settings › Sound có thiết bị ra/vào; thử loa, mic, tai nghe.
+   Kiểm lại stack đồ hoạ còn nguyên: Metal 2 (`system_profiler SPDisplaysDataType | grep -i metal`), `kmutil showloaded | grep -i -E 'TGL|HookCase'`.
+Gỡ: `sudo rm -rf /Library/Extensions/VoodooHDA.kext && sudo kmutil load -z --load-style match-only` → khởi động lại; muốn AppleHDA lại → root patch Modern Audio (§5).

@@ -149,3 +149,113 @@ strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c HWPAUTO     
 (`~/xe-stack` phải đang ở v7. Nếu không chắc: dùng bản gộp `nootedgreen-gmsfix-v8-jn6f03560.patch` trên cây JN 6f03560 sạch.)
 Chép `build/NootedGreen.kext` vào gốc USB MACEFI (ngoài `EFI`) → Claude dựng build-36 = build-35 + kext v8.
 Thử: `sudo sysctl -w debug.xepm.hwpauto=1` → `XEFREQ_SAMPLES=1 ./xe-freq 1 30` + Geekbench 7; so với `hwpauto=0`.
+
+## v9 — nâng stack lên JN `24450b4` + giải phóng boot-args (2026-11-06, người dùng duyệt 19:49)
+Lý do: GB7 GPU treo ở Feature Matching trên build-37 (BUILD-LOG). JN `24450b4` có libxedrv v21–v24 (compute được xếp thứ tự
+với render/blit, barrier compute hoạt động, sửa blur) + kernel XE-PORTGUARD, XE-AUXBL, XE-HWCAPS114C (JN ghi "testing").
+Patch: `patches/nootedgreen-gmsfix-v9-jn24450b4.patch` (sha256 `3685fa72fadfde9dc077c5f1ab2b738732003adccf18ca4321e3776eaa33cf0a`)
+= v8 áp lên JN 24450b4 + `-ngreenpm` mặc định HWPAUTO bật và C8/C10 tắt (bỏ được ` ngreenpmcst=0 ngreenpmauto=1`, 29 ký tự).
+Hai boot-arg đó vẫn ghi đè được (`ngreenpmauto=0`, `ngreenpmcst=1`).
+Kiểm trên MÁY A: `git apply --check` sạch trên JN 24450b4; `clang++ -fsyntax-only` 0 lỗi, số cảnh báo bằng JN gốc. Chưa build/chạy.
+
+Lần này chạy **`install.sh`** (khác v1–v8): libxedrv là user-space, chỉ cài lại mới có tác dụng. `install.sh` build kext từ
+chính cây `~/xe-stack` → **phải áp patch trước**. Nó chỉ ghi vào `/Library/GPUBundles` và `/Library/Extensions`, không đụng
+root patch OCLP (Wi-Fi/Audio nằm ở volume hệ thống). Boot bằng build-37 (đang chạy stack) để `install.sh` vào chế độ update.
+
+Bước 0 — sao lưu (để quay về):
+```
+cp -R /Library/GPUBundles ~/xe-backup-GPUBundles-6f03560
+mkdir -p ~/xe-backup-LE-6f03560 && cp -R /Library/Extensions/AppleIntelTGL* /Library/Extensions/AppleIntelGraphicsShared.bundle /Library/Extensions/HookCase.kext ~/xe-backup-LE-6f03560/
+cd ~/xe-stack && git rev-parse HEAD && git diff > ~/xe-stack-v8-local.diff && git status --short
+```
+`git rev-parse` phải ra `6f03560…`; `git status` chỉ có 4 file M của v8 (kern_gen11.cpp, kern_green.cpp, kern_green.hpp, kern_xepm.cpp).
+
+Bước 1 — đổi source sang 24450b4 + v9 (chép `patches/nootedgreen-gmsfix-v9-jn24450b4.patch` vào `~/patches/`):
+```
+shasum -a 256 ~/patches/nootedgreen-gmsfix-v9-jn24450b4.patch     # 3685fa72…cf0a
+cd ~/xe-stack
+git checkout -- src/NootedGreen
+git fetch origin && git checkout 24450b476d7ca025b83c85d7b8362caf3234d2f2
+git rev-parse HEAD                                                 # 24450b476d7c…
+git apply --check ~/patches/nootedgreen-gmsfix-v9-jn24450b4.patch && git apply ~/patches/nootedgreen-gmsfix-v9-jn24450b4.patch
+git status --short                                                 # 4 file M như trên
+```
+Bước 2 — xem kiểm tra, rồi build + cài:
+```
+zsh install.sh --check       # phải: macOS 25G241, device-id 9A49, NootedGreen loaded, "Mode: update"
+zsh install.sh               # build NootedGreen + HookCase + Metal driver/libxedrv/shader compiler, cài (sudo)
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c -E 'HWPAUTO|PORTGUARD|GMSFIX'   # phải > 0
+```
+**Không làm theo phần cuối của `install.sh`** (mount `disk0s1` và chép kext vào ESP): ESP chỉ được sửa từ Linux.
+Chép cả thư mục `build/NootedGreen.kext` vào gốc USB MACEFI (ngoài `EFI`), gửi Claude output các lệnh trên.
+Lỗi ở bất kỳ bước nào → dừng, gửi output (không sửa tay).
+
+Bước 3 — Claude dựng **build-38** = build-37 + kext v9, boot-args bỏ ` ngreenpmcst=0 ngreenpmauto=1` (255 → 226), validate, snapshot,
+hỏi trước khi ghi USB. Sau `install.sh`, lần vào macOS kế tiếp phải boot **build-38 từ USB** — không boot ESP ổ trong (còn build-37,
+kext v8): user-space 24450b4 + kernel v8 là tổ hợp chưa ai thử. Vào CachyOS ở giữa thì không sao.
+
+Bước 4 — kiểm sau boot build-38:
+```
+kmutil showloaded | grep -iE 'nootedgreen|hookcase'
+system_profiler SPDisplaysDataType | grep -i metal
+sysctl debug.xepm.hwpauto debug.xepm.cst debug.xepm.route     # 1 / 0 / 1 (không còn boot-arg)
+ioreg -rc IntelAccelerator -d1 | grep -E 'xe-topo|xe-fencefix-n|xe-rowchk-post'
+sudo dmesg | grep -E 'PORTGUARD|HWCAPS' | head
+```
+Rồi chạy lại GB7 GPU **sau khi lưu hết việc đang làm** (vẫn có thể treo).
+
+Quay về: boot build-37 (USB) → `cd ~/xe-stack && git checkout -- src/NootedGreen && git checkout 6f03560ef9694f9826caae15624d4a6cb1bf9ffc
+&& git apply ~/xe-stack-v8-local.diff && zsh install.sh` (cài lại user-space 6f03560), hoặc chép lại thư mục sao lưu ở Bước 0 (sudo).
+Tắt riêng từng sửa của libxedrv không cần cài lại: tạo `/private/var/tmp/xedrv.off` chứa `o` (bỏ xếp thứ tự compute), `b` (bỏ barrier), `x` (bỏ sửa blur).
+
+## v10 — mặc định cho máy này, bỏ 5 boot-arg (2026-11-06, người dùng đề xuất 21:34)
+Chỉ sửa `src/NootedGreen/kern_gen11.cpp`, 4 chỗ — khi KHÔNG có boot-arg thì dùng giá trị của máy này (boot-arg vẫn ghi đè):
+topology 64 EU / L3 6 (`gTopoSs` 8, `gTopoL3` 6; ghi cứng, không đọc fuse — JN ghi rằng đọc fuse lúc boot làm treo boot),
+`ngreenV142` = 3, `ngreenblmax` = 17741, `ngreen-dmc` = `adlp`. Giải phóng 72 ký tự boot-args (235 → 163).
+Patch: `patches/nootedgreen-gmsfix-v9-to-v10.patch` (sha256 `9599beee000c1386fe1228fddfc6a96601300abf1d856739a75e7192fb0c6b6d`);
+gộp trên JN 24450b4: `patches/nootedgreen-gmsfix-v10-jn24450b4.patch` (sha256 `1b232960e5e954a805295bc22392a63533c0227f7d412c68f9ef91eeb5180567`).
+Kiểm trên MÁY A: apply-check sạch; `clang++ -fsyntax-only` kern_gen11 0 lỗi, 21 cảnh báo = JN gốc. Chưa build/chạy.
+```
+cd ~/xe-stack
+git rev-parse HEAD                     # 24450b476d7c…
+shasum -a 256 ~/patches/nootedgreen-gmsfix-v9-to-v10.patch     # 9599beee…6b6d
+git apply --check ~/patches/nootedgreen-gmsfix-v9-to-v10.patch && git apply ~/patches/nootedgreen-gmsfix-v9-to-v10.patch
+zsh build-nootedgreen.sh
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c -E 'HWPAUTO|PORTGUARD|GMSFIX'   # như v9 (11)
+```
+Chỉ build lại kext (`build-nootedgreen.sh`), **không** cần `install.sh` (user-space không đổi). Chép `build/NootedGreen.kext` vào gốc USB MACEFI.
+
+Cùng lúc (cho G3, vô hại khi chưa có `-ngreengva` — plugin không được dùng): build + cài plugin VA (JN INSTALL "Hardware video decode"):
+```
+zsh macos/vadriver/build-vadriver.sh build/deps/NootedGreen/sle_Internal/sle
+sudo rm -rf /Library/GPUBundles/AppleIntelTGLGraphicsVADriver.bundle
+sudo ditto macos/out/AppleIntelTGLGraphicsVADriver.bundle /Library/GPUBundles/AppleIntelTGLGraphicsVADriver.bundle
+```
+build-41 = build-39 + kext v10 + boot-args 163 (bỏ `ngreen-eu=64 ngreen-l3=6 ngreenblmax=17741 ngreen-dmc=adlp ngreenV142=3`).
+Kiểm sau boot (phải y như build-39): `ioreg -rc IntelAccelerator -d1 | grep xe-topo` = 16390; độ sáng tối đa đúng; con trỏ, Metal 2, Wi-Fi.
+build-42 = build-41 + ` -ngreengva` nối cuối (174 ký tự, trong 228) → G3.
+
+## v11 — XE-PAVPCTX, thử tạo context PAVP (2026-11-06, người dùng: "thử patch11 đi"; THỬ NGHIỆM)
+Mục tiêu: G3. Không có context PAVP (`accel+0x1278`) → không PAVPFIX thì panic lúc boot (build-43), có PAVPFIX thì giải mã panic NULL+0x284 (build-42).
+v11 bật `accel+0x1300` bit 3 ngay trước `IntelAccelerator::startGraphicsEngine` (điều kiện tạo context PAVP, theo ghi chú PAVPFIX) — **chỉ khi có boot-arg `-ngreenpavpctx`**; không có cờ thì kext chạy y như v10. PAVPFIX vẫn bật.
+Chẩn đoán: `ioreg -rc IntelAccelerator -d1 | grep xe-pavp` → `xe-pavp-1300-pre/-post`, `xe-pavp-ctx` (1 = đã tạo); dmesg `XeNG PAVPCTX`.
+Giả thuyết CHƯA XÁC MINH: (a) Apple có thể tính lại 0x1300 trong `startGraphicsEngine` → không tác dụng (`xe-pavp-ctx` 0); (b) BIOS HP khoá PAVP → tạo context có thể treo/panic lúc boot; (c) panic giải mã có thể không do PAVP.
+Patch: `patches/nootedgreen-gmsfix-v10-to-v11.patch` (sha256 `37e4c6bf9cdf5987879136adb824dfdb291f82b78aeb556ac2a78161253e8a24`);
+gộp trên JN 24450b4: `patches/nootedgreen-gmsfix-v11-jn24450b4.patch` (sha256 `050dab16036d0a221d89ac4845d45270a357a8677a9cd44b59d94133e98fddcc`).
+Kiểm MÁY A: apply-check sạch; `clang++ -fsyntax-only` 0 lỗi, 21 cảnh báo = JN gốc. Chưa build/chạy.
+```
+cd ~/xe-stack
+shasum -a 256 ~/patches/nootedgreen-gmsfix-v10-to-v11.patch     # 37e4c6bf…8a24
+git apply --check ~/patches/nootedgreen-gmsfix-v10-to-v11.patch && git apply ~/patches/nootedgreen-gmsfix-v10-to-v11.patch
+zsh build-nootedgreen.sh
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c PAVPCTX     # phải > 0
+```
+Chỉ build lại kext. Chép `build/NootedGreen.kext` vào gốc USB MACEFI.
+- build-44 = build-41 + kext v11 + `-ngreenpavpctx` (178 ký tự): chỉ kiểm boot + `xe-pavp-ctx`. Lỗi → build-41.
+- build-45 = build-44 + `-ngreengva` (189): chỉ khi build-44 boot ổn và `xe-pavp-ctx` = 1.
