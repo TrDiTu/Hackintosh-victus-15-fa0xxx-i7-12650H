@@ -1091,3 +1091,18 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - Bảo mật: SIP thêm 0x40 (CSR_ALLOW_UNRESTRICTED_NVRAM: ghi NVRAM không giới hạn), AMFI vẫn tắt + `amfi=0x80`. Lùi: build-48.
 - 2026-11-07T01:08:59 Xoá thủ công snapshot build-46-20261107-003442-config-install-wifi (người dùng duyệt; chỗ cho build-49). Quy tắc mới (người dùng): được xoá snapshot known-good đã cũ hơn 5 bản so với build mới nhất.
 - 2026-11-07T01:08:59 Created build-49-20261107-010859-nvidia-try (tree 347f3e5b4a67, ocvalidate: 0 errors, 0 warnings (validate-20261107T010620.md))
+- 2026-11-07T01:12:37 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 3a0106f9c7a9, verified)
+- 2026-11-07T01:12 build-49 nvidia-try ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-47 (đường lui không cần USB).
+- 2026-11-07 01:17 build-49 trên MÁY B (chưa cài NullMoth): **panic lúc boot** (`logs/Kernel-2026-11-07-011600.panic`, uptime 6,9 s, kernel_task): page fault **CR2 0xc78**, RAX/RDI = 0, trong `com.apple.iokit.IOAcceleratorFamily2` +0x39117 ← `com.xxxxx.driver.AppleIntelTGLGraphics` +0x7882 ← NootedGreen (kext v10, UUID E6C3625D) +0x16f23. → Cùng dấu hiệu panic cũ `IOAccelTask::release ← IGAccelTask::withOptions` (H3, GMSFIX sửa ở build-19). Không có driver NVIDIA → do **để dGPU sống** (bỏ SSDT-DGPU-OFF + `disable-gpu`), hoặc AMFIPass/SIP/boot-args mới (khó hơn).
+- Giả thuyết (CHƯA XÁC MINH): (H1) dGPU bật làm đổi cách cấp phát vùng PCI (BAR lớn của dGPU) → aperture/GTT của iGPU khác → bộ quản lý bộ nhớ iGPU khởi tạo thất bại, triệu chứng giống GMS sai; (H2) GMSFIX không áp (`stolen_real_size` = 0) khi có 2 GPU. NootedGreen đọc GGC từ `devInfo->videoBuiltin` (kern_green.cpp:270) nên H2 ít khả năng.
+- 2026-11-07T01:19:07 plist_edit set ACPI/Add[Path=SSDT-DGPU-OFF.aml]/Enabled = False (config.plist)
+- 2026-11-07T01:19:07 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)} (config.plist)
+- 2026-11-07T01:19:07 plist_edit bootarg-add -v (config.plist)
+
+## Build 50 — `dgpu-on-diag` (nhánh `nvidia-gpu`): = build-48 + chỉ để dGPU sống + `-v`
+- Tách nguyên nhân panic build-49: `SSDT-DGPU-OFF.aml` Enabled=false, xoá `disable-gpu`; KHÔNG AMFIPass, SIP giữ 0x0A13, không cờ NullMoth. `-v` để chụp dòng `XeNG GMSFIX: GMS=… real=… patch=…` / `diag[1] … seg=…` trước panic. boot-args 162. plist_diff với build-48: 3 khác biệt. efi-validate 0/0 (validate-20261107T011908.md).
+- Panic giống build-49 → do dGPU sống; không panic → do AMFIPass/SIP/cờ NullMoth.
+- 2026-11-07T01:19:25 Xoá snapshot known-good build-26-20261105-193440-fencefix-restored theo quy tắc người dùng (known-good cũ hơn 5 bản; chỗ cho build-50)
+- 2026-11-07T01:19:25 Created build-50-20261107-011925-dgpu-on-diag (tree 0cfe830a32e8, ocvalidate: 0 errors, 0 warnings (validate-20261107T011908.md))
+- 2026-11-07T01:20:05 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree d4e40b1a279f, verified)
+- 2026-11-07T01:20 build-50 dgpu-on-diag ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
