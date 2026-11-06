@@ -142,7 +142,9 @@ def main():
     ap.add_argument("--create", action="store_true", help="allow set to create a missing key/parents")
     argv = sys.argv[1:]
     if len(argv) >= 2 and argv[0] in ("bootarg-add", "bootarg-remove") and argv[1].startswith("-"):
-        argv = [argv[0], "--", argv[1]] + argv[2:]  # boot-args such as -wegnoegpu look like options
+        # boot-args such as -wegnoegpu look like options: put the word after "--" at the END, so later flags
+        # (--dry-run, --file) are still parsed as flags (before, "--dry-run" became a positional and the edit was written)
+        argv = [argv[0]] + argv[2:] + ["--", argv[1]]
     a = ap.parse_args(argv)
 
     root_dir = efikit.project_root_from(__file__)

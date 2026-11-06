@@ -1039,3 +1039,37 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
 - 2026-11-07T00:34:42 Created build-46-20261107-003442-config-install-wifi (tree 1e857ce7d220, ocvalidate: 0 errors, 0 warnings (validate-20261107T002946.md))
 - 2026-11-07T00:35:52 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 4d8c13b03131, verified)
 - 2026-11-07T00:35 build-46 config-install-wifi ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-07T00:39:05 plist_edit set Kernel/Add[BundlePath=AMFIPass.kext]/Enabled = False (config.plist)
+- 2026-11-07T00:39:05 plist_edit bootarg-remove -amfipassbeta (config.plist)
+- 2026-11-07T00:39:05 plist_edit bootarg-add itlwm_he=1 (config.plist)
+
+## Build 47 — `wifi6-noamfipass` (2026-11-07 00:39; người dùng: "bật wifi 6 và bỏ amfipass"): = build-46 + `itlwm_he=1`, AMFIPass tắt
+- `itlwm_he`: laobamac `AirportItlwm/AirportItlwmV2.cpp:335` (7204c69) `PE_parse_boot_argn("itlwm_he")` == 1 → `IEEE80211_F_HEON`; chuỗi có trong binary Tahoe. README laobamac: HE tắt mặc định trên macOS 26, bật bằng `itlwm_he=1`.
+- AMFIPass + `-amfipassbeta` chỉ phục vụ root patch OCLP (W4), máy không còn root patch; AMFI vẫn tắt bằng `amfi_get_out_of_my_way=1` (stack đồ hoạ cần). `AMFIPass.kext` Enabled=false (file giữ để lùi). JN không dùng AMFIPass.
+- boot-args 163 → 160. plist_diff với build-46: 2 khác biệt. efi-validate 0/0 (validate-20261107T003905.md). Hai thay đổi trong một build theo yêu cầu người dùng; lỗi → build-46, rồi tách từng cái.
+- Lỗi công cụ: `plist_edit.py bootarg-remove/bootarg-add --dry-run` GHI THẬT vào config (lần chạy thật sau đó báo "No change"/ERROR). Kết quả cuối vẫn đúng (kiểm bằng plist_diff). Cần sửa script.
+- 2026-11-07T00:39:54 Xoá thủ công snapshot build-43-20261106-225429-gva-nopavp (người dùng duyệt; chỗ cho build-47)
+- 2026-11-07T00:39:54 Created build-47-20261107-003954-wifi6-noamfipass (tree 0974eff308b3, ocvalidate: 0 errors, 0 warnings (validate-20261107T003905.md))
+- 2026-11-07T00:39:57 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 3780be079449, verified)
+- 2026-11-07T00:39 build-47 wifi6-noamfipass ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-07T00:43 build-47 trên MÁY B: hoạt động (người dùng: "được rồi"). Người dùng sẽ chép EFI sang ESP ổ trong.
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext/Contents/PlugIns/AirPortBrcmNIC.kext] (config.plist)
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext] (config.plist)
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=IOSkywalkFamily.kext] (config.plist)
+- 2026-11-07T00:49:05 plist_edit delete Kernel/Add[BundlePath=AMFIPass.kext] (config.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Block[Identifier=com.apple.iokit.IOSkywalkFamily] (config.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext/Contents/PlugIns/AirPortBrcmNIC.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=IO80211FamilyLegacy.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=IOSkywalkFamily.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Add[BundlePath=AMFIPass.kext] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit delete Kernel/Block[Identifier=com.apple.iokit.IOSkywalkFamily] (config-install.plist)
+- 2026-11-07T00:49:06 plist_edit bootarg-remove -amfipassbeta (config-install.plist)
+- 2026-11-07T00:51:18 Xoá thủ công snapshot build-44-20261106-232314-pavpctx (người dùng duyệt; chỗ cho build-48)
+
+## Build 48 — `cleanup` (2026-11-07 00:49; người dùng: "dọn dẹp file rồi push"): = build-47, gỡ hẳn mục đã tắt
+- `config.plist` + `config-install.plist`: xoá Kernel/Add `AMFIPass.kext`, `IOSkywalkFamily.kext`, `IO80211FamilyLegacy.kext` (+ plugin AirPortBrcmNIC), Kernel/Block `com.apple.iokit.IOSkywalkFamily`; `config-install.plist` bỏ `-amfipassbeta`. Xoá thư mục ba kext khỏi `EFI/OC/Kexts`. Lúc chạy giống build-47 (các mục đã Enabled=false). plist_diff với build-47: 5 mục xoá + đổi chỉ số (thứ tự tương đối giữ nguyên). efi-validate 0/0 (validate-20261107T004906.md); ocvalidate config-install: No issues.
+- Sửa `plist_edit.py`: `bootarg-*` với từ bắt đầu bằng `-` chèn `--` trước từ đó nên `--dry-run`/`--file` phía sau thành tham số vị trí → dry-run ghi thật. Nay `--` + từ đặt cuối argv. Kiểm: 3 lệnh dry-run trên bản sao không đổi hash.
+- build-48 ★ known-good (người dùng: "giữ build 48 known good"). USB và ESP hiện là build-47 (chạy giống hệt).
+- 2026-11-07T00:51:18 Created build-48-20261107-005118-cleanup (tree e891efd83a8e, ocvalidate: 0 errors, 0 warnings (validate-20261107T004906.md))
+- 2026-11-07T00:51:18 Marked build-48-20261107-005118-cleanup as known-good (user request)
+- 2026-11-07T00:51 Marked build-48 known-good (người dùng).

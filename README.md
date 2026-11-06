@@ -20,13 +20,13 @@ Alder Lake-P GT1 UHD 64 EU, RTX 3050 Ti tắt) chạy **macOS 26.7.1 Tahoe (25G2
 > WhateverGreen `gfxrst=1` cuts boot from 38 s to 23 s. Not working: hardware video decode (`-ngreengva` panics in
 > `VTDecoderXPCService`; turning PAVPFIX off panics at boot) and the Geekbench 7 GPU run (hangs in Feature Matching).
 
-## Trạng thái (build-45, 2026-11-07)
+## Trạng thái (build-48, 2026-11-07)
 
 | Hạng mục | Trạng thái |
 |---|---|
 | Khởi động macOS 26.7.1 (25G241) | ✅ |
 | **Tăng tốc đồ hoạ iGPU** | ✅ **Metal 2**, 1920×1080 @ 144 Hz, 64 EU (`xe-topo` 16390), con trỏ hiển thị đúng |
-| Wi-Fi Intel AX210 | ✅ **laobamac AirportItlwm-Tahoe v2.4.0-alpha** (theo JulioNectar): dùng IO80211Family/IOSkywalkFamily gốc của Tahoe, **không cần root patch**; không AirDrop/AWDL, không WPA3-only |
+| Wi-Fi Intel AX210 | ✅ **laobamac AirportItlwm-Tahoe v2.4.0-alpha** (theo JulioNectar), **Wi-Fi 6** (`itlwm_he=1`): dùng IO80211Family/IOSkywalkFamily gốc của Tahoe, **không cần root patch**; không AirDrop/AWDL, không WPA3-only |
 | Ethernet RTL8111 | ✅ RealtekRTL8111 **2.4.2** (bản 3.0.0 không chạy trên máy này) |
 | Bàn phím PS/2, touchpad ELAN0788 (I2C, ngắt GPIO) | ✅ cử chỉ đa điểm |
 | Bluetooth AX210 | ✅ IntelBluetoothFirmware 2.5.3 (fork lshbluesky) + BlueToolFixup |
@@ -51,7 +51,7 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 
 ## Cảnh báo — đọc trước khi dùng
 
-- **Bảo mật hạ thấp:** SIP `0x0A13`, AMFI tắt (`amfi_get_out_of_my_way=1`) + AMFIPass. Chỉ dùng trên máy cá nhân.
+- **Bảo mật hạ thấp:** SIP `0x0A13`, AMFI tắt (`amfi_get_out_of_my_way=1`, stack đồ hoạ cần). Chỉ dùng trên máy cá nhân.
 - **Không cập nhật macOS.** Stack đồ hoạ gắn với đúng 25G241 (Wi-Fi laobamac chỉ nạp trên Darwin 25); cập nhật có thể làm hỏng.
 - Có thể gặp GPU hang / kernel panic. Luôn giữ một EFI không tăng tốc để quay về (`EFI/OC/config-install.plist`
   hoặc build nền).
@@ -60,8 +60,7 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 - **Tránh System Settings › Displays** và đổi profile màu (từng gây panic với stack JulioNectar). Đổi độ phân giải /
   tần số quét bằng `tools/xe-res` của JulioNectar.
 - EFI trong repo dùng **SMBIOS giả** (`CHANGE_ME_*`). Tự sinh serial riêng; không bao giờ commit serial thật.
-- Từ build-45 EFI không cần kext Wi-Fi của OCLP-CustoMac (`IOSkywalkFamily`, `IO80211FamilyLegacy` để tắt, chỉ giữ cho đường lui;
-  là binary của Apple, không có trong repo — lấy từ [kgp-macPro/OCLP-CustoMac](https://github.com/kgp-macPro/OCLP-CustoMac) nếu cần).
+- Từ build-48 EFI không còn kext nào của OCLP-CustoMac (`IOSkywalkFamily`, `IO80211FamilyLegacy`, `AMFIPass`): Wi-Fi và audio không cần root patch.
 
 ## Phần cứng
 
@@ -80,14 +79,14 @@ một lần panic chia cho 0 trong `fbTimingsWorker` (`-ngreenfixbootmode`) lúc
 
 Chi tiết: [`laptop-specs.md`](laptop-specs.md).
 
-## Cấu hình EFI (build-45)
+## Cấu hình EFI (build-48)
 
 - **OpenCore 1.0.8**, SMBIOS `MacBookPro16,2`.
 - **SSDT** (tự viết từ DSDT của máy, nguồn ở [`docs/acpi-src/`](docs/acpi-src/)): PLUG-ALT, EC-USBX, AWAC, XOSI
   (+ patch `_OSI`→`XOSI`), **DGPU-OFF** (tắt RTX 3050 Ti), SBUS-MCHC, **PNLF** (thiết bị đèn nền dưới `PC00.GFX0`;
   firmware không có sẵn, thiếu nó macOS không hiện thanh độ sáng).
 - **Kext:** Lilu, VirtualSMC (+SMCProcessor, SMCBatteryManager), ECEnabler, WhateverGreen, **NootedGreen (bản vá)**,
-  AppleALC 1.9.8, RestrictEvents, CpuTopologyRebuild, NVMeFix, BrightnessKeys, RealtekRTL8111 2.4.2, AMFIPass,
+  AppleALC 1.9.8, RestrictEvents, CpuTopologyRebuild, NVMeFix, BrightnessKeys, RealtekRTL8111 2.4.2,
   **AirportItlwm-Tahoe v2.4.0-alpha (laobamac)**, IntelBluetoothFirmware + IntelBTPatcher 2.5.3 (fork lshbluesky),
   BlueToolFixup 2.7.2, XHCI-ADL-Injector (tự viết, chỉ Info.plist cho `8086:51ED`),
   USBToolBox + UTBMap (HS01/02/04/06/07 + SS01/02), VoodooPS2 (bàn phím), VoodooI2C 3.0.0 (fork lzhoang2801) + VoodooI2CHID.
@@ -100,15 +99,16 @@ Chi tiết: [`laptop-specs.md`](laptop-specs.md).
   CpuTopologyRebuild để mặc định (6 nhân / 16 luồng; `ctrsmt=off` đo được kém hơn). PL1 giữ của BIOS.
 - **Quirk đáng chú ý:** `SetupVirtualMap = true` (thiếu nó máy treo ở `EXITBS:START`), `AppleXcpmCfgLock`
   (CFG Lock bật, BIOS không có tuỳ chọn), `DisableIoMapper = true`, `ProvideCurrentCpuInfo`.
-- **boot-args** (163 ký tự):
+- **boot-args** (160 ký tự):
   ```
-  -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 -amfipassbeta gfxrst=1
+  -ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 gfxrst=1 itlwm_he=1
   ```
+  `itlwm_he=1` bật Wi-Fi 6 (802.11ax) trong AirportItlwm laobamac (mặc định tắt).
   Patch v10 ghi sẵn giá trị của máy này làm mặc định: topology **64 EU / L3 6**, `ngreenV142=3`, `ngreenblmax=17741`,
   `ngreen-dmc=adlp` (ghi cứng, không đọc fuse; boot-arg cùng tên vẫn ghi đè). `gfxrst=1` (WhateverGreen) xoá màn hình boot
   thay vì chép nó qua vùng nhớ chậm: −15 s.
-  Hai giới hạn: **Lilu chỉ giữ ~228 ký tự đầu** cho cờ đọc bằng `checkKernelArgument` (`-ngreen*`, `-amfipassbeta`…), còn
-  **kernel giữ 255** cho tham số đọc bằng `PE_parse_boot_argn` (`gfxrst`, `ngreen-eu`…). Thêm cờ mới thì kiểm vị trí.
+  Hai giới hạn: **Lilu chỉ giữ ~228 ký tự đầu** cho cờ đọc bằng `checkKernelArgument` (`-ngreen*`…), còn
+  **kernel giữ 255** cho tham số đọc bằng `PE_parse_boot_argn` (`gfxrst`, `itlwm_he`, `ngreen-eu`…). Thêm cờ mới thì kiểm vị trí.
 
 ## Các lỗi đã sửa và nguyên nhân
 
@@ -159,7 +159,7 @@ Giá trị chẩn đoán xem bằng `ioreg -rc IntelAccelerator -d1 | grep -E 'x
 
 | Đường dẫn | Nội dung |
 |---|---|
-| `EFI/` | EFI OpenCore hiện tại (build-45), SMBIOS giả |
+| `EFI/` | EFI OpenCore hiện tại (build-48), SMBIOS giả |
 | `patches/` | Bản vá NootedGreen (gộp `vN-jn24450b4` / `vN-jn6f03560`, tăng thêm `vN-to-vM`) |
 | `docs/STATE.md`, `docs/BUILD-LOG.md` | Trạng thái và nhật ký từng bản build |
 | `docs/GRAPHICS-PROGRESS.md` | Tiến trình thử đồ hoạ |

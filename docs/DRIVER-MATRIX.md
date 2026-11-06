@@ -125,4 +125,4 @@ Bonus: OCLP-CustoMac còn có root patch **Modern Audio / AppleHDA** (đường 
 ## Cập nhật 2026-11-07: không còn root patch OCLP
 - Wi-Fi: W1–W5 (IOSkywalkFamily/IO80211FamilyLegacy Ventura, Block Skywalk, root patch Modern Wireless) **thay bằng W-alt** (laobamac AirportItlwm-Tahoe v2.4.0-alpha). W1–W3 để Enabled=false trong `config.plist` và `config-install.plist` cho đường lui; AirportItlwm kgp 1.1.0-beta.1 không còn trong EFI (snapshot build-44 trở về trước).
 - Audio: #15 (root patch Modern Audio) **thay bằng #15b** (VoodooHDA 3.6.8 trong `/Library/Extensions`). AppleALC + `layout-id` 11 còn trong EFI nhưng không tác dụng (không có AppleHDA).
-- AMFIPass + `-amfipassbeta` (W4): chỉ phục vụ root patch → có thể bỏ; CHƯA làm (thay đổi riêng, cần thử).
+- AMFIPass + `-amfipassbeta` (W4): **bỏ ở build-47** (MÁY B chạy bình thường). build-48 xoá hẳn W1–W4 khỏi EFI và cả hai config. Wi-Fi 6: `itlwm_he=1` từ build-47.
