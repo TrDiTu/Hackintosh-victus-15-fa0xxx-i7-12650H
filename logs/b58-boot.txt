@@ -1,0 +1,60 @@
+2026-11-10 02:18:35.510 Df launchd[1:43d0] [system:] removing active service: com.apple.displaypolicyd
+2026-11-10 02:18:35.510 Df launchd[1:43d0] [system/com.apple.displaypolicyd [151]:] signaled service: Terminated: 15
+2026-11-10 02:18:35.510 Df launchd[1:43d0] [system/com.apple.displaypolicyd [151]:] service state: SIGTERMed
+2026-11-10 02:18:35.510 Df launchd[1:43d0] [system/com.apple.displaypolicyd [151]:] scheduling cleanup in 5 sec after sending Terminated: 15
+2026-11-10 02:18:35.678 Df launchd[1:4131] [system:] service inactive: com.apple.displaypolicyd
+2026-11-10 02:22:22.080 A  displaypolicyd[151:387] (libsystem_info.dylib) Retrieve User by ID
+2026-11-10 02:22:22.083 E  displaypolicyd[151:387] [com.apple.defaults:User Defaults] All kCFPreferencesCurrentUser domains in this process will be volatile, because homeDirPath starts with /var/empty
+2026-11-10 02:22:22.083 Df displaypolicyd[151:387] [com.apple.xpc:connection] [0x7fb6ff405a50] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+2026-11-10 02:22:22.877 Df syspolicyd[255:5ce] [com.apple.syspolicy.kext:default] canLoadKernelExtension - direct, evaluate, Kext ((null), com.nullmoth.NVRMAGDC) version: 04cfd737d14c5a82f974297c1ee737e32d1fa02c
+2026-11-10 02:22:22.877 Df syspolicyd[255:5ce] [com.apple.syspolicy.kext:default] Kernel Extension ALLOWED: Kext ((null), com.nullmoth.NVRMAGDC) version: 04cfd737d14c5a82f974297c1ee737e32d1fa02c
+2026-11-10 02:22:22.883 Df syspolicyd[255:5ce] [com.apple.syspolicy.kext:default] canLoadKernelExtension - direct, evaluate, Kext ((null), com.nullmoth.NVRMFB) version: 04fad4766b99ae6d833b9bf8de323878c19cec1d
+2026-11-10 02:22:22.884 Df syspolicyd[255:5ce] [com.apple.syspolicy.kext:default] Kernel Extension ALLOWED: Kext ((null), com.nullmoth.NVRMFB) version: 04fad4766b99ae6d833b9bf8de323878c19cec1d
+2026-11-10 02:22:22.892 Df syspolicyd[255:5ce] [com.apple.syspolicy.kext:default] canLoadKernelExtension - direct, evaluate, Kext ((null), com.nullmoth.NVRM) version: 12ee21757f800462f9965cec4f9eae3df2c57f2e
+2026-11-10 02:22:23.405 Df syspolicyd[255:5ce] [com.apple.syspolicy.kext:default] Kernel Extension ALLOWED: Kext ((null), com.nullmoth.NVRM) version: 12ee21757f800462f9965cec4f9eae3df2c57f2e
+2026-11-10 02:22:23.408 Df kernelmanagerd[130:377] Validate approval for /Library/Extensions/NVRMAGDC.kext in auxKC: approved
+2026-11-10 02:22:23.408 Df kernelmanagerd[130:377] Validate approval for /Library/Extensions/NVRMFB.kext in auxKC: approved
+2026-11-10 02:22:23.408 Df kernelmanagerd[130:377] Validate approval for /Library/Extensions/NVRM.kext in auxKC: approved
+2026-11-10 02:22:23.408 Df kernelmanagerd[130:377] installation check: bundle for com.nullmoth.NVRMAGDC is at /Library/Extensions/NVRMAGDC.kext
+2026-11-10 02:22:23.408 Df kernelmanagerd[130:377] installation check: bundle for com.nullmoth.NVRMFB is at /Library/Extensions/NVRMFB.kext
+2026-11-10 02:22:23.408 Df kernelmanagerd[130:377] installation check: bundle for com.nullmoth.NVRM is at /Library/Extensions/NVRM.kext
+2026-11-10 02:22:23.457 E  kernelmanagerd[130:377] error: tried to insert an invalid codeful kernel extension in the restricted lookup table: Kext com.nullmoth.NVRMAGDC v2.8.1 in executable kext bundle com.nullmoth.NVRMAGDC at /Library/Extensions/NVRMAGDC.kext
+2026-11-10 02:22:23.482 E  kernelmanagerd[130:377] error: tried to insert an invalid codeful kernel extension in the restricted lookup table: Kext com.nullmoth.NVRMFB v2.8.1 in executable kext bundle com.nullmoth.NVRMFB at /Library/Extensions/NVRMFB.kext
+2026-11-10 02:22:23.605 E  kernelmanagerd[130:377] error: tried to insert an invalid codeful kernel extension in the restricted lookup table: Kext com.nullmoth.NVRM v2.8.1 in executable kext bundle com.nullmoth.NVRM at /Library/Extensions/NVRM.kext
+2026-11-10 02:22:24.093 Df kernel[0:251] (NVRMAGDC) NVRM-agdc: loaded; idle until `sysctl debug.nvrmfb_agdc=1`
+2026-11-10 02:22:24.129 Df kernel[0:8a9] (AppleGraphicsDevicePolicy) Adding AGDP mode validate property
+2026-11-10 02:22:24.129 Df kernel[0:8ac] (IOPCIFamily) [PCIe:0 6902961855 ns] [childPublished()] child AGDPClientControl(0x10000066b) published
+2026-11-10 02:22:24.160 Df displaypolicyd[151:387] [com.apple.GPUWrangler:default] (reg) gpu 0x797e flags 0x2000010 (IG,pubArmed) vid.did=8086.9a49 b:d:f=0:2:0 
+gpu 0x797e agdpclient 0x10000066b     /AppleIntelFramebufferController/IntelFBClientControl/AppleGraphicsDevicePolicy/AGDPClientControl
+2026-11-10 02:22:24.855 Df kernelmanagerd[130:8b2] Received kext load notification: com.nullmoth.NVRMAGDC
+2026-11-10 02:22:30.438 Df displaypolicyd[151:387] [com.apple.GPUWrangler:default] event type=GpuAdded (0x1) gpuId=0x797e (ku)
+2026-11-10 02:22:30.441 Df displaypolicyd[151:387] [com.apple.GPUWrangler:default] gpu 0x797e flags 0xb2000010 (IG,published,quiet,pubSched,pubArmed) vid.did=8086.9a49 b:d:f=0:2:0 
+gpu 0x797e agdpclient 0x10000066b     /AppleIntelFramebufferController/IntelFBClientControl/AppleGraphicsDevicePolicy/AGDPClientControl
+gpu 0x797e agdpclient 0x10000066b     /AppleIntelFramebufferController/IntelFBClientControl/AppleGraphicsDevicePolicy/AGDPClientControl
+2026-11-10 02:22:31.330 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -1979252736.00000000 Event:Framebuffer [4]
+2026-11-10 02:22:31.331 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -1979219968.00000000 Event:Framebuffer [4]
+2026-11-10 02:22:31.332 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -1979547648.00000000 Event:Framebuffer [4]
+2026-11-10 02:22:31.332 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: doAUXCommand:1410 AUX 1: OK RD 2210,1 val = 0x0
+2026-11-10 02:22:31.333 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: doAUXCommand:1410 AUX 1: OK RD 0,1 val = 0x12
+2026-11-10 02:22:31.333 Df kernel[0:3db] (AppleGraphicsDevicePolicy) doesStreamFitInDPLink:160 ASSERT(linkBW) would fail!!!
+2026-11-10 02:22:31.333 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: doAUXCommand:1410 AUX 1: OK RD 100,2 val = 0xa 0x84
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -436303768.00000000 Event:ValidateModeTiming [a]
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:916 kAGDCRegisterLinkValidateModeTiming: FB:0 -> 1920 x 1080, ext_blanking=0, 353090000 Hz
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:917 kAGDCRegisterLinkValidateModeTiming-ext: pEnc 0x1, pBPC=0x2, pColometry=0x1, dRange=0x1 dscBPP=0
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:949 kAGDCRegisterLinkValidateModeTiming: none by policy.
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -436303768.00000000 Event:ValidateModeTiming [a]
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:916 kAGDCRegisterLinkValidateModeTiming: FB:0 -> 1920 x 1080, ext_blanking=0, 147120000 Hz
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:917 kAGDCRegisterLinkValidateModeTiming-ext: pEnc 0x1, pBPC=0x2, pColometry=0x1, dRange=0x1 dscBPP=0
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:949 kAGDCRegisterLinkValidateModeTiming: none by policy.
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -436303768.00000000 Event:ValidateModeTiming [a]
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:916 kAGDCRegisterLinkValidateModeTiming: FB:0 -> 1920 x 1080, ext_blanking=0, 353090000 Hz
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:917 kAGDCRegisterLinkValidateModeTiming-ext: pEnc 0x1, pBPC=0x2, pColometry=0x1, dRange=0x1 dscBPP=0
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:949 kAGDCRegisterLinkValidateModeTiming: none by policy.
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -436303768.00000000 Event:ValidateModeTiming [a]
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:916 kAGDCRegisterLinkValidateModeTiming: FB:0 -> 1920 x 1080, ext_blanking=0, 353090000 Hz
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:917 kAGDCRegisterLinkValidateModeTiming-ext: pEnc 0x1, pBPC=0x2, pColometry=0x1, dRange=0x1 dscBPP=0
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:949 kAGDCRegisterLinkValidateModeTiming: none by policy.
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:621 VendorEventHandler [IGPU:AppleIntelBaseController]: Port: -436303768.00000000 Event:ValidateModeTiming [a]
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:916 kAGDCRegisterLinkValidateModeTiming: FB:0 -> 1920 x 1080, ext_blanking=0, 353090000 Hz
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:917 kAGDCRegisterLinkValidateModeTiming-ext: pEnc 0x1, pBPC=0x2, pColometry=0x1, dRange=0x1 dscBPP=0
+2026-11-10 02:22:31.392 Df kernel[0:3db] (AppleGraphicsDevicePolicy) AGDP:: VendorEventHandler:949 kAGDCRegisterLinkValidateModeTiming: none by policy.

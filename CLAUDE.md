@@ -9,6 +9,11 @@ Trả lời người dùng bằng tiếng Việt.
 - Hướng đồ họa: stack của **JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe** (driver Tiger Lake 16.0.32 của Apple +
   NootedGreen đã sửa + stack user-space `libxedrv`/shader compiler), tham khảo thêm khucxtriendev (ThinkPad P1 Gen 5)
   và các nguồn trong `docs/REFERENCES.md`. **Không** dùng WTLIntelGfx/XeGfx làm driver.
+- **Nhánh `whateverxe-dual-gpu` (người dùng duyệt 2026-11-09):** thử hướng thay thế theo khucxtriendev — iGPU dùng
+  **WhateverXe** (b00t0x) + WhateverXe-Graphics thay NootedGreen/stack JN; dGPU để sống cho NullMoth (HDMI) ở bước sau.
+  Ưu tiên: **độ ổn định iGPU** trước, HDMI sau. Thử trên **volume APFS thứ hai** của MÁY B; volume hiện tại + build-48 là đường lui.
+  `46A3` 64 EU chưa được WhateverXe kiểm trên phần cứng → mọi kết quả phải ghi rõ đã đo hay CHƯA XÁC MINH.
+  Kế hoạch: `docs/REPLAN-WHATEVERXE.md`. Nhánh khác vẫn theo hướng JN ở trên.
 - Kết quả tối đa có bằng chứng của hướng này: tăng tốc Metal cho giao diện (GPU family Mac2/Common3).
   **Metal 3 KHÔNG đạt được** theo hướng này. Không có system sleep, không xuất màn hình ngoài,
   phải hạ SIP/AMFI, có thể có GPU hang/kernel panic. Nói thẳng điều này, không hứa quá.
@@ -34,7 +39,7 @@ Trả lời người dùng bằng tiếng Việt.
 ## 3. Snapshot theo BẢN BUILD (tối đa 10)
 - "Một bản build" = EFI hoàn chỉnh đã qua `efi-validate` không lỗi. Snapshot một lần khi build xong (`efi-snapshot`),
   không snapshot từng lần sửa nhỏ. Ghi mọi quyết định vào `docs/BUILD-LOG.md`.
-- Tối đa 10 trong `snapshots/` (người dùng đổi từ 3, 2026-11-02); bản `known-good` không bao giờ tự xoá (dừng và hỏi). Chỉ người dùng mới đánh dấu known-good.
+- Tối đa 10 trong `snapshots/` (người dùng đổi từ 3, 2026-11-02); bản `known-good` không tự xoá (dừng và hỏi), TRỪ known-good cũ hơn 5 bản so với build mới nhất — được xoá, báo người dùng (người dùng đổi 2026-11-07). Chỉ người dùng mới đánh dấu known-good.
 
 ## 4. Kiểm định driver và nguồn
 - Driver/kext/SSDT chỉ vào EFI khi đã qua `driver-vetting` VÀ người dùng duyệt trong `docs/DRIVER-MATRIX.md`.

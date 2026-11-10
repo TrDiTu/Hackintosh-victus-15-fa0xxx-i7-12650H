@@ -259,3 +259,45 @@ strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c PAVPCTX     
 Chỉ build lại kext. Chép `build/NootedGreen.kext` vào gốc USB MACEFI.
 - build-44 = build-41 + kext v11 + `-ngreenpavpctx` (178 ký tự): chỉ kiểm boot + `xe-pavp-ctx`. Lỗi → build-41.
 - build-45 = build-44 + `-ngreengva` (189): chỉ khi build-44 boot ổn và `xe-pavp-ctx` = 1.
+
+## v12 — XE-PCIMATCH: personality IntelAccelerator chỉ khớp GPU Intel (2026-11-10, nhánh `whateverxe-dual-gpu`)
+Mục tiêu: để dGPU sống (cho NullMoth/HDMI) mà iGPU không panic. Nguyên nhân panic build-49/50 (CHƯA XÁC MINH runtime):
+`Gen11::injectAcceleratorPersonality` đăng ký `IntelAccelerator` với `IOPCIClassMatch 0x03000000&0xff000000` và **không** lọc vendor
+(personality gốc của kext TGL đã bị `install-macos.sh` giới hạn ở `0x9a498086`) → khi dGPU còn trong IOKit, IntelAccelerator khởi động trên
+card NVIDIA, `IGAccelTask::withOptions` thất bại → panic NULL+0xc78. build-51 (dGPU có điện, Lilu `disable-gpu` terminate khỏi IOKit) boot bình thường, Metal 2.
+v12 thêm `IOPCIPrimaryMatch 0x00008086&0x0000ffff` (IOPCIFamily AND với ClassMatch). Không đổi gì khác; không boot-arg.
+Patch: `patches/nootedgreen-v12-pcimatch.patch` (sha256 `02a677ae74027d5f12806df96920a1e5d13b1c864695ad63681c9feb2117898b`),
+áp được trên cây v10 **hoặc** v11 (đã kiểm `git apply --check` cả hai). Kiểm MÁY A: `clang++ -fsyntax-only` 0 lỗi, 76 cảnh báo = v10 gốc. Chưa build/chạy.
+```
+cd ~/xe-stack
+shasum -a 256 ~/patches/nootedgreen-v12-pcimatch.patch     # 02a677ae…898b
+git apply --check ~/patches/nootedgreen-v12-pcimatch.patch && git apply ~/patches/nootedgreen-v12-pcimatch.patch
+zsh build-nootedgreen.sh
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c '0x00008086&0x0000ffff'     # phải = 1
+```
+Chỉ build lại kext. Chép `build/NootedGreen.kext` vào gốc USB MACEFI.
+- build-52 = build-51 + kext v12, **bỏ** `disable-gpu` (dGPU sống và hiện trong IOKit; = cấu hình build-50 + kext v12), giữ `-v`.
+  Kiểm: boot không panic; `ioreg -lw0 | grep -iE 'de10'` có NVIDIA; `ioreg -rc IntelAccelerator -d1 | grep -c IOClass` = 1 (chỉ iGPU). Panic → build-51.
+
+## v13 — XE-AGDCSTUB: callback AGDC rỗng khi AGDP không gắn (2026-11-10, nhánh `whateverxe-dual-gpu`)
+Panic build-52/53 (WindowServer, RIP 0): `IOFramebuffer::newUserClient` → `IOFramebuffer::open` → `AppleIntelFramebuffer::enableController+0x1356`
+→ `AppleIntelBaseController::CallBackAGDC(4, …)` → `callq *0x1c00(controller)` = NULL (disassemble FB TGL 16.0 UUID B96A8448 + IOGraphicsFamily KDK 25G241, khớp UUID panic).
+Con trỏ `controller+0x1c00` (ref `+0x1c08`) = 0 trong `AppleIntelBaseController::start`, chỉ được gán ở `RegisterAGDCCallback` (gọi từ `IntelFBClientControl::doAttribute`,
+tức AppleGraphicsDevicePolicy). Log: build-47 AGDP gắn vào `IntelFBClientControl` 40 ms sau FB; build-52 không có dòng AGDP/displaypolicyd nào trong 13 s sau FB → không ai đăng ký.
+Lý do AGDP không gắn khi dGPU hiện: CHƯA XÁC MINH. Cùng con trỏ được gọi không kiểm NULL ở `validateDetailedTiming` (event 0xa) và `setupDisplayTiming` (0xc); kết quả là bool.
+v13 route 3 hàm đó: nếu `+0x1c00` = 0 thì gán stub trả 0 (= nhánh Apple dùng khi AGDC không xác nhận: "AGDC detailed timing validation failed - assuming valid timing";
+`enableController` bỏ qua kết quả). AGDP đăng ký sau sẽ ghi đè stub. Tắt: `-ngreennoagdcstub`. Log: `XeNG AGDCSTUB: armed 1`, `… stub installed`, `… event N -> 0`.
+Patch: `patches/nootedgreen-v12-to-v13-agdcstub.patch` (sha256 `70adc2e39e599d25411db8aa22a4ead4d635b26b6840722139bb55f208e6179d`), áp trên cây v10+v11+v12 (đã kiểm).
+Kiểm MÁY A: `clang++ -fsyntax-only` 0 lỗi, 76 cảnh báo = gốc; 3 symbol có trong FB TGL (local `t`). Chưa build/chạy.
+```
+cd ~/xe-stack
+shasum -a 256 ~/patches/nootedgreen-v12-to-v13-agdcstub.patch     # 70adc2e3…179d
+git apply --check ~/patches/nootedgreen-v12-to-v13-agdcstub.patch && git apply ~/patches/nootedgreen-v12-to-v13-agdcstub.patch
+zsh build-nootedgreen.sh
+md5 -q build/NootedGreen.kext/Contents/MacOS/NootedGreen
+shasum -a 256 build/NootedGreen.kext/Contents/MacOS/NootedGreen
+strings build/NootedGreen.kext/Contents/MacOS/NootedGreen | grep -c AGDCSTUB     # phải >= 3
+```
+- build-54 = build-53 + kext v13. Kiểm: boot vào desktop; `dmesg | grep AGDCSTUB` (stub installed khi dGPU hiện); de10 trong ioreg; IntelAccelerator = 1. Lỗi → build-51.

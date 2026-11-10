@@ -16,7 +16,7 @@ Nhật ký chi tiết bên dưới theo thứ tự thời gian.
 | Việc | Công cụ | Ghi chú |
 |---|---|---|
 | Nhiệt độ P/E-core, gói; công suất gói / nhân CPU / **iGPU** | `tools/xe-monitor.py` | Đọc `sysctl debug.xepm.sensors` của NootedGreen JN @6f03560 (luôn có, không cần `-ngreenpm`) + `ioreg` IntelAccelerator. `python3 xe-monitor.py -i 1 -o <tên>.csv` |
-| Xung CPU | `tools/xe-freq.c` (`clang -O2 -o xe-freq xe-freq.c -lpthread`; `./xe-freq` = 1 luồng, `./xe-freq 16` = toàn bộ). ⛔ **KHÔNG dùng `powermetrics`** | 2026-11-06 00:07: `powermetrics --samplers cpu_power` gây kernel panic (NULL trong framebuffer TGL qua AppleGraphicsDeviceControl). Dùng công suất IA của `xe-monitor.py` làm chỉ báo |
+| Xung CPU | `tools/xe-freq.c` (`clang -O2 -o xe-freq xe-freq.c -lpthread`; `./xe-freq` = 1 luồng, `./xe-freq 16` = toàn bộ). `powermetrics` được dùng lại (người dùng 2026-11-10 20:44: chỉ panic 1 lần, 2026-11-06) | 2026-11-06 00:07: `powermetrics --samplers cpu_power` gây kernel panic (NULL trong framebuffer TGL qua AppleGraphicsDeviceControl). Dùng công suất IA của `xe-monitor.py` làm chỉ báo |
 | Mức dùng iGPU | Activity Monitor › Window › GPU History; `python3 xe-monitor.py --gpu-keys` | Driver TGL giả lập: khoá nào có thì dùng khoá đó |
 | Benchmark CPU | Geekbench 7 (CPU), Cinebench 2024 (CPU, chạy 10 phút để thấy giới hạn nhiệt/PL1) | |
 | Benchmark iGPU | Geekbench 7 (GPU, **Metal**) | ⚠️ Tải GPU nặng chưa từng chạy trên stack này: có thể GPU hang/panic. Lưu việc đang làm trước |
@@ -108,3 +108,13 @@ XE-PM mặc định v9/v10: HWPAUTO 1, C8/C10 tắt (`cst` 0), EPP 0.
 - Nghỉ **cao hơn mốc build-33** (7,4 W avg, CPU 1,6 W): min vẫn 7,9 W, nhưng CPU có nhiều đợt 13–16 W → việc chạy nền (sau khi mở Photos: `mediaanalysisd`/`photoanalysisd`, Spotlight) và/hoặc XE-PM EPP 0 + HWPAUTO (mỗi lần thức dậy nhân lên xung tối đa). Mẫu nghỉ chỉ 52 s — cần đo lại ≥ 2 phút.
 - Ứng viên (đổi trực tiếp, không cần build): `debug.xepm.cst=1` (C8/C10, JN: nghỉ 4,6 → 3,3 W), `debug.xepm.epp` 0 → 64/128 (cân bằng), tắt `mediaanalysisd`.
 - 2026-11-06 23:44 (người dùng): A (cst 0, EPP 0), B (cst 1), C (cst 1 + EPP 128) — **cả ba nghỉ quanh 8 W** khi không đụng vào máy. → C8/C10 và EPP không đổi mức nền; 11,7 W lần trước là do việc chạy nền. Mức nền ~8 W nằm ở uncore/SA (CPU cores chỉ ~2,4 W lúc thấp nhất), không phải ở nhân. Ứng viên: gói CPU không vào được package C-state sâu (PC8/PC10) do màn hình 144 Hz không có PSR/FBC (engine hiển thị + RAM luôn chạy), dGPU/PCIe/NVMe chưa vào trạng thái ngủ — CHƯA XÁC MINH. Cần mốc Linux cùng máy và thử 60 Hz.
+
+## Stack WhateverXe — build-66 (volume dự phòng 26.7.2 25G332, WEX 0.7.0-katana r7, dGPU + NullMoth bật, không XE-PM) — 2026-11-10
+| Bài | build-66 (WEX) | build-33 (NootedGreen, chưa XE-PM) | build-37 (NootedGreen + XE-PM/HWPAUTO) |
+|---|---|---|---|
+| Geekbench 7 single-core | **999** | 1076 | 2030 |
+| Geekbench 7 multi-core | **4658** | 5837 | 9646 |
+| Geekbench 7 GPU (Metal) | **không ra điểm** — GPU treo 100 % ~90 s, WindowServer bị watchdog giết | 1094 | — |
+- `powermetrics` (`logs/b66/pm-gb7-*.txt`): CPU gói max 57,8 W, xung nhân max **3673 MHz** (turbo bị giới hạn); GPU bài GB7 kẹt 100 % ở cuối. Nhận định (CHƯA XÁC MINH): thiếu XE-PM (lỗi XCPM giới hạn HWP trên CPU lai)
+  → gần mức build-33; thấp hơn thêm (−7 % / −20 %) có thể do dGPU luôn bật (NullMoth, chia nhiệt/công suất) và boot-args debug.
+- Ứng viên khôi phục: HybridPM (DRIVER-MATRIX X4, XE-PM tách thành kext — không có HWPAUTO).

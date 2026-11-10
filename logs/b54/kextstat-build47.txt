@@ -1,0 +1,5 @@
+  143    0 0xffffff7f94a1a000 0x63a4     0x63a4     com.apple.AppleGPUWrangler (8.1.12) 91823F71-9AA4-387B-BA74-A129ECC8F1AC <142 141 19 9 8 7 6 3 1>
+  152    0 0xffffff7f94a10000 0x29ea     0x29ea     com.apple.driver.AGDCBacklightControl (8.1.12) 9B0BB60A-5821-369B-8E28-AE44F448B289 <150 142 141 17 9 7 6 3 1>
+  169    0 0xffffff7f94a16000 0x1cee     0x1cee     com.apple.AGDCPluginDisplayMetrics (8.1.12) B0806A56-733A-3622-9A8F-08C925C49A2E <142 9 8 7 6 3 1>
+  174    1 0xffffff7f94a0d000 0x77b      0x77b      com.apple.driver.AppleGraphicsControl (8.1.12) 2123B373-097D-3029-9063-2E6821D16B10 <9 7 6 3 1>
+  175    0 0xffffff7f94a2e000 0xc0f5     0xc0f5     com.apple.driver.AppleGraphicsDevicePolicy (8.1.12) CEA4C73B-358B-3E8E-951E-9E39F44D02D6 <174 142 141 19 17 9 8 7 6 3 1>
