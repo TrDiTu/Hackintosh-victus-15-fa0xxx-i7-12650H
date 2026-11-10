@@ -6,8 +6,7 @@ dGPU RTX 3050 Ti `10DE:25A0`) running **macOS 26.7.2 Tahoe (25G332)**.
 The iGPU uses [WhateverXe](https://github.com/b00t0x/WhateverXe) and the dGPU uses the
 [NullMoth NVIDIA driver](https://github.com/nullmoth/nvidia-macos-driver). This is the project's current setup. It is still experimental and has not been through long-term testing.
 
-The project's earlier route (NootedGreen and the JulioNectar stack, dGPU off, macOS 26.7.1, build-48) is no longer
-installed on the laptop. Its EFI, patches and documentation are kept in the [`jn-driver`](../../tree/jn-driver) branch.
+The project's earlier route (NootedGreen and the JulioNectar stack, dGPU off, macOS 26.7.1, build-48) is no longer installed or maintained on the laptop. Its EFI, patches and documentation are kept in the [`jn-driver`](../../tree/jn-driver) branch.
 
 ## Summary
 
@@ -23,8 +22,9 @@ parts (`ProfileMismatch`, upstream issue #76), so the panel runs without acceler
 Result: Metal acceleration on the internal panel (1920×1080 @ 144 Hz), **H.264 hardware decode on VCS2**, the
 RTX 3050 Ti visible to macOS with **HDMI output**, and CPU performance close to Linux (Geekbench 7 2035 / 9320) through HybridPM plus an XE-HWPAUTO port.
 
-Not working: the Geekbench 7 Metal GPU run on the iGPU (hangs in Recognition) and DRM video.
-Untested: sleep, HEVC, long-term stability.
+Not working: the Geekbench 7 Metal GPU run on the iGPU (hangs in Feature Matching) and DRM video.
+
+Untested: HEVC, long-term stability.
 
 ## Status (build-70, 2026-11-10)
 
@@ -37,7 +37,7 @@ Untested: sleep, HEVC, long-term stability.
 | **HDMI** (wired to the dGPU) | ✅ shows a picture on build-70 (confirmed by the owner; no log saved in the repo yet) |
 | **CPU performance** | ✅ Geekbench 7 **2035 / 9320** with HybridPM and XE-HWPAUTO (build-70), about 93 % / 92 % of Linux on the same laptop (2195 / 10101). Before HybridPM: 999 / 4658; HybridPM without XE-HWPAUTO: 1176 / 4888 |
 | **iGPU compute (Geekbench 7 OpenCL)** | ✅ **7598** on the iGPU (reported by the owner; no log saved in the repo) |
-| **iGPU compute (Geekbench 7 Metal)** | ❌ hangs in the Facial Recognition workload, and the watchdog restarts WindowServer. Same pattern as WhateverXe #25, #40 and #44 |
+| **iGPU compute (Geekbench 7 Metal)** | ❌ hangs in the Feature Matching workload, and the watchdog restarts WindowServer. Same pattern as WhateverXe #25, #40 and #44 |
 | Vulkan | ✅ MoltenVK 1.4.2 (LunarG SDK 1.4.363.1) sees the iGPU |
 | Audio (ALC245) | ✅ VoodooHDA 3.6.8 in `/Library/Extensions`; NullMoth's `NMXAudio.kext` must be disabled |
 | DRM video (FairPlay/PAVP) | ❌ the PAVP path is forced off to avoid a panic |
@@ -51,7 +51,7 @@ The build marked as known-good is **build-63** (Metal on the iGPU, software vide
 
 - These config and drivers are only used for the **HP Victus 15 fa0xxx with an i7-12650H**
 - **Lowered security.** SIP is `0x0A53` and AMFI is off (`amfi_get_out_of_my_way=0x1`, `amfi=0x80`, AMFIPass).
-  Unsigned kexts and binaries can run. Use this on a personal machine only.
+  Unsigned kexts and binaries can run.
 - **Experimental.** GPU hangs, hard freezes and kernel panics are possible. Keep a way back: the non-accelerated EFI
   (`EFI/OC/config-install.plist`) and a snapshot of the last EFI that booted.
 - **Do not update macOS** without checking first. WhateverXe-Graphics, HybridPM's XCPM hook and NullMoth are all tied
@@ -69,7 +69,7 @@ The build marked as known-good is **build-63** (Metal on the iGPU, software vide
 | Laptop | HP Victus 15-fa0xxx, board `8A4F`, BIOS F.34 |
 | CPU | Intel Core i7-12650H (6P + 4E, 16 threads), PL1 45 W |
 | iGPU | `8086:46A3` rev 0c, UHD 64 EU (1 slice, 4 DSS with mask `0x33`, 6 L3 banks), fixed 60 MB DVMT. GT fuse `0x000E00FB`: **VCS2 only**, VCS0 is fused off |
-| dGPU | `10DE:25A0` RTX 3050 Ti (Ampere GA107, 4 GB); the HDMI port is wired to it |
+| dGPU | `10DE:25A0` RTX 3050 Ti (Ampere GA107, 4 GB); wired to HDMI port |
 | Display | eDP 1920×1080 144 Hz on the iGPU |
 | Wi-Fi / BT | Intel AX210 `8086:2725` / `8087:0032` |
 | Ethernet | Realtek RTL8111 `10EC:8168` |
@@ -161,6 +161,7 @@ Most documents under `docs/` are written in Vietnamese.
 | Path | Contents |
 |---|---|
 | `EFI/` | Current OpenCore EFI (build-70), placeholder SMBIOS, no AMFIPass |
+| `config/`| Config USB path |
 | `kexts-custom/` | Self-built WhateverXe 0.7.0-katana r1–r7 and HybridPM: zips, SHA-256, source notes, diff against the upstream tag |
 | `docs/STATE.md`, `docs/BUILD-LOG.md` | Current state and the log of every build |
 | `docs/ROADMAP.md` | Plan for the WhateverXe route |
@@ -169,6 +170,7 @@ Most documents under `docs/` are written in Vietnamese.
 | `docs/PERFORMANCE.md` | CPU and iGPU measurements from the earlier NootedGreen setup (the comparison baseline) |
 | `docs/acpi-src/` | SSDT sources |
 | `patches/` | NootedGreen patches from the earlier setup (not used by the current EFI) |
+| `secrets/` | SMBIOS information example, use your own information and change it to `smbios.json`  |
 | `logs/` | Panic reports and logs used for analysis |
 | `tools/` | Hardware dump and USB mapping scripts, `xe-monitor.py`, `xe-freq.c`, `nvrm-go.c` (starts the NVIDIA GPU by hand) |
 | `.claude/` | Skills and rules used by Claude Code while developing this project |
