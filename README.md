@@ -3,7 +3,7 @@
 OpenCore EFI for the **HP Victus 15-fa0xxx** (board `8A4F`, i7-12650H, iGPU `8086:46A3` Alder Lake-P UHD 64 EU,
 dGPU RTX 3050 Ti `10DE:25A0`) running **macOS 26.7.2 Tahoe (25G332)**.
 
-This is the **`whateverxe-dual-gpu`** branch: the iGPU uses [WhateverXe](https://github.com/b00t0x/WhateverXe) and the
+This is the **`main`** branch: the iGPU uses [WhateverXe](https://github.com/b00t0x/WhateverXe) and the
 dGPU uses the [NullMoth NVIDIA driver](https://github.com/nullmoth/nvidia-macos-driver). The `main` branch takes a
 different route (NootedGreen and the JulioNectar stack, dGPU off, macOS 26.7.1) and is currently more stable. This
 branch is experimental: it has only run on a spare APFS volume and has not been through long-term testing.
