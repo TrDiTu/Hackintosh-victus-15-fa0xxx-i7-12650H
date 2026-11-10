@@ -12,6 +12,16 @@ Mục tiêu: có số đo nền (baseline) trước, rồi mỗi lần chỉnh c
 | Linux CachyOS cùng máy | 2195 | 10101 | 100 |
 Nhật ký chi tiết bên dưới theo thứ tự thời gian.
 
+## Tóm tắt hướng WhateverXe (2026-11-11, build-70, macOS 26.7.2)
+| Cấu hình | GB7 single | GB7 multi | % Linux |
+|---|---|---|---|
+| build-66 (không HybridPM) | 999 | 4658 | 46 / 46 |
+| build-67 HybridPM 1.0.0 (xung 1 nhân tối đa 3673 → 4615 MHz) | 1176 | 4888 | 54 / 48 |
+| **build-69/70 HybridPM fork + XE-HWPAUTO** (người dùng báo, không có log) | **2035** | **9320** | **93 / 92** |
+
+iGPU 46A3 (WhateverXe r7): **GB7 OpenCL 7598** (người dùng báo, không có log). GB7 Metal: treo ở Recognition (BUILD-LOG 2026-11-10 22:00).
+`hpmpl1=55` (PL1 55 W ở MCHBAR) có trong build-68–70; chưa tách được tác dụng riêng.
+
 ## Công cụ
 | Việc | Công cụ | Ghi chú |
 |---|---|---|

@@ -1,12 +1,13 @@
-# Hackintosh HP Victus 15-fa0xxx (i7-12650H, UHD 64 EU + RTX 3050 Ti) — macOS 26 Tahoe, WhateverXe branch
+# Hackintosh HP Victus 15-fa0xxx (i7-12650H, UHD 64 EU + RTX 3050 Ti) — macOS 26 Tahoe with WhateverXe and NullMoth
 
 OpenCore EFI for the **HP Victus 15-fa0xxx** (board `8A4F`, i7-12650H, iGPU `8086:46A3` Alder Lake-P UHD 64 EU,
 dGPU RTX 3050 Ti `10DE:25A0`) running **macOS 26.7.2 Tahoe (25G332)**.
 
-This is the **`main`** branch: the iGPU uses [WhateverXe](https://github.com/b00t0x/WhateverXe) and the
-dGPU uses the [NullMoth NVIDIA driver](https://github.com/nullmoth/nvidia-macos-driver). The `main` branch takes a
-different route (NootedGreen and the JulioNectar stack, dGPU off, macOS 26.7.1) and is currently more stable. This
-branch is experimental: it has only run on a spare APFS volume and has not been through long-term testing.
+The iGPU uses [WhateverXe](https://github.com/b00t0x/WhateverXe) and the dGPU uses the
+[NullMoth NVIDIA driver](https://github.com/nullmoth/nvidia-macos-driver). This is the project's current setup. It is still experimental and has not been through long-term testing.
+
+The project's earlier route (NootedGreen and the JulioNectar stack, dGPU off, macOS 26.7.1, build-48) is no longer
+installed on the laptop. Its EFI, patches and documentation are kept in the [`jn-driver`](../../tree/jn-driver) branch.
 
 ## Summary
 
@@ -20,12 +21,12 @@ parts (`ProfileMismatch`, upstream issue #76), so the panel runs without acceler
 - two patches that move Apple's Tiger Lake media path from VCS0 to VCS2.
 
 Result: Metal acceleration on the internal panel (1920×1080 @ 144 Hz), **H.264 hardware decode on VCS2**, the
-RTX 3050 Ti visible to macOS with **HDMI output**, and CPU turbo through HybridPM plus an XE-HWPAUTO port.
+RTX 3050 Ti visible to macOS with **HDMI output**, and CPU performance close to Linux (Geekbench 7 2035 / 9320) through HybridPM plus an XE-HWPAUTO port.
 
 Not working: the Geekbench 7 Metal GPU run on the iGPU (hangs in Recognition) and DRM video.
 Untested: sleep, HEVC, long-term stability.
 
-## Status (build-70, 2026-11-10, spare volume)
+## Status (build-70, 2026-11-10)
 
 | Item | Status |
 |---|---|
@@ -34,32 +35,32 @@ Untested: sleep, HEVC, long-term stability.
 | **H.264 hardware decode** | ✅ on VCS2: 1080p at 3 ms per frame, 0 dropped frames (build-66). HEVC and encode are untested |
 | **dGPU RTX 3050 Ti** | ✅ NullMoth 2.9 detects the GPU with 4 GB VRAM; System Information reported Metal 4 when the GPU was started by hand |
 | **HDMI** (wired to the dGPU) | ✅ shows a picture on build-70 (confirmed by the owner; no log saved in the repo yet) |
-| CPU performance | ⚠️ HybridPM raised the single-core maximum from 3673 to 4615 MHz and Geekbench 7 from 999 / 4658 to 1176 / 4888 (build-67). Build-69 adds XE-HWPAUTO and has no score yet. The `main` branch reaches 2030 / 9646 |
+| **CPU performance** | ✅ Geekbench 7 **2035 / 9320** with HybridPM and XE-HWPAUTO (build-70), about 93 % / 92 % of Linux on the same laptop (2195 / 10101). Before HybridPM: 999 / 4658; HybridPM without XE-HWPAUTO: 1176 / 4888 |
+| **iGPU compute (Geekbench 7 OpenCL)** | ✅ **7598** on the iGPU (reported by the owner; no log saved in the repo) |
+| **iGPU compute (Geekbench 7 Metal)** | ❌ hangs in the Facial Recognition workload, and the watchdog restarts WindowServer. Same pattern as WhateverXe #25, #40 and #44 |
 | Vulkan | ✅ MoltenVK 1.4.2 (LunarG SDK 1.4.363.1) sees the iGPU |
 | Audio (ALC245) | ✅ VoodooHDA 3.6.8 in `/Library/Extensions`; NullMoth's `NMXAudio.kext` must be disabled |
-| Geekbench 7 GPU (Metal) on the iGPU | ❌ hangs in the Recognition workload, and the watchdog restarts WindowServer. Same pattern as WhateverXe #25, #40 and #44 |
 | DRM video (FairPlay/PAVP) | ❌ the PAVP path is forced off to avoid a panic |
-| Sleep/wake | ❔ untested on this branch |
-| Wi-Fi AX210, Bluetooth, Ethernet, keyboard, touchpad, USB, camera, battery | Same kexts and settings as `main`, where they work; not rechecked one by one on the spare volume |
-| RTS5228 card reader | ❌ no driver |
+| Sleep/wake | ❌ not working |
+| Wi-Fi AX210, Bluetooth, Ethernet, keyboard, touchpad, USB, camera, battery | Same kexts and settings as the earlier NootedGreen setup, where they worked; not rechecked one by one with this setup |
 
-A loaded kext is not the same as a working device, and a working device is not the same as one that stays stable
-across many boots. Each ✅ above means the item was seen working at least once; none has been through long-term
-testing. The build marked as known-good is **build-63** (Metal on the iGPU, software video decode, dGPU not started).
+
+The build marked as known-good is **build-63** (Metal on the iGPU, software video decode, dGPU not started).
 
 ## Warnings — read before use
 
+- These config and drivers are only used for the **HP Victus 15 fa0xxx with an i7-12650H**
 - **Lowered security.** SIP is `0x0A53` and AMFI is off (`amfi_get_out_of_my_way=0x1`, `amfi=0x80`, AMFIPass).
   Unsigned kexts and binaries can run. Use this on a personal machine only.
 - **Experimental.** GPU hangs, hard freezes and kernel panics are possible. Keep a way back: the non-accelerated EFI
-  (`EFI/OC/config-install.plist`) or another macOS volume booted with the `main` branch EFI.
+  (`EFI/OC/config-install.plist`) and a snapshot of the last EFI that booted.
 - **Do not update macOS** without checking first. WhateverXe-Graphics, HybridPM's XCPM hook and NullMoth are all tied
   to the macOS build.
 - The EFI in this repo uses **placeholder SMBIOS values** (`CHANGE_ME_*`). Generate your own serials and never commit
   real ones.
 - The repo **does not contain** `AMFIPass.kext` (it has no redistribution license) or any Apple binaries. The EFI here
   is therefore one kext short of the running setup; get AMFIPass as described in [`docs/SOURCES.md`](docs/SOURCES.md).
-- BIOS: do not use a dGPU-only mode. The internal panel is always driven by the iGPU (the laptop is muxless).
+
 
 ## Hardware
 
@@ -80,8 +81,7 @@ Details: [`laptop-specs.md`](laptop-specs.md) (in Vietnamese).
 ## Why a WhateverXe fork is needed
 
 Stock WhateverXe reads the GT fuses and accepts only parts with VCS0 (video mask 1 or 5). This laptop reports mask 4,
-so it is rejected. The fork [TrDiTu/WhateverXe](https://github.com/TrDiTu/WhateverXe), branch `katana-46a3` (based on
-tag 0.7.0, BSD-3-Clause), adds these changes in order:
+so it is rejected. The fork [TrDiTu/WhateverXe](https://github.com/TrDiTu/WhateverXe), branch `katana-46a3` (based on tag 0.7.0, BSD-3-Clause), adds these changes in order:
 
 | Revision | Change | Result on this laptop |
 |---|---|---|
@@ -93,12 +93,9 @@ tag 0.7.0, BSD-3-Clause), adds these changes in order:
 | r6 | Diagnostic counters for VCS interrupts | VCS2 interrupts arrive, but the driver does not pick them up |
 | r7 | Replace the VCS interrupt read with one that follows Linux i915 | **H.264 at 3 ms per frame** (build-66) |
 
-Each revision has its zip, SHA-256 and source notes in [`kexts-custom/`](kexts-custom/). The history and measurements
-are in [`docs/BUILD-LOG.md`](docs/BUILD-LOG.md) (build-59 to build-70, in Vietnamese).
+Each revision has its zip, SHA-256 and source notes in [`kexts-custom/`](kexts-custom/). The history and measurements are in [`docs/BUILD-LOG.md`](docs/BUILD-LOG.md) (build-59 to build-70, in Vietnamese).
 
-CPU: [HybridPM](https://github.com/Thatisjigen/HybridPM) corrects XCPM's HWP limits on hybrid CPUs. The fork
-[TrDiTu/HybridPM](https://github.com/TrDiTu/HybridPM), branch `victus`, adds **XE-HWPAUTO** (HWP desired = 0, so each
-core picks its own clock). It is on by default; turn it off with `hpmauto=0` or
+CPU: [HybridPM](https://github.com/Thatisjigen/HybridPM) corrects XCPM's HWP limits on hybrid CPUs. The fork [TrDiTu/HybridPM](https://github.com/TrDiTu/HybridPM), branch `victus`, adds **XE-HWPAUTO** (HWP desired = 0, so each core picks its own clock). It is on by default; turn it off with `hpmauto=0` or
 `sudo sysctl -w debug.hybridpm.hwpauto=0`.
 
 ## EFI configuration (build-70)
@@ -130,7 +127,7 @@ core picks its own clock). It is on by default; turn it off with `hpmauto=0` or
 
 ## Installation (outline)
 
-Use a separate APFS volume if the laptop already has a working macOS install.
+If the laptop already has a working macOS install, try this on a separate APFS volume first.
 
 1. Install macOS 26 Tahoe with the non-accelerated EFI (rename `EFI/OC/config-install.plist` to `config.plist`).
    BIOS: Secure Boot off.
@@ -141,7 +138,7 @@ Use a separate APFS volume if the laptop already has a working macOS install.
    the AuxKC before restarting — see [`docs/NVIDIA-VULKAN-STEPS.md`](docs/NVIDIA-VULKAN-STEPS.md) (in Vietnamese).
    Do not use the 1401 app: it edits OpenCore on its own.
 5. Copy `AMFIPass.kext` into `EFI/OC/Kexts/`, put your own SMBIOS values into `config.plist`, and boot with this
-   branch's EFI.
+   repo's EFI.
 6. If HDMI stays dark and System Information lists the NVIDIA card as "Metal 2", NullMoth's boot guard has switched the
    display part off. Clear its counter and restart:
    ```bash
@@ -169,21 +166,19 @@ Most documents under `docs/` are written in Vietnamese.
 | `docs/ROADMAP.md` | Plan for the WhateverXe route |
 | `docs/NVIDIA-VULKAN-STEPS.md`, `docs/WEX-NULLMOTH-RUNBOOK.md` | Steps to run on the laptop for NullMoth, Vulkan and WhateverXe |
 | `docs/DRIVER-MATRIX.md`, `docs/SOURCES.md` | Vetted drivers, sources, versions, SHA-256 |
-| `docs/PERFORMANCE.md` | CPU and iGPU measurements from the `main` branch (the comparison baseline) |
+| `docs/PERFORMANCE.md` | CPU and iGPU measurements from the earlier NootedGreen setup (the comparison baseline) |
 | `docs/acpi-src/` | SSDT sources |
-| `patches/` | NootedGreen patches from the `main` branch (not used by this branch's EFI) |
+| `patches/` | NootedGreen patches from the earlier setup (not used by the current EFI) |
 | `logs/` | Panic reports and logs used for analysis |
 | `tools/` | Hardware dump and USB mapping scripts, `xe-monitor.py`, `xe-freq.c`, `nvrm-go.c` (starts the NVIDIA GPU by hand) |
 | `.claude/` | Skills and rules used by Claude Code while developing this project |
 
 ## Credits and licenses
 
-- [b00t0x/WhateverXe](https://github.com/b00t0x/WhateverXe) and WhateverXe-Graphics — the iGPU driver (BSD-3-Clause;
-  derived from acidanthera/vit9696's WhateverGreen). The fork in this repo keeps the same license.
+- [b00t0x/WhateverXe](https://github.com/b00t0x/WhateverXe) and WhateverXe-Graphics — the iGPU driver (BSD-3-Clause; derived from acidanthera/vit9696's WhateverGreen). The fork in this repo keeps the same license.
 - [nullmoth/nvidia-macos-driver](https://github.com/nullmoth/nvidia-macos-driver) — the NVIDIA driver (PolyForm
   Noncommercial 1.0.0, non-commercial use only). This repo contains no NullMoth binaries.
-- [Thatisjigen/HybridPM](https://github.com/Thatisjigen/HybridPM) — derived from XE-PM by
-  [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe), under the **Thou Shalt Not Profit
+- [Thatisjigen/HybridPM](https://github.com/Thatisjigen/HybridPM) — derived from XE-PM by [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe), under the **Thou Shalt Not Profit
   License 1.0**; the fork with XE-HWPAUTO is under the same license.
 - [acidanthera](https://github.com/acidanthera) (OpenCore, Lilu, VirtualSMC, AppleALC and others),
   [laobamac/itlwm](https://github.com/laobamac/itlwm), [CloverHackyColor/VoodooHDA](https://github.com/CloverHackyColor/VoodooHDA),

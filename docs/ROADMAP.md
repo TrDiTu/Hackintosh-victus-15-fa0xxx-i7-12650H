@@ -23,7 +23,7 @@ Chi tiết W2 (kết quả disassemble driver Apple, từng bản r5–r7): mụ
 
 1. **W6 — Ổn định build-70.** Nhiều lần khởi động liên tiếp, dùng hằng ngày, rút-cắm HDMI. Thu `logs/b72/` (SPDisplays, `nvrm-display`,
    `debug.nvaccel_heads_*`). Đạt thì người dùng mới đánh dấu known-good. Lùi: build-63 ★ (không HDMI, không giải mã phần cứng).
-2. **W7 — Đo lại CPU trên build-70.** GB7 CPU + `powermetrics` với HWPAUTO; thử `debug.hybridpm.cst=0` (C8/C10 tắt). Mốc: volume chính
+2. **W7 — Đo lại CPU trên build-70 — ✅ 2026-11-11: GB7 2035 / 9320 (HybridPM + XE-HWPAUTO; người dùng báo).** Còn lại: GB7 CPU + `powermetrics` với HWPAUTO; thử `debug.hybridpm.cst=0` (C8/C10 tắt). Mốc: volume chính
    (NootedGreen XE-PM) 2030 / 9646. Xem PL1 55 W có hiệu lực hay MSR `0x610` vẫn giữ 45 W.
 3. **W8 — Sleep/wake.** Chưa kiểm trên nhánh này. WhateverXe issue #86 báo treo khi vào sleep trên Tiger Lake; NullMoth 2.9 có sửa
    WindowServer treo sau display sleep. Thử display sleep trước, rồi system sleep.
