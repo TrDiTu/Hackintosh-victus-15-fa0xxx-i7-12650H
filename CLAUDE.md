@@ -9,6 +9,11 @@ Trả lời người dùng bằng tiếng Việt.
 - Hướng đồ họa: stack của **JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe** (driver Tiger Lake 16.0.32 của Apple +
   NootedGreen đã sửa + stack user-space `libxedrv`/shader compiler), tham khảo thêm khucxtriendev (ThinkPad P1 Gen 5)
   và các nguồn trong `docs/REFERENCES.md`. **Không** dùng WTLIntelGfx/XeGfx làm driver.
+- **Nhánh `whateverxe-dual-gpu` (người dùng duyệt 2026-11-09):** thử hướng thay thế theo khucxtriendev — iGPU dùng
+  **WhateverXe** (b00t0x) + WhateverXe-Graphics thay NootedGreen/stack JN; dGPU để sống cho NullMoth (HDMI) ở bước sau.
+  Ưu tiên: **độ ổn định iGPU** trước, HDMI sau. Thử trên **volume APFS thứ hai** của MÁY B; volume hiện tại + build-48 là đường lui.
+  `46A3` 64 EU chưa được WhateverXe kiểm trên phần cứng → mọi kết quả phải ghi rõ đã đo hay CHƯA XÁC MINH.
+  Kế hoạch: `docs/REPLAN-WHATEVERXE.md`. Nhánh khác vẫn theo hướng JN ở trên.
 - Kết quả tối đa có bằng chứng của hướng này: tăng tốc Metal cho giao diện (GPU family Mac2/Common3).
   **Metal 3 KHÔNG đạt được** theo hướng này. Không có system sleep, không xuất màn hình ngoài,
   phải hạ SIP/AMFI, có thể có GPU hang/kernel panic. Nói thẳng điều này, không hứa quá.

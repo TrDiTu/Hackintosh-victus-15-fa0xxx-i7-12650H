@@ -26,3 +26,7 @@ UPSTREAM-ISSUE-DRAFT.md
 .github
 .opencode
 .windsurf
+# Apple binary copied for disassembly: never commit
+logs/b54/AppleGraphicsControl.kext/
+# AMFIPass (no redistribution license): get it from b00t0x/WhateverXe extras (docs/SOURCES.md)
+EFI/OC/Kexts/AMFIPass.kext/

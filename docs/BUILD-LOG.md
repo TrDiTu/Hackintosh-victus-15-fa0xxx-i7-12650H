@@ -1115,3 +1115,297 @@ Nguồn quyết định: DRIVER-MATRIX đã duyệt, Dortania (Alder Lake laptop
   - → `IGAccelTask::withOptions` thất bại vì lý do khác (không phải stolen/aperture) chỉ khi dGPU sống. Tìm tiếp cần phân tích bên trong driver TGL của Apple (ngoài khả năng của dự án) → **hướng NVIDIA dừng ở đây**; còn: báo issue JN/NullMoth (#428 có máy chạy NootedGreen + dGPU).
 - 2026-11-07 01:50 Đánh giá **watchthelight-labs/WTLIntelGfx** (XeGfx; người dùng hỏi; CLAUDE.md §0: "Không dùng WTLIntelGfx/XeGfx làm driver"). Clone `_cache/refs/wtlintelgfx` @ff64f83. README (2026-10-28/31): i915 (FreeBSD drm-kmod) chạy trong XNU + Mesa ANV + plugin Metal/accelerator fork từ NullMoth; **chạy** trên Arrow Lake 7D67 (Tahoe 26.7.1/26.7.2) và Meteor Lake (tester); **46A3: stage 1–3 qua (tester TrDiTu = người dùng), stage 4 panic PCH lookup — sửa ở 0.0.47; các stage sau cần GuC firmware riêng cho Alder Lake** (release chỉ link `mtl_guc_70.bin`). Thay thế NootedGreen (không chạy song song trên cùng iGPU). Release chỉ pre-release (0.0.45–0.0.47), "still a test driver", 1 panic mở (I-116). License hỗn hợp: shim BSD-2, plugin/accelerator PolyForm Noncommercial, translator LGPL-3.0. → **Không khả thi để dùng hằng ngày**; chỉ có thể tiếp tục vai trò tester (kext không tự nạp lúc boot, chạy theo stage bằng sysctl).
 - 2026-11-07 01:55 Người dùng chỉ ra: NullMoth yêu cầu `gfxrst=4` khi có WhateverGreen (README:129, TROUBLESHOOTING:56 — panic `IOFramebuffer::postOpen`/`memcpy` khi màn hình NVIDIA mở), mâu thuẫn với `gfxrst=1` của JN/G4. Quyết định: nhánh chính giữ `gfxrst=1`; nhánh `nvidia-gpu` sẽ dùng `gfxrst=4`. Lưu ý: panic build-49/50 (CR2 0xc78 trong `IGAccelTask`, 7–34 s, chưa có driver NVIDIA) là lỗi khác, ở đường khởi tạo bộ tăng tốc iGPU, không phải panic `postOpen` này. Thêm: README NullMoth thử với SMBIOS có GPU rời (`iMacPro1,1`), dự án dùng `MacBookPro16,2`.
+- 2026-11-09T23:41:10 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)}/disable-gpu = <data 01000000> (config.plist)
+- 2026-11-09T23:41:30 Created build-51-20261109-234130-dgpu-powered-hidden (tree 56cd46e12be1, ocvalidate: 0 errors, 0 warnings (validate-20261109T234113.md))
+
+## 2026-11-09 — nhánh `whateverxe-dual-gpu`: thử WhateverXe → không đạt; quay lại điều tra panic dGPU-sống với NootedGreen
+- khucxtriendev @8714a85 chuyển sang WhateverXe + NullMoth. Kiểm định (DRIVER-MATRIX X1–X4): máy VCS2-only (`available engines: 41003`) → WhateverXe 0.8.0
+  từ chối (issue #76, cùng 46A3: ProfileMismatch, ép thì treo cứng). Người dùng chọn hướng: giữ NootedGreen, điều tra panic build-49/50.
+- Ký hiệu panic build-50 (kext v10 eb2d2843, `llvm-nm`): NootedGreen +0x16f23 = `Gen11::igAccelTaskWithOptions+0x73` (ngay sau khi gọi hàm gốc),
+  +0x1fb04 = `Gen11::start+0x1f94`. Lỗi nằm trong `IGAccelTask::withOptions` gốc (TGL +0x7882 → IOAcceleratorFamily2 +0x39117, NULL+0xc78):
+  task init thất bại rồi release (cùng chữ ký JN #13/#24, sgiammori #12 — các issue này dGPU tắt/không có, nghi `newAddressRangeAllocatorForTask` trả NULL).
+  Không issue nào gắn chữ ký này với dGPU.
+- NullMoth match dGPU theo `IOPCIClassMatch 0x03000000&0xff000000` → không thể dùng NullMoth nếu đổi `class-code` dGPU.
+- build-49/50 đổi cùng lúc 2 thứ (SSDT-DGPU-OFF tắt + xoá `disable-gpu`). Tách: build-51 chỉ để dGPU có điện, vẫn `disable-gpu`.
+
+## Build 51 — `dgpu-powered-hidden` (nhánh `whateverxe-dual-gpu`): = build-50 + `disable-gpu` lại
+- So build-48: SSDT-DGPU-OFF Enabled=false, boot-args thêm `-v` (2 khác biệt). `disable-gpu` = <01000000> ở `PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)` như build-48.
+- Kết quả đọc: không panic → panic do dGPU **được IOKit/driver Apple nhìn thấy** (không phải do có điện); panic → do dGPU có điện (phần cứng/ACPI/PCIe).
+- efi-validate 0/0 (validate-20261109T234113.md).
+- 2026-11-09T23:41 Xoá snapshot known-good build-29-20261105-202412-blmax theo quy tắc người dùng (known-good cũ hơn 5 bản; chỗ cho build-51).
+- 2026-11-09T23:41:30 Created build-51-20261109-234130-dgpu-powered-hidden. Chưa ghi USB (chờ người dùng).
+- 2026-11-09T23:44:38 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree d75b3580ea22, verified)
+- 2026-11-09 23:44 build-51 dgpu-powered-hidden ghi lên MACEFI (/dev/sdb3, tree d75b3580ea22, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-47.
+- 2026-11-10 00:21 build-51 trên MÁY B: **boot vào desktop, không panic**, `Intel HD Graphics TGL CRB`, Metal 2. `ioreg`: dưới `PEG1` không còn thiết bị, không có `de10` → Lilu `disable-gpu` đã terminate dGPU khỏi IOKit (`DeviceInfo::processSwitchOff`, `requestTerminate`/`terminate`; không tắt điện). Đo nghỉ không dùng được (`mds_stores` 103 % CPU; `pkg_W` không gồm dGPU).
+- → Panic build-49/50 do dGPU **hiện trong IOKit**, không do có điện. Nguyên nhân tìm được (đọc mã, CHƯA XÁC MINH runtime): NootedGreen `Gen11::injectAcceleratorPersonality` (kern_gen11.cpp, JN 24450b4) đăng ký `IntelAccelerator` chỉ với `IOPCIClassMatch 0x03000000&0xff000000`, không lọc vendor → khớp cả RTX 3050 Ti. Kext TGL gốc đã giới hạn `0x9a498086` (JN `install-macos.sh:22`).
+- Patch **v12 XE-PCIMATCH** `patches/nootedgreen-v12-pcimatch.patch` (sha256 02a677ae…898b): thêm `IOPCIPrimaryMatch 0x00008086&0x0000ffff`. Áp được trên v10 và v11; syntax 0 lỗi, cảnh báo = v10. Hướng dẫn: GMSFIX-RUNBOOK §v12. Chờ người dùng build kext trên MÁY B → build-52.
+- 2026-11-10T00:30:30 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)} (config.plist)
+- 2026-11-10T00:30:34 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v10 + v11 (opt-in, tắt) + v12 XE-PCIMATCH (md5 24b8d331)' (config.plist)
+- 2026-11-10T00:30:45 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v10 + v11 (opt-in, off) + v12 XE-PCIMATCH (md5 24b8d331)' (config.plist)
+- 2026-11-10T00:31:10 Created build-52-20261110-003110-v12-dgpu-visible (tree 545553b032bd, ocvalidate: 0 errors, 0 warnings (validate-20261110T003045.md))
+
+## Build 52 — `v12-dgpu-visible` (nhánh `whateverxe-dual-gpu`): = build-50 + kext v12
+- Kext do người dùng build trên MÁY B (cây v10 + v11 + v12): md5 `24b8d331fb10285a5f668cb62811303a`, sha256 `57133c462a59b9314e24502f88da14b430bcb0e2057fd43a54403e70d9bdafb2`;
+  chuỗi `0x00008086&0x0000ffff` 1, `PAVPCTX` 1 (v11 chỉ chạy khi có `-ngreenpavpctx` — không có trong boot-args); Info.plist giống v10. Lưu `_cache/user-inputs/NootedGreen-v12-24b8d331.kext`.
+- Config: xoá lại `disable-gpu` (dGPU sống và hiện trong IOKit), SSDT-DGPU-OFF tắt, `-v` → plist_diff với build-50: chỉ Comment. efi-validate 0/0 (validate-20261110T003045.md;
+  lần đầu lỗi vì Comment có ký tự không phải ASCII — ocvalidate cấm).
+- Kiểm: boot không panic; `ioreg -lw0 | grep -i de10` thấy NVIDIA; `ioreg -rc IntelAccelerator -d1 | grep -c '"IOClass"'` = 1. Panic → build-51.
+- 2026-11-10T00:31 Xoá snapshot known-good build-31-20261105-205412-alc11 theo quy tắc người dùng (cũ hơn 5 bản; chỗ cho build-52).
+- 2026-11-10T00:31:10 Created build-52-20261110-003110-v12-dgpu-visible. Chờ duyệt ghi USB.
+- 2026-11-10T00:32:23 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree f3099e87a754, verified)
+- 2026-11-10 00:32 build-52 v12-dgpu-visible ghi lên MACEFI (/dev/sdb3, tree f3099e87a754, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-47.
+- 2026-11-10T00:45:40 plist_edit append to Kernel/Block: Identifier=com.apple.iokit.IONDRVSupport (config.plist)
+- 2026-11-10T00:45:58 Created build-53-20261110-004558-block-ondrv (tree 36b902683268, ocvalidate: 0 errors, 0 warnings (validate-20261110T004540.md))
+- 2026-11-10 00:33 build-52 trên MÁY B: **hết panic 0xc78** (`V501[1]: initWithOptions … ret=1`, `XeNG POOL[1] init`) → v12 sửa đúng chỗ. Treo ở verbose (Caps Lock chết) do panic mới
+  (`logs/Kernel-2026-11-10-003901.panic` ở nhánh nvidia-gpu, uptime 37 s, **WindowServer**): page fault RIP 0 (gọi con trỏ hàm NULL) ← `AppleIntelTGLGraphicsFramebuffer` +0x54d3e ← `IOGraphicsFamily` +0x19f81/+0x10255.
+- Log (`build52-boot.log`): dGPU được IOPCIFamily công bố (`1:0:0 (0x10de:0x25a0)`, HDA `0x10de:0x2291`); **`IONDRVFramebuffer` published** (chỉ ở build-52, không có ở boot build-47 cùng file)
+  → framebuffer firmware của Apple gắn vào dGPU không driver; WindowServer gặp 2 framebuffer → panic trong FB TGL (cơ chế cụ thể CHƯA XÁC MINH). `Insufficient stolen memory` (FBMemMgr_Init) có ở cả hai boot → không liên quan.
+- NullMoth README/HOW-IT-WORKS yêu cầu sẵn `Kernel → Block com.apple.iokit.IONDRVSupport Exclude` ("otherwise the firmware framebuffer takes display index 0").
+
+## Build 53 — `block-ondrv` (nhánh `whateverxe-dual-gpu`): = build-52 + Block IONDRVSupport
+- Một thay đổi: `Kernel/Block` thêm `com.apple.iokit.IONDRVSupport` Exclude. efi-validate 0/0 (validate-20261110T004540.md).
+- Rủi ro: kext phụ thuộc IONDRVSupport không nạp (AGPM có — thấy trong `kextstat` build-51); FB TGL không phụ thuộc (panic build-52). Panic/không boot → build-51.
+- 2026-11-10T00:46 Xoá snapshot known-good build-37-20261106-042417-hwpauto-on theo quy tắc người dùng (chỗ cho build-53).
+- 2026-11-10T00:46:37 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree a3d50279bc38, verified)
+- 2026-11-10 00:47 build-53 block-ondrv ghi lên MACEFI (/dev/sdb3, tree a3d50279bc38, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-47.
+- 2026-11-10 00:48 build-53 trên MÁY B: **panic giống hệt build-52** (`Kernel-2026-11-10-004839.panic`, nhánh nvidia-gpu: WindowServer, RIP 0 ← FB TGL +0x54d3e ← IOGraphicsFamily +0x19f81/+0x10255, uptime 40 s).
+  → Chặn IONDRVSupport không đổi gì (hoặc chưa có tác dụng — chưa có log kiểm). Kết luận chắc: dGPU hiện trong IOKit → FB TGL gọi con trỏ hàm NULL khi WindowServer mở FB.
+  Bước tiếp: người dùng chép binary FB TGL + IOGraphicsFamily (KDK 25G241) để disassemble hai địa chỉ (chỉ phân tích trong `_cache/`, không phân phối) + `log show` build-53.
+- 2026-11-10 01:0x Disassemble (binary người dùng chép từ MÁY B vào `_cache/user-inputs/b53/`, UUID khớp panic; chỉ phân tích, không phân phối):
+  IOGraphicsFamily +0x10255 = `IOFramebuffer::newUserClient+0x187`, +0x19f81 = `IOFramebuffer::open+0x60b`; FB TGL +0x54d3e = `AppleIntelFramebuffer::enableController+0x1356`
+  ngay sau `CallBackAGDC(4, fb)` → `callq *0x1c00(controller)` không kiểm NULL (RAX 0x90f = mặt nạ sự kiện, khớp panic). `+0x1c00` chỉ gán ở `RegisterAGDCCallback` (AGDP qua IntelFBClientControl).
+  build-47: AGDP gắn 40 ms sau FB; build-52: không có AGDP/displaypolicyd trong 13 s sau FB → callback NULL. Log build-53 không lưu được lần boot panic.
+- Patch **v13 XE-AGDCSTUB** `patches/nootedgreen-v12-to-v13-agdcstub.patch` (sha256 70adc2e3…179d): stub trả 0 khi callback trống ở enableController/validateDetailedTiming/setupDisplayTiming.
+  Syntax 0 lỗi. GMSFIX-RUNBOOK §v13. Chờ người dùng build → build-54 (= build-53 + kext v13).
+- 2026-11-10T01:07:34 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Comment = 'NootedGreen JN 24450b4 + patch v10 + v11 (opt-in, off) + v12 PCIMATCH + v13 AGDCSTUB (md5 58678f8b)' (config.plist)
+- 2026-11-10T01:08:26 Created build-54-20261110-010825-agdcstub (tree 6fa16421fc42, ocvalidate: 0 errors, 0 warnings (validate-20261110T010734.md))
+
+## Build 54 — `agdcstub` (nhánh `whateverxe-dual-gpu`): = build-53 + kext v13
+- Kext người dùng build trên MÁY B (v10+v11+v12+v13): md5 `58678f8bb0bede716b074b590e0a7e14`, sha256 `5a5960e6ca1bc33ff3c81a5d07fdf7238209bc3b208ca0a998e5aeab6d0a164c`;
+  chuỗi `XeNG AGDCSTUB` 3, PCIMATCH 1, PAVPCTX 1; Info.plist giống v10. (Lần build đầu md5 3497cdb1 thiếu v13 — patch chưa được áp; đã build lại.) Lưu `_cache/user-inputs/NootedGreen-v13-58678f8b.kext`.
+- Config: chỉ đổi Comment so với build-53 (giữ Block IONDRVSupport, dGPU hiện, `-v`). efi-validate 0/0 (validate-20261110T010734.md).
+- Kiểm: vào desktop; `log show --last boot | grep AGDCSTUB` (armed 1; "stub installed" nếu AGDP không gắn); de10 trong ioreg; IntelAccelerator = 1. Lỗi → build-51.
+- 2026-11-10T01:07 Xoá snapshot known-good build-38-20261106-201328-jn24450b4-v9 theo quy tắc người dùng (chỗ cho build-54).
+- 2026-11-10T01:09:08 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 8ce46b9312f2, verified)
+- 2026-11-10 01:09 build-54 agdcstub ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). ESP ổ trong vẫn build-47.
+- 2026-11-10 01:11 build-54 trên MÁY B: **hết panic gọi NULL** (v13 có tác dụng), panic mới (`logs/Kernel-2026-11-10-011108.panic`, nhánh này; WindowServer, uptime 38 s): **divide error** ở
+  `AppleIntelBaseController::setupPipeWatermarks+0xaa` ← `SetupParams` ← `hwSetMode` ← `AppleIntelFramebuffer::setDisplayMode` ← `IOFramebuffer::doSetDisplayMode` (WindowServer đặt mode).
+  Số chia = `adjustPixelClockForWatermarks()/1e6` → pixel clock 0. Nguyên nhân: event 0xc ở `setupDisplayTiming` là `kAGDCRegisterLinkModesetCallback` — AGDC phải trả true + chỉ số link;
+  stub trả 0 → "kAGDCRegisterLinkModesetCallback failed", hàm thoát sớm, cấu hình link không có → pixel clock 0. → **AGDP làm việc thật khi đặt mode; stub không thay được.**
+  Cần tìm vì sao AppleGraphicsDevicePolicy không gắn vào IntelFBClientControl khi dGPU hiện. Xin AppleGraphicsControl.kext (KDK) + ioreg AGDP từ build-47.
+- 2026-11-10T01:25:04 plist_edit delete Kernel/Add[BundlePath=NootedGreen.kext] (config.plist)
+- 2026-11-10T01:25:04 plist_edit delete Kernel/Add[BundlePath=WhateverGreen.kext] (config.plist)
+- 2026-11-10T01:25:04 plist_edit append to Kernel/Add: BundlePath=AMFIPass.kext (config.plist)
+- 2026-11-10T01:25:04 plist_edit append to Kernel/Add: BundlePath=WhateverXe.kext (config.plist)
+- 2026-11-10T01:25:09 plist_edit move Kernel/Add[BundlePath=AMFIPass.kext] to position 1 (config.plist)
+- 2026-11-10T01:25:09 plist_edit move Kernel/Add[BundlePath=WhateverXe.kext] to position 5 (config.plist)
+- 2026-11-10T01:25:19 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)} (config.plist)
+- 2026-11-10T01:25:19 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)}/framebuffer-patch-enable = <data 01000000> (config.plist)
+- 2026-11-10T01:25:19 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)}/framebuffer-stolenmem = <data 0000C003> (config.plist)
+- 2026-11-10T01:25:19 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)}/enable-max-pixel-clock-override = <data 01000000> (config.plist)
+- 2026-11-10T01:25:19 plist_edit set DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)}/built-in = <data 00> (config.plist)
+- 2026-11-10T01:25:19 plist_edit delete Kernel/Block[Identifier=com.apple.iokit.IONDRVSupport] (config.plist)
+- 2026-11-10T01:25:19 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = '-v keepsyms=1 debug=0x100 -allow3d -disablegfxfirmware -igfxdvmt amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth itlwm_he=1' (config.plist)
+- 2026-11-10T01:25:19 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/csr-active-config = <data 530A0000> (config.plist)
+- 2026-11-10T01:26:55 Created build-55-20261110-012655-wex-nullmoth (tree 0639135856ce, ocvalidate: 0 errors, 0 warnings (validate-20261110T012543.md))
+
+## Build 55 — `wex-nullmoth` (nhánh `whateverxe-dual-gpu`): WhateverXe + NullMoth cho volume dự phòng
+- Người dùng (2026-11-10 01:23): "hãy test WhateverXe + nullmoth trên volume dự phòng" — duyệt đưa X1 (WhateverXe 0.8.0) + X3 (AMFIPass 1.4.1 Mod) vào EFI để thử,
+  dù DRIVER-MATRIX X1 = KHÔNG ĐẠT (dự kiến 46A3 VCS2-only bị từ chối như issue #76). Không HybridPM (X4, không release).
+- release-fetch: WhateverXe-0.8.0-RELEASE.zip sha256 5B71E14C…8E4B (GitHub digest); AMFIPass-v1.4.1-Mod-RELEASE.zip @WhateverXe-Graphics 88d64a3 sha256 71F41DE4…6250 (khớp số repo công bố). SOURCES.md.
+- Config (từ build-54): gỡ WhateverGreen + NootedGreen; thêm AMFIPass (sau Lilu) + WhateverXe (MinKernel 20.0.0); iGPU chỉ `framebuffer-patch-enable`, `framebuffer-stolenmem 0000C003`,
+  `enable-max-pixel-clock-override`, `built-in` (không spoof); bỏ Block IONDRVSupport; SIP 0x0A53; boot-args 183 ký tự (WhateverXe + NullMoth + `-v keepsyms=1 debug=0x100`, `itlwm_he=1`).
+  WhateverXe 0.8.0 không có `disable-agdc` (thuộc tính WhateverGreen); có `WEXDisplay13AGDCGuardReady` (tự bảo vệ CallBackAGDC). efi-validate 0/0 (validate-20261110T012543.md).
+- 2026-11-10T01:26 Xoá snapshot known-good build-41-20261106-220946-v10-defaults theo quy tắc người dùng (chỗ cho build-55). Created build-55-20261110-012655-wex-nullmoth.
+- Hướng dẫn MÁY B: `docs/WEX-NULLMOTH-RUNBOOK.md` (WhateverXe-Graphics 0.4.1 pkg sha256 7f7ce3b9…c02c, NullMoth v2.8.1 tar.gz sha256 1aa25a7f…5df8, cài trên volume dự phòng). Chờ duyệt ghi USB.
+- 2026-11-10T01:29:11 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 2d03b2bba732, verified)
+- 2026-11-10 01:29 build-55 wex-nullmoth ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). Người dùng: volume dự phòng đã cài 26.7.1; có màn hình HDMI. ESP ổ trong vẫn build-47.
+- 2026-11-10 01:35 MÁY B (volume dự phòng): WhateverXe-Graphics 0.4.1 cài OK (sha256 khớp). NullMoth 2.8.1 sha256 khớp; `install.sh` lần đầu (boot ổ trong build-47, dGPU tắt) dừng "STOP: no NVIDIA GPU found on PCI".
+- 2026-11-10 01:37 boot USB build-55 → **vào desktop với dGPU hiện trong IOKit, không panic** (khác hướng NootedGreen); `install.sh` OK ("NVIDIA GPU present"), backup `/Library/NullMoth/backup-20261110-013738.TvFelH`.
+  **Volume dự phòng chạy macOS 26.7.2** (không phải 25G241 như CLAUDE.md ghim; người dùng tưởng 26.7.1). WhateverXe (Tahoe ≥ 26.7) và NullMoth hỗ trợ; kết quả không so trực tiếp với volume chính. Chờ reboot + kiểm.
+- 2026-11-10T01:52:32 plist_edit bootarg-add -nvrmnogo (config.plist)
+- 2026-11-10T01:52:47 Created build-56-20261110-015247-nvrmnogo (tree d52ee23319ec, ocvalidate: 0 errors, 0 warnings (validate-20261110T015232.md))
+- 2026-11-10 01:40 boot USB build-55 (sau khi cài NullMoth) trên volume dự phòng: **treo cứng** (Caps Lock chết, >5 phút; ảnh `logs/20261110_014012.jpg`). NVRM khởi động tốt: `RmInitAdapter succeeded`,
+  `PASS 2 REACHED … GSP-RM is running`, GA107, VRAM 4096 MB, BAR1 4096 MB. NVRM-fb thấy HDMI (`connected 1 edid 384 B`), mode 1920x1080@60; dòng cuối `console range BEFORE allocating: 0x4000000000 ..`
+  (= BAR2 iGPU → console boot trên panel iGPU). Theo mã NVRMFB (clone 18ba05f, có thể khác 2.8.1): ngay sau đó, vì fIndex 0, NVRMFB tắt console kernel (`kPEDisableScreen`) rồi cấp phát vùng scanout
+  → verbose không hiện thêm → chưa biết điểm treo. HDMI có tín hiệu, đen. Không có panic log (treo cứng). Volume dự phòng boot bằng build-47 đứng ở logo (dự kiến); volume chính boot bình thường.
+- `nvidia-macos-driver` repo nguồn chưa có tag v2.8.1 (clone_ref --ref v2.8.1 vẫn ở 18ba05f).
+
+## Build 56 — `nvrmnogo`: = build-55 + `-nvrmnogo`
+- NVRM nạp nhưng không tự `go(2)` (README: "idles until `nvrmctl go <pass>`"). Mục đích: (1) vào desktop trên iGPU/WhateverXe khi NullMoth có mặt, đọc trạng thái WEX + AGDP;
+  (2) khởi động NVIDIA bằng tay để khoanh điểm treo. efi-validate 0/0 (validate-20261110T015232.md). boot-args 193 ký tự.
+- 2026-11-10T01:53 Xoá snapshot known-good build-45-20261107-001333-wifi-laobamac theo quy tắc người dùng (chỗ cho build-56).
+- 2026-11-10T01:53:25 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 9610b68e8781, verified)
+- 2026-11-10 01:54 build-56 nvrmnogo ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-10 01:56 build-56 trên MÁY B (volume dự phòng 26.7.2): **vào desktop**. iGPU: `Kernel Extension Info: No Kext Loaded`, VRAM 7 MB, `N97GTTopologyReady = No`, `N97NativePreflight = No`,
+  `N97GTReadout` status 4 với fuse `0x000E00FB` → video mask 4 (VCS2-only) = **WhateverXe từ chối iGPU, đúng như issue #76** → panel không tăng tốc. dGPU RTX 3050 Ti hiện trong SPDisplays;
+  NVRM/NVRMFB/NVAccel/NVRMAGDC 2.8.1 đã nạp, `nvrm-autogo = off (-nvrmnogo)`; AppleGraphicsDevicePolicy nạp; AMFIPass 1.4.1 + WhateverXe 0.8.0 nạp. `nvrmctl` không có trong gói.
+- `tools/nvrm-go.c`: gọi NVRMUserClient selector 0 (`sGo`, 1 scalar = pass), như `nvrmctl go <pass>` (NVRM.cpp:1978, go() đòi root cho pass mới).
+- 2026-11-10 02:0x Đọc fork khucxtriendev/WhateverXe @32228ed (clone `_cache/refs/khucxtriendev-wex`) và b00t0x/WhateverXe 0.8.0 @db438fd (`_cache/refs/b00t0x-wex`): bản vá của khucxtriendev
+  (`THINKPAD_P1_GEN5_PATCH_GUIDE.md`, `whateverxe_thinkpad_p1_gen5.patch`) chỉ sửa hiển thị (GOP 6-bpc, bỏ lỗi Type-C khi có eDP, đọc thanh ghi pipe). Máy họ 46A6 96 EU có VCS0 → qua kiểm GT gốc.
+  `decodeADLPGT` (`video!=1 && video!=5` → false) giống hệt trong fork và 0.8.0 → không ai sửa chỗ chặn 46A3 VCS2-only. Issue #76: ép nhận mask 4 → treo cứng khi accelerator start.
+  Giả thuyết (CHƯA XÁC MINH): NootedGreen chạy được trên 46A3 VCS2-only vì XE-NOGVA ẩn giải mã phần cứng → driver Apple không dùng VCS0. Đề xuất: dừng WhateverXe cho iGPU; quay lại NootedGreen.
+  Quan sát build-56: AppleGraphicsDevicePolicy có nạp khi NullMoth (NVRMAGDC) có mặt → thử NullMoth trên volume chính + build-54 (giả thuyết).
+- 2026-11-10T02:05:54 plist_edit set Kernel/Add[BundlePath=NootedGreen.kext]/Enabled = False (config.plist)
+- 2026-11-10T02:05:54 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)}/device-id (config.plist)
+- 2026-11-10T02:05:54 plist_edit delete DeviceProperties/Add/{PciRoot(0x0)/Pci(0x2,0x0)}/AAPL,ig-platform-id (config.plist)
+- 2026-11-10T02:05:54 plist_edit delete Kernel/Block[Identifier=com.apple.iokit.IONDRVSupport] (config.plist)
+- 2026-11-10T02:06:22 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = '-allow3d -disablegfxfirmware amfi_get_out_of_my_way=1 gfxrst=1 itlwm_he=1 -v' (config.plist)
+- 2026-11-10T02:07:34 Created build-57-20261110-020734-nm-install (tree 4e78e1b5699a, ocvalidate: 0 errors, 0 warnings (validate-20261110T020622.md))
+- 2026-11-10 02:02 build-56: `nvrm-go 1` → 0x0, `nvrm-go 2` → 0x0, **không treo** khi khởi động GPU bằng tay sau khi vào desktop → treo lúc boot gắn với auto-go sớm (console boot còn trên iGPU). Trạng thái HDMI sau go: chưa có.
+- 2026-11-10 02:05 Người dùng: "quay lại NootedGreen với nullmoth trong volume chính". `install.sh` NullMoth bắt buộc thấy `vendor-id <de100000>` trên PCI (install.sh:146, không có cờ bỏ qua) →
+  cần build cài đặt riêng: dGPU hiện nhưng không bật bộ tăng tốc TGL (tránh panic AGDP).
+
+## Build 57 — `nm-install` (chỉ dùng một lần để cài NullMoth trên volume chính)
+- Từ build-54: NootedGreen Enabled=false; xoá spoof iGPU (`device-id`, `AAPL,ig-platform-id`) → kext TGL (IOPCIPrimaryMatch 0x9a498086) không khớp → panel chạy framebuffer firmware;
+  xoá Block IONDRVSupport (cần cho framebuffer firmware); boot-args bỏ cờ ngreen: `-allow3d -disablegfxfirmware amfi_get_out_of_my_way=1 gfxrst=1 itlwm_he=1 -v`. dGPU sống, hiện. efi-validate 0/0 (validate-20261110T020622.md).
+- 2026-11-10T02:06 Xoá snapshot build-49-20261107-010859-nvidia-try (không known-good, thử nghiệm thất bại đã thay thế); giữ build-47 (known-good, trên ESP).
+- 2026-11-10T02:08:00 plist_edit append to Kernel/Add: BundlePath=AMFIPass.kext (config.plist)
+- 2026-11-10T02:08:00 plist_edit move Kernel/Add[BundlePath=AMFIPass.kext] to position 1 (config.plist)
+- 2026-11-10T02:08:00 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/csr-active-config = <data 530A0000> (config.plist)
+- 2026-11-10T02:08:00 plist_edit set NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args = '-ngreenpm -ngreentglwithgfx -allow3d -disablegfxfirmware -ngreenv189 -ngreenkeepefi -ngreenxefix -ngreenfixbootmode amfi_get_out_of_my_way=1 gfxrst=4 itlwm_he=1 -v amfi=0x80 ipc_control_port_options=0 nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth -nvrmnogo' (config.plist)
+- 2026-11-10T02:08:22 Created build-58-20261110-020822-ng-nullmoth (tree 6af66caed391, ocvalidate: 0 errors, 0 warnings (validate-20261110T020800.md))
+
+## Build 58 — `ng-nullmoth`: = build-54 (NootedGreen v13, dGPU hiện, Block IONDRVSupport, `-v`) + điều kiện NullMoth
+- AMFIPass 1.4.1 Mod sau Lilu (NullMoth README yêu cầu AMFIPass); SIP 0x0A53 (⊇ 0x0A43); boot-args thêm `amfi=0x80 ipc_control_port_options=0 nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth -nvrmnogo`,
+  `gfxrst=1` → `gfxrst=4` (NullMoth README:129 khi có WhateverGreen). boot-args **254 ký tự**; cờ Lilu kết thúc ở 115 (< 228). efi-validate 0/0 (validate-20261110T020800.md).
+- Câu hỏi: khi NullMoth có mặt (NVRMAGDC), AGDP có gắn vào framebuffer Intel không → hết panic chia 0 (build-54)? `-nvrmnogo` để tách: desktop trước, `nvrm-go 1/2` sau.
+- 2026-11-10T02:08 Xoá snapshot build-50-20261107-011925-dgpu-on-diag (không known-good, đã thay thế). Created build-58. EFI dự án đưa về build-57 để ghi USB trước.
+- 2026-11-10T02:09:45 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 9524f9eaaed5, verified)
+- 2026-11-10 02:10 build-57 nm-install ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật). Dùng để cài NullMoth trên volume chính.
+- 2026-11-10 02:13 MÁY B volume chính (26.7.1), boot USB build-57: `ioreg` de10 = 2 (GPU + HDA); NullMoth 2.8.1 `install.sh` OK ("NVIDIA GPU present"), backup `/Library/NullMoth/backup-20261110-021310.AbUevu`.
+  NOTE của script: thiếu `nvfb=1`, `nvaccel=1`, `gfxrst=4` (đúng — build-57 không có; build-58 có).
+- `NMXAudio.kext` (NullMoth tự cài trên macOS 26): `IOPCIClassMatch 0x04030000&0xffff0000`, không lọc vendor → tranh HDA Intel với VoodooHDA → chuyển sang `/Library/NullMoth/NMXAudio.kext.disabled`,
+  dựng lại AuxKC theo lệnh kmutil của `uninstall.sh:71` ra file `.new`, kiểm NMXAudio = 0, rồi thay. AuxKC mới: NVRM, NVAccel, NVRMFB, NVRMAGDC 2.8.1, VoodooHDA 3.6.8, HookCase 8.0.1, AppleIntelTGLGraphics 16.0.2, AppleIntelTGLGraphicsFramebuffer 16.0.0.
+- 2026-11-10T02:17:59 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 83ab0e6623bc, verified)
+- 2026-11-10 02:18 build-58 ng-nullmoth ghi lên MACEFI (/dev/sdb3, kiểm hash OK, SMBIOS thật).
+- 2026-11-10 02:20 build-58 trên MÁY B (volume chính): **panic giống build-54** (`logs/Kernel-2026-11-10-022221.panic`: WindowServer, divide error FB TGL +0x732a2 setupPipeWatermarks ← NootedGreen +0xd8fe, uptime 37,7 s).
+  `logs/b58-boot.txt` không chứa lần boot build-58 (log mất do panic); các dòng từ 02:22:22 là boot build-47 sau đó: AGDP gắn vào IntelFBClientControl bình thường, NVRMAGDC nạp ("idle until sysctl debug.nvrmfb_agdc=1")
+  → volume chính có NullMoth vẫn boot build-47 được. **Giả thuyết "NullMoth có mặt thì AGDP gắn" sai.**
+- Tham khảo WhateverXe 0.8.0 (`kern_xe.cpp:8246-8288`, BSD-3, chỉ đọc ý tưởng): không giả lập AGDP; chặn `AppleIntelFramebuffer::newUserClient` type 0 bằng `kIOReturnNotReady` tới khi controller có callback AGDC
+  (để WindowServer thử lại; tránh IOG đánh dấu FB chết khi enableController lỗi); `CallBackAGDC` trả NotReady cho thông báo khi chưa có receiver. Đề xuất v14 XE-AGDCWAIT (chẩn đoán): áp ý tưởng đó vào NootedGreen
+  → không panic → SSH lấy ioreg AGDP/IntelFBClientControl/GPUWrangler khi dGPU hiện. Chờ người dùng chọn (v14 hay dừng, về build-48).
+
+## Build 59 — `wex070-katana` (2026-11-10 16:45): = build-56 + WhateverXe 0.8.0 → **0.7.0-katana** (MỘT thay đổi: binary kext)
+- Người dùng 16:44: "dựng efi đi, volume dự phòng hạ về 0.4.0". Kế hoạch: `docs/PLAN-wex-46a3.md`; log: `docs/wex-46a3/LOG.md` (thư mục chính).
+- EFI = snapshot build-56 `nvrmnogo` (vào desktop trên volume dự phòng) chép nguyên; chỉ thay `WhateverXe.kext` bằng bản RELEASE
+  tự build (fork `TrDiTu/WhateverXe` `katana-46a3`, CI run 42791539485, zip sha256 `536cd7dc…7ca8`, binary md5 `eb7bccb2`).
+  Gồm patch issue #35 (VBT, eDP port mode 0, CDCLK nguội) + cờ opt-in `-wex-adlp-allow-vcs2` (KHÔNG bật trong build này).
+- Config không đổi so với build-56: boot-args 193 (`-v keepsyms=1 debug=0x100 -allow3d -disablegfxfirmware -igfxdvmt …
+  -nvrmnogo`), SIP 0x0A53, `framebuffer-stolenmem` 0000C003, SSDT-DGPU-OFF tắt, AMFIPass 1.4.1 Mod (blob giống tag v0.4.0).
+- Dự kiến: `N97GTReadout` vẫn status 4 (máy VCS2-only). Mục đích lần này: xem patch #35 có cho `N97FBBootHandoff` Complete,
+  panel 1920×1080 qua FB WEX không. Lần sau (build-60) mới thêm `-wex-adlp-allow-vcs2` — có thể treo cứng (#76).
+- MÁY B: volume dự phòng hạ WhateverXe-Graphics 0.4.1 → **0.4.0** (`WhateverXe-Graphics-0.4.0.pkg`, sha256 `7a1b5015…9510`).
+- efi-validate: 0 lỗi, 0 cảnh báo, ocvalidate chạy (`docs/validation/validate-20261110T164537.md`).
+- 2026-11-10T16:45:59 Created build-59-20261110-164559-wex070-katana (tree 1f9baf291713, ocvalidate: docs/validation/validate-20261110T164537.md)
+- 2026-11-10T16:45:59 Rotated out (deleted) oldest snapshot build-47-20261107-003954-wifi6-noamfipass
+- 2026-11-10T16:56:45 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 345d7b0cc8ba, verified)
+  USB MACEFI (`/dev/sdb3`) ghi build-59 lúc 16:56 (tree 345d7b0cc8ba, md5 kext khớp `eb7bccb2`).
+- 2026-11-10T17:01:28 plist_edit bootarg-add -wex-adlp-allow-vcs2 (config.plist)
+
+## Build 60 — `vcs2` (2026-11-10 17:01): = build-59 + boot-arg `-wex-adlp-allow-vcs2` (MỘT thay đổi; người dùng duyệt 17:01)
+- Lý do: build-59 dừng ở `N97GTReadout` status 4 (fuse `0x000E00FB`, chỉ VCS2) → FB/accelerator WEX không khởi động
+  (`docs/wex-46a3/LOG.md` 16:59). Cờ cho `decodeADLPGT` nhận video mask 4. Rủi ro: issue #76 báo treo cứng khi ép.
+- boot-args 214 ký tự (< 228). efi-validate 0/0 (`docs/validation/validate-20261110T170128.md`).
+- MÁY B: volume dự phòng đã hạ WhateverXe-Graphics về 0.4.0 (17:00).
+- 2026-11-10T17:04:35 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree a8b171194850, verified)
+- USB MACEFI (`/dev/sdb3`) ghi build-60 lúc 17:03 (tree a8b171194850). Snapshot build-60 CHƯA tạo: xoay vòng chạm build-48 known-good, chờ người dùng chọn xoá build-51 hay build-48.
+
+## Build 61 — `wex-r2-vbtpanel` (2026-11-10 17:26): = build-60 + WhateverXe 0.7.0-katana **r2** (MỘT thay đổi: binary kext; người dùng duyệt 17:25)
+- r2 (fork `katana-46a3`, CI run 42797617881, zip sha256 `a5e0910e…fdbd`, binary md5 `6616a629`): sửa đọc VBT panel —
+  chọn eDP DDI A khi VBT khai báo eDP ở A và B; nhận `panel_type` 0xFF như loại 0 khi 16 mục đồng nhất. Nguyên nhân và kiểm offline:
+  `docs/wex-46a3/LOG.md` 17:10–17:25 (thư mục chính). Mục tiêu: `WEXDisplay13BootReady`=Yes, FB TGL khởi động.
+- Boot-args giữ nguyên build-60 (214 ký tự, có `-wex-adlp-allow-vcs2`). efi-validate 0/0 (`docs/validation/validate-20261110T172623.md`).
+- Snapshot: người dùng xoá build-51 (không known-good) để giữ build-48 known-good. Bộ đếm snapshot đặt tên `build-60-20261110-172633-wex-r2-vbtpanel` (= build-61 trong log này) vì build-60 `vcs2` chưa từng snapshot; build-60 `vcs2` = build-59 snapshot + boot-arg `-wex-adlp-allow-vcs2`.
+- 2026-11-10T17:26:33 Created build-60-20261110-172633-wex-r2-vbtpanel (tree e71333c674d6, ocvalidate: docs/validation/validate-20261110T172623.md)
+- 2026-11-10T17:30:03 Created build-61-20261110-173003-usb-before-deploy (tree 35d4e46f8b86, ocvalidate: n/a (existing USB content))
+- 2026-11-10T17:30:03 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 81a890490df6, verified)
+- Người dùng xoá thêm build-52 (17:28). Ghi USB MACEFI (`/dev/sdb3`) 17:30, hash khớp (tree 81a890490df6, kext md5 `6616a629`). Sao lưu USB cũ (build-60 `vcs2`) thành snapshot `build-61-20261110-173003-usb-before-deploy` (serial đã gỡ). Lưu ý tên: snapshot `build-60-…-wex-r2-vbtpanel` = build-61 (r2); snapshot `build-61-…-usb-before-deploy` = build-60 `vcs2`.
+
+## Build 62 — `wex-r3-pavp` (2026-11-10 17:52): = build-61 + WhateverXe 0.7.0-katana **r3** (MỘT thay đổi: binary kext; người dùng duyệt 17:52)
+- Lý do: build-61 panic `PAVPCommandCallback+0x177` CR2 0xb8 trong `startGraphicsEngine` (`logs/b61/Kernel-2026-11-10-173420.panic`).
+- r3 (CI run 42800957857, zip sha256 `fa7561a2…0c86`, binary md5 `ef097eaf`): `je`→`jmp` sang nhánh "PAVP tắt" trong
+  `PAVPCommandCallback` (kiểm mẫu đúng 1 lần; ioreg `WEXPAVPDisabledPath`). Mất phát video DRM phần cứng (như PAVPFIX của NootedGreen).
+- Boot-args giữ nguyên (214, có `-wex-adlp-allow-vcs2`). efi-validate 0/0 (`docs/validation/validate-20261110T175213.md`).
+- Người dùng xoá snapshot build-53, build-54 (không known-good) để có chỗ.
+- 2026-11-10T17:52:23 Created build-62-20261110-175223-wex-r3-pavp (tree b135c31fea33, ocvalidate: docs/validation/validate-20261110T175213.md)
+- 2026-11-10T17:53:13 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 5e58af37b14f, verified)
+- Ghi USB MACEFI (`/dev/sdb3`) 17:53, hash khớp (tree 5e58af37b14f, kext md5 `ef097eaf`); bản cũ trên USB trùng snapshot build-60-…-wex-r2-vbtpanel → không sao lưu thêm.
+
+## Build 63 — `wex-r4-novideo` (2026-11-10 18:19): = build-62 + WhateverXe 0.7.0-katana **r4** (MỘT thay đổi: binary kext; người dùng duyệt 18:19)
+- Lý do: build-62 đã tăng tốc (FB TGL + IntelAccelerator + Metal, VRAM 1536 MB) nhưng panic `VTDecoderXPCService` NULL+0x284
+  khi mở System Settings (`logs/b62/`). r4 (CI run 42804853728, zip sha256 `8e83c589…f7ff`, binary md5 `4b8b18b7`): VCS2-only →
+  không giải mã/mã hoá video phần cứng (`WEXHardwareVideoDisabled`). Nghiên cứu VCS2: ROADMAP G5.
+- Boot-args giữ nguyên (214). efi-validate 0/0 (`docs/validation/validate-20261110T181928.md`).
+- 2026-11-10T18:19:46 Created build-63-20261110-181946-wex-r4-novideo (tree e20580747647, ocvalidate: docs/validation/validate-20261110T181928.md)
+- 2026-11-10T18:21:02 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 848cfcbae83d, verified)
+- Ghi USB MACEFI (`/dev/sdb3`) 18:20, hash khớp (tree 848cfcbae83d, kext md5 `4b8b18b7`).
+- 2026-11-10 18:32 Người dùng: build-63 ổn (System Settings, YouTube không panic) → **★ known-good**. build-48 vẫn known-good, KHÔNG được xoá (người dùng: bản ổn định nhất).
+
+## Build 64 — `wex-r5-vcs2media` (2026-11-10 18:45): = build-63 ★ + WhateverXe 0.7.0-katana **r5** (MỘT thay đổi: binary kext; người dùng duyệt 18:32)
+- r5 (CI run 42808459666, zip sha256 `d5d30e1b…fc9`, binary md5 `f9a7f64a`): vá params VideoMedia của AppleIntelTGLGraphics sang VCS2
+  (type 4 / instance 2) → thử giải mã video phần cứng (ROADMAP G5). ioreg `WEXVCS2Media`, `WEXHardwareVideoDisabled`.
+- Rủi ro: treo GPU/panic khi phát video. Đường lui: build-63 ★.
+- Boot-args giữ nguyên (214). efi-validate 0/0 (`docs/validation/validate-20261110T184213.md`).
+- Người dùng xoá snapshot build-55 (18:44).
+- 2026-11-10T18:46:10 Created build-64-20261110-184610-wex-r5-vcs2media (tree de60a622ad77, ocvalidate: docs/validation/validate-20261110T184213.md)
+- 2026-11-10T18:48:11 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 53ebf5c35329, verified)
+- Ghi USB MACEFI (`/dev/sdb3`) 18:47, hash khớp (tree 53ebf5c35329, kext md5 `f9a7f64a`).
+
+## Build 65 — `wex-r6-vcsdiag` (2026-11-10 19:15): = build-64 + WhateverXe 0.7.0-katana **r6** (MỘT thay đổi: binary kext; người dùng: "tiếp tục G5")
+- r6 (CI run 42813262332, zip sha256 `d06c4996…f235`, binary md5 `ce67501b`): r5 + bộ đếm chẩn đoán (chỉ đọc) cho ngắt/hoàn tất VCS
+  (ioreg `WEXVCSDiag`, `WEXVCSDiagRouted`). Mục tiêu: biết vì sao giải mã VCS2 ~1 s/khung.
+- Boot-args giữ nguyên (214). efi-validate 0/0 (`docs/validation/validate-20261110T191852.md`).
+- 2026-11-10T19:19:54 Created build-65-20261110-191954-wex-r6-vcsdiag (tree 446262cf2284, ocvalidate: docs/validation/validate-20261110T191852.md)
+- 2026-11-10T19:19:55 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 705a8142e3b3, verified)
+- Người dùng xoá snapshot build-56 (19:19). Snapshot build-65; ghi USB MACEFI (`/dev/sdb3`) 19:20, hash khớp (tree 705a8142e3b3, kext md5 `ce67501b`).
+
+## Build 66 — `wex-r7-vcsirq` (2026-11-10 20:25): = build-65 + WhateverXe 0.7.0-katana **r7** (MỘT thay đổi: binary kext; người dùng duyệt 19:27)
+- r7 (CI run 42816038634, zip sha256 xem `kexts-custom/WhateverXe-0.7.0-katana-r7/SOURCE.md`, binary md5 `cb4403c2`): thay
+  `IGInterruptBridge::readAndClearVCSInterrupts` trên máy VCS2-only bằng hàm kiểu i915 (chọn đúng engine, chờ identity ~100 µs).
+  Lý do: build-65 đo được ngắt VCS2 tới nhưng driver gốc không nhận → giải mã ~1 s/khung. Bộ đếm `WEXVCSDiag` mở rộng.
+- Rủi ro: hàm chạy trong đường ngắt GPU → treo/panic. Lùi: build-63 ★. Boot-args giữ nguyên (214).
+- Người dùng xoá snapshot build-57 (19:27). efi-validate 0/0 (`docs/validation/validate-20261110T202439.md`).
+- 2026-11-10T20:24:53 Created build-66-20261110-202453-wex-r7-vcsirq (tree 007bedb3f761, ocvalidate: docs/validation/validate-20261110T202439.md)
+- 2026-11-10T20:26:00 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree e5e76b951987, verified)
+- Ghi USB MACEFI (`/dev/sdb3`) 20:25, hash khớp, kext md5 `cb4403c2`.
+- 2026-11-10 20:29 Test MÁY B: giải mã H.264 phần cứng qua VCS2 chạy (3 ms/khung, 0 bỏ) — `logs/b66/b66-diag.txt`.
+- 2026-11-10T21:06:02 plist_edit append to Kernel/Add: BundlePath=HybridPM.kext (config.plist)
+- 2026-11-10T21:06:02 plist_edit move Kernel/Add[BundlePath=HybridPM.kext] to position 1 (config.plist)
+
+## Build 67 — `hybridpm` (2026-11-10 21:06): = build-66 + **HybridPM 1.0.0** (MỘT thay đổi: thêm kext; người dùng duyệt 21:03)
+- Lý do: build-66 GB7 CPU 999/4658, xung nhân max 3673 MHz (turbo bị XCPM giới hạn; NootedGreen sửa bằng XE-PM nhưng WEX không có).
+- HybridPM (DRIVER-MATRIX X4; TSNPL 1.0; tự build @23c4537, binary sha256 `9f65958f…`) thêm ở Kernel/Add vị trí 1 (sau Lilu).
+  Mặc định áp profile ở 20 s/60 s; hook XCPM kiểm byte trên 25G332. Không thêm boot-arg (214). Không có HWPAUTO như patch v8.
+- Rủi ro: panic/treo do hook XCPM hoặc ghi MSR. Lùi: build-66 (snapshot) / build-63 ★. efi-validate 0/0 (`docs/validation/validate-20261110T210602.md`).
+- 2026-11-10T21:08:22 Created build-67-20261110-210822-hybridpm (tree 12a921f89065, ocvalidate: pass)
+- 2026-11-10T21:08:37 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree cd1e12556742, verified)
+- 2026-11-10T21:09 Snapshot build-58 `ng-nullmoth` đã xoá (người dùng duyệt) để chừa chỗ build-67. build-67 ghi USB `/dev/sdb3` MACEFI, tree cd1e12556742, hash khớp.
+- 2026-11-10T21:20 build-67 test (`logs/b67/`): HybridPM áp profile (hwp=1, epp=96, eet_off=1, cst=1, route=1). powermetrics GB7 CPU so với build-66: xung từng nhân tối đa 3673 → **4615 MHz** (p95 4540), xung TB hệ thống lúc tải 1805 → 2348 MHz (max 3083 → 4332), công suất gói lúc tải TB 33.7 → 31.8 W (max 57.8 → 62.6 W), nhiệt Nominal. Turbo CPU đã chạy. Điểm GB7 build-67: **1176 single / 4888 multi** (build-66: 999 / 4658; +17.7% / +4.9%).
+- 2026-11-10T21:25 Người dùng xác nhận PL1 thực của máy = 45 W (Intel: base 45 W, max turbo 115 W, min assured 35 W). Khớp b67: tải đa nhân TB 49.9 W. Chưa biết 45 W nằm ở MSR 0x610 hay MCHBAR 0x59A0 (HybridPM `hpmpl1` chỉ ghi MCHBAR, tối đa 64 W).
+- 2026-11-10T21:26:32 plist_edit bootarg-add NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args (config.plist)
+- 2026-11-10T21:26:43 plist_edit bootarg-remove NVRAM/Add/7C436110-AB2A-4BBB-A880-FE41995C9F82/boot-args (config.plist)
+- 2026-11-10T21:26:43 plist_edit bootarg-add hpmpl1=55 (config.plist)
+- 2026-11-10T21:27 **build-68 `hpmpl1-55`** = build-67 + boot-arg `hpmpl1=55` (HybridPM ghi PL1 55 W vào MCHBAR 0x59A0; thử xem PL1 45 W của HP nằm ở MCHBAR hay MSR 0x610). Boot-args 224 ký tự. validate 0/0 (`docs/validation/validate-20261110T212648.md`). Snapshot chờ người dùng chọn bản xoá (đủ 10). Lưu ý: lần chạy bootarg-add đầu sai cú pháp (chèn chuỗi path), đã gỡ ngay — config cuối đúng.
+- 2026-11-10T21:28:00 Created build-68-20261110-212800-hpmpl1-55 (tree 584477bf57eb, ocvalidate: pass)
+- 2026-11-10T21:28:10 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree dd03ee0759a7, verified)
+- 2026-11-10T21:28 Snapshot build-59 đã xoá (người dùng duyệt); snapshot build-68 tạo; build-68 ghi USB /dev/sdb3 MACEFI, hash khớp. Chờ `logs/b68/`.
+- 2026-11-10T21:31 build-68: `pl1_w 55`, `pl1_set 440` (= 55 W × 8) — MCHBAR không khoá, đã ghi 55 W. Chờ GB7 + powermetrics xem MSR 0x610 có giữ 45 W không.
+- 2026-11-10T21:36 So với volume chính (build-37/48, NootedGreen XE-PM: GB7 2030/9646, PERFORMANCE.md): volume dự phòng thiếu 2 thứ đã đo là quyết định — XE-HWPAUTO (HWP desired=0; 1191/5637 → 2030/9646) và tắt C8/C10 (multi +22 %). HybridPM 1.0.0 không có HWPAUTO và mặc định cst=1. PL1 45 W không phải nút thắt chính (build-33 gói lên 73 W lúc GB7). Đề xuất: thử `sysctl -w debug.hybridpm.cst=0`; sau đó port HWPAUTO vào fork HybridPM.
+- 2026-11-10T21:40 **build-69 `hwpauto`** = build-68 + HybridPM fork `victus` @6ddb23d (thêm XE-HWPAUTO từ patch v8: xoá HWP desired, mặc định BẬT vì boot-args 224/228; tắt bằng `hpmauto=0` / `sysctl debug.hybridpm.hwpauto=0`). CI run 42836259880, binary sha256 c6067942…2baa. Người dùng duyệt ("thêm HWPAUTO đi"). validate 0/0 (`docs/validation/validate-20261110T214027.md`). Snapshot chờ chọn bản xoá.
+- 2026-11-10T21:43:36 Created build-69-20261110-214336-hwpauto (tree 8da95b473db2, ocvalidate: pass)
+- 2026-11-10T21:44:06 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree 0fd9aac92026, verified)
+- 2026-11-10T21:43 Snapshot build-60 đã xoá (người dùng duyệt); snapshot build-69 tạo; build-69 ghi USB /dev/sdb3 MACEFI, hash khớp. Chờ `logs/b69/`.
+- 2026-11-10T21:52 build-69: người dùng báo "đã ổn" (CPU), không gửi log/điểm. Tiếp: GB7 GPU treo ở Recognition (b66).
+- 2026-11-10T22:00 Phân tích GB7 GPU treo (build-66, `logs/b66/`): powermetrics GPU Active 100 % liên tục từ 20:52:46 (sau pha ~70–80 %), watchdog WindowServer 20:53:45 ("Display … not ready … GPU Busy: SurfaceID 9/3"), lần 2 lúc 20:54:25, GPU vẫn 100 % → GPU treo cứng, khôi phục không thành. Spindump: `IGAccelEventMachine` ở `IGAccelEventMachine::eventTimeout(int)+0x70` → `IGScheduler5::checkForProgress(IGHwCsType)+0xa4` (TGL BA3AA1C0); geekbench_avx2 chờ Metal. Cùng chữ ký WEX issue #44 (TGL-H, cùng offset) và #40; #25 (ADL-N, WEX 0.7.0 + Graphics 0.4.0): Geekbench Metal treo CCS, reset không khôi phục — chưa có bản sửa upstream. Volume chính (NootedGreen) chạy hết GB7 GPU (1094). Chưa loại trừ r5–r7 (VCS2/ngắt) — đề xuất chạy GB7 GPU trên build-63 ★ (không có r5–r7) + thu `ioreg -l | grep TGLRecovery` và `*.gpuRestart`.
+- 2026-11-10T22:05 Người dùng: bỏ qua GB7 Metal; cài Vulkan + sửa NVIDIA. Hiện trạng NVIDIA (volume dự phòng, NullMoth 2.8.1): auto-go lúc boot → treo cứng (build-55, không có panic log); `-nvrmnogo` + `nvrm-go 1/2` tay → không treo (build-56), HDMI chưa kiểm. NullMoth v2.9 (2026-11-10) có sửa cho laptop lai panel trên iGPU (#516), GSP kẹt, mode set lỗi lúc boot; có `nmhybrid` (thử nghiệm, tắt mặc định). Viết `docs/NVIDIA-VULKAN-STEPS.md`: A Vulkan SDK, B cập nhật 2.9 (tắt lại NMXAudio), C `nvrm-go` tay trên build-69. Chờ `logs/b70/`.
+- 2026-11-10T22:16 MÁY B volume dự phòng: NullMoth cập nhật 2.9 xong — kextstat: NVRMFB/NVRMAGDC/NVRM/NVAccel (2.9), VoodooHDA 3.6.8, không có NMXAudio. Tiếp: `nvrm-go 1/2` tay (build-69, `-nvrmnogo`).
+- 2026-11-10T22:20 build-69 + NullMoth 2.9, sau `nvrm-go` tay: SPDisplays có 2 GPU — Intel UHD 46a3 Metal 2 (panel trong 1920×1080 @144 Hz, Main), **NVIDIA RTX 3050 Ti 25a0 Metal 4**, VRAM 4 GB, PCIe x8; không treo/panic. Dưới NVIDIA không có màn hình nào (HDMI: chưa biết có cắm không).
+- 2026-11-10T22:27 `logs/b70/` (build-69 + NullMoth 2.9): **Vulkan OK** — SDK 1.4.363.1, MoltenVK 1.4.2, GPU `Intel(R) TGL Unknown` (lỗi nạp `libvulkan_kosmickrisp.dylib` arm64: vô hại; vulkaninfo chụp trước `nvrm-go` nên chưa có NVIDIA). NVIDIA sau `nvrm-go` tay (22:19–22:20): NVRMFB thấy HDMI (dpy 0x100, connector 0x1), `head 0 lit again -> ok 1 rc 0`, `first accepted primary flip on head 0`, nhưng `fb0 connect notify: nothing registered yet` ×2 → framebuffer xuất hiện sau khi WindowServer đã chạy, không ai nhận → SPDisplays không có màn hình dưới NVIDIA, HDMI không có desktop. Boot kế (22:23, `-nvrmnogo`, không go): `heads_published 0`; `boot guard: start 1 without a display so far (the driver turns itself off after 2)`; NVAccel headless check 60 s → "MetalPluginName restored WITHOUT arming". Kết luận: HDMI cần auto-go lúc boot → đề xuất build-70 bỏ `-nvrmnogo` (chờ duyệt). Backup NullMoth: `/Library/NullMoth/backup-20261110-221213.xsyZF3`.
+- 2026-11-10T22:28:06 plist_edit bootarg-remove -nvrmnogo (config.plist)
+- 2026-11-10T22:28:06 Created build-70-20261110-222806-nvrm-autogo (tree bb8744300fdb, ocvalidate: pass)
+- 2026-11-10T22:28:20 Deployed EFI to /run/media/cyra/MACEFI/EFI (tree af6cb8084147, verified)
+- 2026-11-10T22:28 **build-70 `nvrm-autogo`** = build-69 bỏ `-nvrmnogo` (NullMoth 2.9 tự go(2) lúc boot, để NVRMFB có trước WindowServer → HDMI). Người dùng duyệt. boot-args 214 ký tự. validate 0/0 (`docs/validation/validate-20261110T222806.md`). Snapshot build-61 đã xoá (người dùng duyệt); snapshot build-70 tạo; ghi USB /dev/sdb3 MACEFI, hash khớp. Rủi ro: 2.8.1 auto-go treo cứng (build-55). Lùi: build-69. Chờ `logs/b71/`.
+- 2026-11-10T22:32 build-70 trên MÁY B: boot OK, **không treo** (auto-go 2.9), panel trong bình thường, âm thanh bình thường, **HDMI không có hình**. Chờ `logs/b71/` để biết lý do (boot guard / headless check / mode set).
+- 2026-11-10T22:36 `logs/b71/` (build-70, NullMoth 2.9, auto-go): NVRM `auto-go: go(2) -> 0x0`, `PASS 2 REACHED`, 4 nub NVRMDisplay published; nhưng **NVRMFB và NVAccel không chạy** sau khi claim (không có dòng `NVRM-fb`, không có sysctl `debug.nvaccel_*`/`nvrmfb_*`, SPDisplays NVIDIA "Metal 2" thay vì Metal 4); `auto-go: heads published mask 0x0 … after 20 s`, `accelerator level 1 NEVER took after 11 tries`, `nvrm-display = heads 0x0 accel 0 agdc -99 k5 -99 iop -99`, `boot hold RELEASED (display PARTIAL)`. Đầu boot: `boot guard: start 2 without a display so far (the driver turns itself off after 2)`. Nguồn 2.7.2 (`kexts/NVRM/nvrm_off.h`): NVRAM `nullmoth-nv-starts` đếm số lần start chưa bật được màn hình; đủ 2 → driver tắt như `-nvoff`. Hai lần đếm: boot 22:23 (`-nvrmnogo`, không go) và 22:29. Giả thuyết (khớp log, CHƯA XÁC MINH trên 2.9): bộ đếm = 2 làm NVRMFB/NVAccel tắt ngay trong boot này. Thử: xoá `nullmoth-nv-starts`, boot lại build-70.
+- 2026-11-10T22:48 **build-70 hoạt động** (người dùng: "hoạt động rồi") sau khi xoá NVRAM `nullmoth-nv-starts` và boot lại: HDMI có hình qua NullMoth 2.9. Chưa có `logs/b72/` trên MÁY A → chi tiết (Metal 4, heads) CHƯA XÁC MINH bằng log. Người dùng yêu cầu cập nhật tài liệu và push. Không commit: `logs/b54/AppleGraphicsControl.kext` (binary Apple), `EFI/OC/Kexts/AMFIPass.kext` (không có giấy phép phân phối).

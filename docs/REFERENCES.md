@@ -58,6 +58,9 @@ https://github.com/khucxtriendev/irisxegraphic-i712800h-efi
   không sleep, phải tắt AMFI). Báo panic Skywalk với bản AirportItlwm-Tahoe 2.4.0 (khác bản kgp-macPro dự án này dùng).
 - dGPU chỉ được ẩn bằng `class-code` (chưa xác nhận tắt nguồn) → máy tôi cần SSDT tắt nguồn thật.
 - `LUU-Y-RA-SOAT.md` cảnh báo bản phụ không nên dùng như bản đã sửa. Repo nhỏ (4 commit).
+- **Cập nhật 2026-11-09 (@8714a85, release EFI v1.0.1): repo đã đổi hẳn hướng** — iGPU dùng **WhateverXe** (b00t0x, fork của tác giả)
+  + WhateverXe-Graphics thay stack JN; dGPU **sống**, chạy **NullMoth** cho HDMI; HybridPM thay XE-PM. Không SSDT tắt dGPU.
+  Các nhận xét trên là của bản cũ. Phân tích và kế hoạch: `docs/REPLAN-WHATEVERXE.md` (nhánh `whateverxe-dual-gpu`).
 
 ### T2-2 · m4j2rpf766-crypto/IntelIGPU-Tahoe (B) — **cùng CPU/iGPU 46A3, panel 1080p 144 Hz (KHÔNG DÙNG - CÓ THỂ THAM KHẢO)** 
 https://github.com/m4j2rpf766-crypto/IntelIGPU-Tahoe

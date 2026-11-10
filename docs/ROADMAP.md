@@ -49,3 +49,42 @@ HWPAUTO và tắt C8/C10 (bỏ ` ngreenpmcst=0 ngreenpmauto=1`, giải phóng 29
 ## Ghi chú G3 (2026-11-06): `-ngreengva` đọc bằng `checkKernelArgument` (Lilu, 228) → không nối cuối được. Build G3 phải đổi thứ tự:
 đưa các tham số `PE_parse_boot_argn` (`ngreen-eu`, `ngreen-l3`, `ngreenblmax`, `ngreenV142`, `ngreen-dmc`, `gfxrst`) ra sau cờ Lilu.
 Cần thêm plugin VA build trên MÁY B (`macos/vadriver/build-vadriver.sh`, chép vào `/Library/GPUBundles`). FairPlay (Apple Music/TV+) hỏng khi có `-ngreengva` (JN #11); Safari vẫn giải mã CPU.
+
+## G5 — Giải mã video phần cứng trên WhateverXe (VCS0 → VCS2) — ✅ H.264 chạy ở build-66 (2026-11-10 20:29); HEVC/ổn định CHƯA KIỂM
+- Bối cảnh: nhánh `whateverxe-dual-gpu`, WEX 0.7.0-katana (fork `TrDiTu/WhateverXe` `katana-46a3`) đã tăng tốc Metal ở build-62
+  (VRAM 1536 MB). Fuse máy này: video mask 4 = **chỉ VCS2** (`fuses[4]=0x000E00FB`); VCS0 bị tắt.
+- Lỗi: driver Apple TGL (UUID `BA3AA1C0`) gắn ring media vào VCS0 → `IGHardwareCommandStreamer5::setWorkQueueBinding` NULL+0x284
+  trong `VTDecoderXPCService` (`logs/b62/Kernel-2026-11-10-175834.panic`). Cùng triệu chứng G3 (NootedGreen `-ngreengva`, build-42).
+  r4 tắt giải mã phần cứng (`WEXHardwareVideoDisabled`) để hệ thống ổn định.
+- Hướng: vá driver dùng VCS2 thay VCS0 — MMIO base (VCS0 `0x1C0000` → VCS2 `0x1D0000`, theo bố trí Gen12 của i915; CHƯA XÁC MINH
+  với driver Apple), engine ID/class instance, bit ngắt, chỗ tạo command streamer và scheduler bind. Linux i915 dùng VCS2 bình thường.
+- Bước 1 (cần người dùng): chép `AppleIntelTGLGraphics.kext` của gói WhateverXe-Graphics 0.4.0 từ volume dự phòng vào `logs/b62/`
+  (chỉ phân tích trên MÁY A, không commit, không phân phối binary Apple).
+- Bước 2: disassemble — tìm nơi tạo `IGHardwareCommandStreamer5` cho VCS0, bảng engine, `IGScheduler5::bind`, HuC/firmware media
+  (với `-disablegfxfirmware`). Kết luận khả thi/không trước khi viết patch.
+- Rủi ro: treo cứng (issue #76 khi ép VCS2-only), panic, có thể mất nhiều ngày và có thể không làm được. Không ai có bằng chứng
+  giải mã phần cứng trên iGPU VCS2-only trong macOS.
+- Ảnh hưởng nếu không làm: giải mã phần mềm (i7-12650H đủ cho 1080p/4K H.264/HEVC), tốn CPU/pin hơn; DRM phần cứng đã mất do PAVP.
+- **2026-11-10 18:40 — kết quả disassemble** (`AppleIntelTGLGraphics` của WhateverXe-Graphics 0.4.0, UUID `BA3AA1C0`, sha256
+  `567511be…496e`; lưu `_cache/apple-bin/` — gitignored, không commit):
+  - `kIGHwCsDesc` (0xd1c60 và 0xd4200, mục 0x79 byte): type 3 = VCS0 `0x1C0000` fuse bit 0x1; **type 4 = VCS2 `0x1D0000` fuse bit 0x4**;
+    type 5 = VECS `0x1C8000`. Driver đã hỗ trợ VCS2 (TGL GT2 có VD0 + VD2).
+  - `IntelAccelerator::getGPUInfo` lọc mặt nạ engine `accel+0x1300` bằng fuse `0x9140` (đảo, `&0xF00FF`). Máy này `0x000E00FB` → `0x10004`
+    → bỏ type 3, **giữ type 4 và 5**. `IGScheduler5::initWithAccelerator` tạo streamer cho mọi bit → có streamer VCS2.
+  - Lỗi: `g_cInitGfxHwCtxParamsForVideoMedia` (0xbe8a0) = `03 00 08 00 01 00 00 00 | 00 00 00 00` → type 3, instance (`ctx+0x74`) 0.
+    `IGHardwareRingBufferMedia::init` hỗ trợ instance 2 (`0x1D0244`/`0x1D003C`, `_vcs2ResetRegisters`). `IGScheduler5::bind` lấy
+    `sched+0xca0+8*type` → type 3 NULL → panic NULL+0x284.
+  - Bản vá đề xuất (r5): đổi params thành type **4**, instance **2** (2 trường, dữ liệu hằng). Thanh ghi VCS0 hardcode chỉ còn trong hàm
+    dump/chẩn đoán (`dumpRegistersVCS`, `gatherKeyRingData`) và `startGraphicsEngine` (3 chỗ, CHƯA xem kỹ); `determinePowerDomain` theo dải
+    địa chỉ (VCS2 CHƯA XÁC MINH). HuC/firmware media với `-disablegfxfirmware`: CHƯA XÁC MINH. Rủi ro: treo GPU/panic khi giải mã.
+- **2026-11-10 kết quả:** r5 (params VideoMedia → VCS2) + r7 (thay `readAndClearVCSInterrupts`, xử lý ngắt VCS2 kiểu i915) →
+  build-66: H.264 1080p 3 ms/khung, 0 khung bỏ. r5 một mình: ~1 s/khung (ngắt VCS2 tới nhưng driver gốc không nhận; r6 đo).
+  Còn lại: HEVC, phát lâu, sleep/wake, mã hoá phần cứng (quay màn hình) — chưa thử.
+
+## G6 — dGPU RTX 3050 Ti + HDMI (NullMoth) trên volume dự phòng — ✅ chạy ở build-70 (2026-11-10 22:48, người dùng xác nhận)
+- NullMoth 2.9 + WhateverXe r7: GPU tự khởi động lúc boot (không `-nvrmnogo`), HDMI có hình, panel trong trên iGPU.
+- Bài học: `nvrm-go` tay sau khi vào desktop không cho HDMI (WindowServer không nhận framebuffer muộn); boot với `-nvrmnogo`
+  làm boot guard đếm → đủ 2 thì NVRMFB/NVAccel tắt; xoá NVRAM `nullmoth-nv-starts` rồi boot lại.
+- Còn lại: nhiều lần boot, sleep/wake, rút-cắm HDMI, công suất nghỉ khi dGPU sống, `nmhybrid` (thử nghiệm của 2.9: render NVIDIA, hiện trên panel iGPU).
+- GB7 GPU Metal trên iGPU WhateverXe: treo ở Recognition (WEX #25/#44) — BỎ QUA (người dùng 2026-11-10 22:02).
+

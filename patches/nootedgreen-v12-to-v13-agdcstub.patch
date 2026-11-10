@@ -1,0 +1,66 @@
+diff --git a/src/NootedGreen/kern_gen11.cpp b/src/NootedGreen/kern_gen11.cpp
+index 4990f58..5f055e8 100755
+--- a/src/NootedGreen/kern_gen11.cpp
++++ b/src/NootedGreen/kern_gen11.cpp
+@@ -130,6 +130,44 @@ static uint32_t xePortGuardProbe(void *that) {
+ 	return FunctionCast(xePortGuardProbe, gXePortGuardOrg)(that);
+ }
+ 
++// XE-AGDCSTUB (v13). AppleIntelFramebuffer::enableController, validateDetailedTiming and setupDisplayTiming call the
++// AGDC link-control callback at controller+0x1c00 (ref at +0x1c08) without a NULL check (TGL FB 16.0, UUID B96A8448:
++// CallBackAGDC +0xdd, validateDetailedTiming +0x4e5, setupDisplayTiming +0x209). The pointer is zeroed in
++// AppleIntelBaseController::start and set only by RegisterAGDCCallback, which AppleGraphicsDevicePolicy reaches through
++// IntelFBClientControl. With a second display-class GPU (live NVIDIA dGPU) AGDP never attaches, so WindowServer's first
++// IOFramebuffer::open panics at RIP 0. The stub returns 0 ("AGDC did not handle it"): the timing paths then take the
++// branch Apple uses when AGDC validation fails, and enableController ignores the result. A later RegisterAGDCCallback
++// simply overwrites the stub. Off: -ngreennoagdcstub.
++static mach_vm_address_t gXeAgdcEnableOrg = 0, gXeAgdcValidateOrg = 0, gXeAgdcSetupOrg = 0;
++static volatile uint32_t gXeAgdcStubN = 0, gXeAgdcStubCalls = 0;
++static uint32_t xeAgdcStub(void *, uintptr_t, uint32_t, uint32_t event) {
++	if (OSIncrementAtomic(&gXeAgdcStubCalls) < 8)
++		IOLog("XeNG AGDCSTUB: AGDC callback absent, event %u -> 0\n", event);
++	return 0;
++}
++static void xeAgdcEnsure(void *fb) {
++	auto *ctl = fb ? getMember<uint8_t *>(fb, 0x1d0) : nullptr;
++	if (!ctl) return;
++	auto &cb = *reinterpret_cast<mach_vm_address_t *>(ctl + 0x1c00);
++	if (cb) return;
++	*reinterpret_cast<void **>(ctl + 0x1c08) = nullptr;
++	cb = reinterpret_cast<mach_vm_address_t>(xeAgdcStub);
++	if (OSIncrementAtomic(&gXeAgdcStubN) < 4)
++		IOLog("XeNG AGDCSTUB: controller %p had no AGDC callback, stub installed\n", ctl);
++}
++static IOReturn xeAgdcEnableController(void *that) {
++	xeAgdcEnsure(that);
++	return FunctionCast(xeAgdcEnableController, gXeAgdcEnableOrg)(that);
++}
++static IOReturn xeAgdcValidateDetailedTiming(void *that, void *timing, unsigned long long size) {
++	xeAgdcEnsure(that);
++	return FunctionCast(xeAgdcValidateDetailedTiming, gXeAgdcValidateOrg)(that, timing, size);
++}
++static uint64_t xeAgdcSetupDisplayTiming(void *that, const void *in, void *out) {
++	xeAgdcEnsure(that);
++	return FunctionCast(xeAgdcSetupDisplayTiming, gXeAgdcSetupOrg)(that, in, out);
++}
++
+ // xe/curdiag (2026-11-05): cursor-plane registers sampled ~200 ms after AppleIntelBaseController::hwSetCursorImage and
+ // published on the accelerator (ioreg -rc IntelAccelerator -d1 | grep xe-cur). Diagnostic only, no behaviour change.
+ // The boot log is useless for this: the kernel message buffer is overwritten by XeNG BLIT/V212 lines long before.
+@@ -1596,6 +1634,16 @@ bool Gen11::processKext(KernelPatcher &patcher, size_t index, mach_vm_address_t
+ 				  gXePureVirtual ? "ok" : "missing",
+ 				  !gXePureVirtualBase ? "missing" : gXePureVirtualBase == gXePureVirtual ? "= pure_virtual" : "differs");
+ 		}
++		if (!checkKernelArgument("-ngreennoagdcstub")) {
++			KernelPatcher::RouteRequest agdcRoutes[] = {
++				{"__ZN21AppleIntelFramebuffer16enableControllerEv", xeAgdcEnableController, gXeAgdcEnableOrg},
++				{"__ZN21AppleIntelFramebuffer22validateDetailedTimingEPvy", xeAgdcValidateDetailedTiming, gXeAgdcValidateOrg},
++				{"__ZN21AppleIntelFramebuffer18setupDisplayTimingEPK29IODetailedTimingInformationV2PS0_", xeAgdcSetupDisplayTiming, gXeAgdcSetupOrg},
++			};
++			patcher.routeMultiple(index, agdcRoutes, address, size);   // a route that fails is simply not installed
++			patcher.clearError();
++			IOLog("XeNG AGDCSTUB: armed %d\n", gXeAgdcEnableOrg != 0 && gXeAgdcValidateOrg != 0 && gXeAgdcSetupOrg != 0);
++		}
+ 		gOrgGcdm = this->ogetCurrentDisplayMode; gOrgGpi = this->ogetPixelInformation; gOrgVdm = this->ovalidateDisplayMode;
+ 		SYSLOG("ngreen", "TGL FB routes applied (fixbootmode: getCurrentDisplayMode org=0x%llx, arg=%d)",
+ 			   (unsigned long long)this->ogetCurrentDisplayMode, (int)checkKernelArgument("-ngreenfixbootmode"));
