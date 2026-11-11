@@ -26,6 +26,14 @@ Not working: the Geekbench 7 Metal GPU run on the iGPU (hangs in Feature Matchin
 
 Untested: HEVC, long-term stability.
 
+## Screenshots
+
+Taken on the laptop on 2026-11-11 (macOS 26.7.2). The serial number, account name, computer name and location are masked.
+
+| About This Mac | iGPU: Intel UHD Graphics, Metal 2 | dGPU: RTX 3050 Ti, Metal 4 |
+|---|---|---|
+| [![About This Mac](docs/images/01-about-mac.png)](docs/images/01-about-mac.png) | [![System Information: Intel UHD Graphics, 1536 MB, Metal 2, 1920×1080 @ 144 Hz](docs/images/02-igpu-info.png)](docs/images/02-igpu-info.png) | [![System Information: NVIDIA GeForce RTX 3050 Ti Laptop GPU, 4 GB, Metal 4](docs/images/03-dgpu-info.png)](docs/images/03-dgpu-info.png) |
+
 ## Status (build-70, 2026-11-10)
 
 | Item | Status |

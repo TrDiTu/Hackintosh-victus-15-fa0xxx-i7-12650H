@@ -17,6 +17,10 @@ docs/STATE.md
 docs/feasibility.md
 *.jpg
 *.png
+# original screenshots show the serial number and account name: never commit
+screenshots/
+# README screenshots: only copies with the serial number masked go here
+!docs/images/*.png
 docs/validation
 GRAPHICS-PANIC-ANALYSIS.md
 MACHINE-ANALYSIS.md
